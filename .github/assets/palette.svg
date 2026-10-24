@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 120" width="760" height="120" font-family="Montserrat, Inter, 'Segoe UI', Arial, sans-serif">
+  <g>
+    <rect x="0"   y="0" width="140" height="72" rx="10" fill="#083A4F"/>
+    <rect x="155" y="0" width="140" height="72" rx="10" fill="#A58D66"/>
+    <rect x="310" y="0" width="140" height="72" rx="10" fill="#C0D5D6"/>
+    <rect x="465" y="0" width="140" height="72" rx="10" fill="#407E8C"/>
+    <rect x="620" y="0" width="140" height="72" rx="10" fill="#E5E1DD" stroke="#C9C3BC"/>
+  </g>
+  <g font-size="12" font-weight="600" letter-spacing="1.5" fill="#407E8C">
+    <text x="0"   y="96">DEEP NAVY</text>
+    <text x="155" y="96">MUTED GOLD</text>
+    <text x="310" y="96">LIGHT TEAL</text>
+    <text x="465" y="96">MID TEAL</text>
+    <text x="620" y="96">OFF-WHITE</text>
+  </g>
+  <g font-size="12" fill="#A58D66" letter-spacing="1">
+    <text x="0"   y="114">#083A4F</text>
+    <text x="155" y="114">#A58D66</text>
+    <text x="310" y="114">#C0D5D6</text>
+    <text x="465" y="114">#407E8C</text>
+    <text x="620" y="114">#E5E1DD</text>
+  </g>
+</svg>
