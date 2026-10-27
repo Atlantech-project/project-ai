@@ -1,0 +1,656 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c06-completion.schema.json",
+  "title": "C-06 Completion message (queue:ai-results)",
+  "description": "Pushed by a worker with RPUSH after its result transaction has committed. One message per run, after the last retry. Delivery is at-least-once: the Backend de-duplicates on job_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "job_type",
+    "job_id",
+    "run_id",
+    "status",
+    "outcome",
+    "error_category",
+    "finished_at",
+    "worker_version"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0"
+    },
+    "job_type": {
+      "enum": [
+        "PART1_RUN",
+        "PART2_SOLVE",
+        "YARD_PLACEMENT",
+        "BAPLIE_PARSE",
+        "VALIDATION",
+        "PART3_EVALUATION"
+      ]
+    },
+    "job_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "job_id of the envelope. For PART3_EVALUATION (no envelope) the worker generates it."
+    },
+    "run_id": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "status": {
+      "enum": [
+        "DONE",
+        "FAILED"
+      ]
+    },
+    "outcome": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "error_category": {
+      "enum": [
+        null,
+        "INVALID_ENVELOPE",
+        "PRECONDITION_FAILED",
+        "DATA_UNAVAILABLE",
+        "CONFIGURATION_ERROR",
+        "INFEASIBLE",
+        "SOLVER_ERROR",
+        "TIMEOUT",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "worker_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "entry_window_proposal_id": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "terminal_recommendation_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "baplie_file_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "validation_result": {
+      "$ref": "#/$defs/validation_result"
+    },
+    "drift_measurement_ids": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "PART1_RUN"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "entry_window_proposal_id"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "integer"
+          },
+          "terminal_recommendation_id": false,
+          "baplie_file_id": false,
+          "validation_result": false,
+          "drift_measurement_ids": false
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "enum": [
+                  "WINDOWS_FOUND",
+                  "NO_FEASIBLE_WINDOW",
+                  "ENV_DATA_UNAVAILABLE"
+                ]
+              },
+              "error_category": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": null
+              },
+              "error_category": {
+                "enum": [
+                  "INVALID_ENVELOPE",
+                  "PRECONDITION_FAILED",
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "entry_window_proposal_id": {
+                "const": null
+              }
+            }
+          }
+        ],
+        "if": {
+          "properties": {
+            "outcome": {
+              "const": "WINDOWS_FOUND"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "entry_window_proposal_id": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "PART2_SOLVE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "run_id": {
+            "type": "integer"
+          },
+          "entry_window_proposal_id": false,
+          "terminal_recommendation_id": false,
+          "baplie_file_id": false,
+          "validation_result": false,
+          "drift_measurement_ids": false
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "enum": [
+                  "SOLVED",
+                  "PARTIALLY_SOLVED",
+                  "NO_FEASIBLE_PLAN"
+                ]
+              },
+              "error_category": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "const": "FIFO_FALLBACK"
+              },
+              "error_category": {
+                "enum": [
+                  "SOLVER_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": "GENERATION_FAILED"
+              },
+              "error_category": {
+                "enum": [
+                  "INVALID_ENVELOPE",
+                  "PRECONDITION_FAILED",
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "SOLVER_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "YARD_PLACEMENT"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "terminal_recommendation_id"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "integer"
+          },
+          "entry_window_proposal_id": false,
+          "baplie_file_id": false,
+          "validation_result": false,
+          "drift_measurement_ids": false
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "const": "YARD_REC_GENERATED"
+              },
+              "error_category": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": "GENERATION_FAILED"
+              },
+              "error_category": {
+                "enum": [
+                  "INVALID_ENVELOPE",
+                  "PRECONDITION_FAILED",
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "INFEASIBLE",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "BAPLIE_PARSE"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "baplie_file_id"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "integer"
+          },
+          "entry_window_proposal_id": false,
+          "terminal_recommendation_id": false,
+          "validation_result": false,
+          "drift_measurement_ids": false
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "enum": [
+                  "PARSED",
+                  "QUARANTINED",
+                  "REJECTED"
+                ]
+              },
+              "error_category": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": null
+              },
+              "error_category": {
+                "enum": [
+                  "INVALID_ENVELOPE",
+                  "PRECONDITION_FAILED",
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "VALIDATION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "run_id": {
+            "const": null
+          },
+          "entry_window_proposal_id": false,
+          "terminal_recommendation_id": false,
+          "baplie_file_id": false,
+          "drift_measurement_ids": false
+        },
+        "oneOf": [
+          {
+            "required": [
+              "validation_result"
+            ],
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "enum": [
+                  "VALID",
+                  "VIOLATIONS"
+                ]
+              },
+              "error_category": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": null
+              },
+              "error_category": {
+                "enum": [
+                  "INVALID_ENVELOPE",
+                  "PRECONDITION_FAILED",
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "validation_result": false
+            }
+          }
+        ],
+        "if": {
+          "properties": {
+            "outcome": {
+              "const": "VALID"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "validation_result": {
+              "properties": {
+                "valid": {
+                  "const": true
+                },
+                "violations": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        },
+        "else": {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "VIOLATIONS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "validation_result": {
+                "properties": {
+                  "valid": {
+                    "const": false
+                  },
+                  "violations": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "job_type": {
+            "const": "PART3_EVALUATION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "run_id": {
+            "const": null
+          },
+          "entry_window_proposal_id": false,
+          "terminal_recommendation_id": false,
+          "baplie_file_id": false,
+          "validation_result": false
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "const": "EVALUATED"
+              },
+              "error_category": {
+                "const": null
+              },
+              "drift_measurement_ids": {
+                "maxItems": 0
+              }
+            }
+          },
+          {
+            "required": [
+              "drift_measurement_ids"
+            ],
+            "properties": {
+              "status": {
+                "const": "DONE"
+              },
+              "outcome": {
+                "const": "DRIFT_DETECTED"
+              },
+              "error_category": {
+                "const": null
+              },
+              "drift_measurement_ids": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              },
+              "outcome": {
+                "const": null
+              },
+              "error_category": {
+                "enum": [
+                  "DATA_UNAVAILABLE",
+                  "CONFIGURATION_ERROR",
+                  "TIMEOUT",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "drift_measurement_ids": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "validation_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validation_type",
+        "subject_id",
+        "valid",
+        "violations"
+      ],
+      "properties": {
+        "validation_type": {
+          "enum": [
+            "OVERRIDE",
+            "YARD_ADJUSTMENT"
+          ]
+        },
+        "subject_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "violations": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/violation"
+          }
+        },
+        "violations_truncated": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "constraint_type_code",
+        "is_hard_safety_limit",
+        "message_key",
+        "detail"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "SAFETY",
+            "STRUCTURAL"
+          ]
+        },
+        "constraint_type_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,59}$"
+        },
+        "is_hard_safety_limit": {
+          "type": "boolean",
+          "description": "Copied from constraint_types for kind SAFETY; always false for kind STRUCTURAL."
+        },
+        "message_key": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "change_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "OVERRIDE: index in proposed_change.changes; null when the violation comes from the combination."
+        },
+        "manifest_entry_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "YARD_ADJUSTMENT: the container concerned."
+        }
+      }
+    }
+  }
+}

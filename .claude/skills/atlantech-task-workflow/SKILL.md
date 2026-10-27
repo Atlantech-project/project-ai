@@ -20,12 +20,13 @@ Work through the phases in order. Each **STOP** means: report what you found, sa
 - **No destructive Git.** Never `stash`, `reset`, `checkout -- <file>`, `clean`, `branch -D`, `push --force`, or anything else that discards work or rewrites history.
   - Never `git pull` without `--ff-only`, and never add, remove or change remotes.
   - When a Git command fails, quote its actual output and **STOP**. Don't attempt a corrective action.
-- **Leave authoritative sources alone without approval.** Don't rewrite the files in `docs/ref/` (architecture, UML, class diagrams, Master_Context) or the specifications in `docs/tasks/`. Don't change a shared contract or the ownership of a DB schema, and don't mark anything APPROVED. When one of these needs to change, write the change as a PROPOSED entry (see Phase 5).
+- **Leave authoritative sources alone without approval.** Don't rewrite the files in `docs/ref/` (architecture, UML, class diagrams, Master_Context, payload schemas, DB references) or the backlog in `docs/tasks/`. The two exceptions are `docs/ref/ATLANTECH_Decisions.md` and `docs/ref/ATLANTECH_Contracts.md`: a needed decision or contract change is written directly into the relevant entry there, marked `Proposed` (see Phase 5). Don't change the ownership of a DB schema, and don't mark anything Approved or Closed without the approval the project requires.
+- **No separate decision or contract logs.** There is no `DECISION_LOG.md` or `CONTRACT_LOG.md`, and no `DL-`/`CL-` entries. Don't create them, or any other parallel copy of a decision or contract.
 - **State a task's status only from verified evidence.** The Status column in `ATLANTECH_AI_TASKS.md` is the backlog's starting snapshot: every task begins as `NOT STARTED`, and the backlog doesn't track progress. A task's current status comes from:
   - its status record on `develop`;
   - the team tracker, `docs/tasks/WORK_STATUS.md`;
   - Git evidence on `develop`, such as the merge of its branch;
-  - for decision and contract tasks, the item's status in the decision and contract files and logs.
+  - for decision and contract tasks, the item's status in `docs/ref/ATLANTECH_Decisions.md` and `docs/ref/ATLANTECH_Contracts.md`, checked against the task's acceptance criteria. A missing log entry or tracker row is not evidence that a decision is unsettled.
 
   If you haven't read that evidence, call the status **unverified**, not `NOT STARTED`. If those sources disagree, apply Phase 2 step 6.
 - **Keep CLAUDE.md for durable rules.** Task progress goes in the status record (Phase 9), never in CLAUDE.md. Approving a task plan never authorises a CLAUDE.md change; see Phase 9.
@@ -51,7 +52,7 @@ git branch --show-current
 ## Phase 2: Identify and validate the task
 
 1. **Require an ID.** If `$ARGUMENTS` is empty or vague, **STOP** and ask for the task ID or the name of the setup task.
-2. **Find the task in `docs/tasks/`.** Search with Grep across all files there. AI tasks (`AI-xxx`) are in `ATLANTECH_AI_TASKS.md`, both in §2 (summary table) and in §5 (details). Contract tasks share their contract's ID (`CT-xx`, `ATLANTECH_Contracts.md`), and decision tasks share their decision's ID (`DEC-xx`, `ATLANTECH_Decisions.md`). Also check any other backlog or team tracker that exists there.
+2. **Find the task.** Search with Grep across `docs/tasks/` and the canonical files. AI tasks (`AI-xxx`) are in `docs/tasks/ATLANTECH_AI_TASKS.md`, both in §2 (summary table) and in §5 (details). Contract tasks share their contract's ID (`CT-xx`, `docs/ref/ATLANTECH_Contracts.md`), and decision tasks share their decision's ID (`DEC-xx`, `docs/ref/ATLANTECH_Decisions.md`). Also check any other backlog or team tracker that exists in `docs/tasks/`.
    - **Don't invent a task ID.** If the ID is not in the official backlog, **STOP** and say so. Suggest the nearest real IDs if any look like what the user meant.
    - **Setup work** that is not in the backlog (repo tooling, onboarding, for example) may go ahead as `SETUP-<slug>`. Label it clearly as a setup task that is not in the official backlog, and get the user's confirmation before continuing.
 3. **Extract the task details:** title, phase, priority, status, prerequisites, flags (D/A/B/X), inputs, expected outputs, files and interfaces, acceptance criteria, verification evidence, and open questions. Quote the acceptance criteria exactly.
@@ -84,7 +85,7 @@ git branch --show-current
    - **A** means it needs an architectural or domain decision.
 
    For every linked contract or decision, record its status. An **Open** decision or an unapproved contract that the task depends on is a blocker unless the task itself is the one that closes it.
-8. **Check scope against closed decisions before branching.** If the request adds to or changes the task's backlog scope (for example "also add X to the MVP"), Grep `ATLANTECH_Decisions.md`, `ATLANTECH_Contracts.md` and the logs for the topic. If a `Closed` decision or an approved contract contradicts the request, **STOP now**, before any branch exists (Phase 5 has the full rules). An empty branch left behind for a request that can't go ahead is clutter someone must clean up.
+8. **Check scope against closed decisions before branching.** If the request adds to or changes the task's backlog scope (for example "also add X to the MVP"), Grep `docs/ref/ATLANTECH_Decisions.md` and `docs/ref/ATLANTECH_Contracts.md` for the topic. If a `Closed` decision or an approved contract contradicts the request, **STOP now**, before any branch exists (Phase 5 has the full rules). An empty branch left behind for a request that can't go ahead is clutter someone must clean up.
 
 ## Phase 3: Prepare `develop` and create the branch (new tasks only)
 
@@ -169,14 +170,16 @@ The current branch must be exactly the name you created, and all three commits m
 - the base (`develop` at `<sha>`, equal to `origin/develop`);
 - the task ID;
 - the feature branch;
-- any unresolved blockers found so far, such as Open decisions, missing references or a PROPOSED item still pending.
+- any unresolved blockers found so far, such as Open decisions, missing references or a Proposed change still pending.
 
 ## Phase 4: Read the references
 
 The authoritative set is everything in `docs/ref/` and `docs/tasks/`. Today that is:
 
-- `docs/ref/`: Master_Context.md, ATLANTECH_AI_ARCHITECTURE.md, UML_Context.md (very large), ClassDiagramContext.md.
-- `docs/tasks/`: ATLANTECH_AI_TASKS.md, ATLANTECH_Contracts.md, ATLANTECH_Decisions.md, and `CONTRACT_LOG.md`, `DECISION_LOG.md` and `status/` when they exist.
+- `docs/ref/`: Master_Context.md, ATLANTECH_AI_ARCHITECTURE.md, UML_Context.md (very large), ClassDiagramContext.md, ATLANTECH_Decisions.md (canonical decisions), ATLANTECH_Contracts.md (canonical contracts), `ai-payloads/` (local reference copies of the AI payload JSON Schemas that the contracts publish under `contracts/ai/`) and `db/` (DB references such as `table-names.md`, published under `contracts/db/`).
+- `docs/tasks/`: ATLANTECH_AI_TASKS.md, WORK_STATUS.md and `status/`.
+
+Use these current paths. Older records may cite `docs/tasks/ATLANTECH_Contracts.md`, `docs/tasks/ATLANTECH_Decisions.md`, the removed decision and contract logs, or an `ai/` payload folder; read those as the `docs/ref/` files and `docs/ref/ai-payloads/`.
 
 List both directories first, because new files may have been added.
 
@@ -184,7 +187,7 @@ List both directories first, because new files may have been added.
 - **Later tasks**: list the whole reference set, then read in depth:
   - every source the task cites (for example "Master_Context §6", "UML 2.16", "plan §8.2");
   - the sections on the components, tables and interfaces the task touches;
-  - any document that could conflict with them: the contract and decision entries the task links to, the newest entries in `CONTRACT_LOG.md` and `DECISION_LOG.md`, and the status records of prerequisite tasks.
+  - any document that could conflict with them: the contract and decision entries the task links to (including any `Proposed` changes recorded in them), and the status records of prerequisite tasks.
 
 Finish with an **"Inspected" list** that separates "read in full", "read sections …" and "headings only". If a cited source is missing from the workspace, say so.
 
@@ -194,28 +197,18 @@ Compare what the user asked for, and what the task needs, against the existing c
 
 1. **Reuse existing IDs.** If `DEC-04` or `CT-08` already covers the topic, refer to it by that ID instead of creating a new item.
 2. **Closed or approved items are settled.** If the request contradicts a `Closed` decision (for example, DEC-55 makes TIMING and NCT recommendations future work) or an approved contract, **STOP**. Quote the decision and explain the conflict. Do not plan around it quietly.
-3. **Draft any new item as PROPOSED.** If the task needs a new decision or a contract change, explain why. Name the owner and the reviewers (from the contract's Owner and Reviewers fields, or the decision's Owner). Then draft an entry with `Status: PROPOSED`:
-   - Write it to `docs/tasks/DECISION_LOG.md` or `docs/tasks/CONTRACT_LOG.md` if the file exists and you are on the task branch.
-   - Otherwise, put the draft in the status record, or in your message if there is no task branch yet, and ask whether to create the log file.
-   - Number new entries `CL-001`, `CL-002`… in the contract log and `DL-001`, `DL-002`… in the decision log, and name the existing `CT-`/`DEC-` IDs they relate to. Never assign a new official `DEC-` or `CT-` ID yourself.
-   - Mark an entry APPROVED only when the user tells you the responsible people have explicitly approved it, and record who approved it and when.
+3. **Propose changes in the canonical document, never in a log.** Decisions live only in `docs/ref/ATLANTECH_Decisions.md` and contracts only in `docs/ref/ATLANTECH_Contracts.md`. If the task needs a new decision or a contract change:
+   - **Inspect first.** Read the relevant entry in full, its summary-table row, the linked `DEC-`/`CT-` entries and the related context (architecture, UML, payload schemas in `docs/ref/ai-payloads/`, DB references in `docs/ref/db/`).
+   - **Edit the existing entry; don't duplicate it.** When an entry covers the topic, add a `Proposed change` row to that entry's table. A whole new contract version may instead be written as `Proposed vX.Y` in the contract's Status row. When no entry covers a decision that belongs to one AI task, add it to the Decisions file's "AI task decisions" section, keyed by the task ID, with Status `Proposed`. Any other new topic needs a new official ID, so ask the user. Never assign a new official `DEC-` or `CT-` ID yourself.
+   - **Keep it visibly proposed.** Apart from a `Proposed vX.Y` status, the entry's Status, Decision and version rows stay as they are until the approval the project requires: the decision's Owner, or the contract's Owner and Reviewers. Name the owner and the reviewers, and explain why the change is needed.
+   - **Write it only on the task branch.** Without a task branch yet, put the exact draft in your message instead.
+   - **After approval, update the canonical entry directly.** Fold the change into the Status, Decision or version rows (bumping a contract's version), record who approved it and when, and remove the `Proposed change` row. Do this only when the user tells you the responsible people explicitly approved it. "Nobody objected" is not approval.
 
    ```
-   ### <next-id> · <title>
-   | Field | Value |
-   |---|---|
-   | Status | PROPOSED |
-   | Related | <task-id>, <existing CT-/DEC- IDs> |
-   | Owner | <team> |
-   | Reviewers | <teams> |
-   | Proposed by / date | <user>, <YYYY-MM-DD> |
-   | Evidence | <documents, files or tests that support it> |
-   | Change | <what changes, with the version bump for contracts> |
-   | Reason | <why the current text is not enough> |
-   | Impact | <tasks, tables, teams affected> |
+   | Proposed change | <YYYY-MM-DD> · <task-id> · <what changes, with the version bump for contracts> · Reason: <why the current text is not enough> · Evidence: <documents, files or tests> · Impact: <tasks, tables, teams> · Awaiting: <owner / reviewers> |
    ```
 
-4. **Stop if something blocks safe work.** If an Open or PROPOSED item blocks safe implementation (the task would have to guess a message format, a schema, or who owns a write), **STOP**. Explain what must be decided, and by whom. Planning may still go ahead if the user wants it, but the plan must mark that part as blocked.
+4. **Stop if something blocks safe work.** If an Open or Proposed item blocks safe implementation (the task would have to guess a message format, a schema, or who owns a write), **STOP**. Explain what must be decided, and by whom. Planning may still go ahead if the user wants it, but the plan must mark that part as blocked.
 
 ## Phase 6: Plan with Superpowers
 
@@ -238,7 +231,7 @@ The plan must contain these sections:
 - **Dependencies:** prerequisites with their status, plus cross-team items.
 - **Tests:** what is tested, how, and the commands to run (TDD where it fits).
 - **Risks:** including data, performance and coordination risks.
-- **Contract/decision changes:** existing IDs touched, plus any PROPOSED entries.
+- **Contract/decision changes:** existing IDs touched, plus any `Proposed change` rows to write in the canonical documents.
 - **Acceptance criteria:** quoted from the backlog, each mapped to a verification step.
 
 ## Phase 7: Approval gate
@@ -269,7 +262,7 @@ If you stop before that branch exists (dirty tree, missing `develop`, blocked pr
 | Updated | <YYYY-MM-DD> |
 
 ## Prerequisites and dependencies
-## Contract / decision items (existing IDs, PROPOSED entries)
+## Contract / decision items (existing IDs, Proposed changes in the canonical documents)
 ## References inspected
 ## Validation results (actual)
 ## Open questions / follow-ups
@@ -294,5 +287,5 @@ Each stop or phase-end message should have these parts:
 
 1. **Where we are:** phase, task, branch.
 2. **What was run and inspected:** the actual commands and files.
-3. **What was found:** blockers, conflicts, PROPOSED entries, missing references.
+3. **What was found:** blockers, conflicts, Proposed changes, missing references.
 4. **What is needed from the user:** the exact next decision or approval.

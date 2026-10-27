@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/worker-heartbeat.schema.json",
+  "title": "Worker heartbeat (Redis key worker:{name}:heartbeat)",
+  "description": "Written by each worker with SET ... EX 60 every 15 seconds. A missing key means the worker is DOWN. Queue depth is read by the Backend with LLEN, not reported here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "name",
+    "status",
+    "version",
+    "host",
+    "started_at",
+    "last_heartbeat",
+    "current_job",
+    "processed_total",
+    "failed_total"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0"
+    },
+    "name": {
+      "enum": [
+        "part1",
+        "part2",
+        "yard",
+        "edi",
+        "validate",
+        "part3"
+      ]
+    },
+    "status": {
+      "enum": [
+        "UP",
+        "DEGRADED",
+        "DRAINING"
+      ]
+    },
+    "status_detail": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "host": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_heartbeat": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "current_job": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "job_type",
+            "job_id",
+            "run_id",
+            "started_at"
+          ],
+          "properties": {
+            "job_type": {
+              "enum": [
+                "PART1_RUN",
+                "PART2_SOLVE",
+                "YARD_PLACEMENT",
+                "BAPLIE_PARSE",
+                "VALIDATION",
+                "PART3_EVALUATION",
+                "WEATHER_PULL",
+                "TIDE_COMPUTE",
+                "DEMAND_FORECAST"
+              ]
+            },
+            "job_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            },
+            "run_id": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    },
+    "processed_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "schedules": {
+      "description": "part1 and part3 only: last successful run of each scheduled job.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "last_weather_pull_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_tide_compute_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_demand_forecast_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_evaluation_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

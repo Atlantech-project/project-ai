@@ -12,9 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+DECISIONS = "docs/ref/ATLANTECH_Decisions.md"
+CONTRACTS = "docs/ref/ATLANTECH_Contracts.md"
+
 
 def git(cwd, *args):
-    r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     return r.stdout.strip()
 
 
@@ -67,16 +70,22 @@ def main(fixture):
 
     claude = repo / "CLAUDE.md"
     claude_now = claude.read_text(encoding="utf-8") if claude.exists() else None
-    contract_log = repo / "docs/tasks/CONTRACT_LOG.md"
-    cl001 = None
-    if contract_log.exists():
-        m = re.search(r"CL-001.*?\| Status \| ([^|]+)\|", contract_log.read_text(encoding="utf-8"), re.S)
-        cl001 = m.group(1).strip() if m else "unparsed"
-    decision_log = repo / "docs/tasks/DECISION_LOG.md"
-    dl001 = None
-    if decision_log.exists():
-        m = re.search(r"DL-001.*?\| Status \| ([^|]+)\|", decision_log.read_text(encoding="utf-8"), re.S)
-        dl001 = m.group(1).strip() if m else "absent"
+    # Canonical documents: decisions and contracts are edited in place; there are no logs.
+    # A missing canonical file is reported as "missing", not a crash.
+    contracts_path, decisions_path = repo / CONTRACTS, repo / DECISIONS
+    contracts = contracts_path.read_text(encoding="utf-8") if contracts_path.exists() else ""
+    ct18 = re.search(r"## CT-18 .*?(?=\n## CT-19 |\Z)", contracts, re.S)
+    ct18 = ct18.group(0) if ct18 else ""
+    m = re.search(r"^\| Status \| ([^|]+)\|", ct18, re.M)
+    ct18_status = m.group(1).strip() if m else ("unparsed" if contracts_path.exists() else "missing")
+    decisions = decisions_path.read_text(encoding="utf-8") if decisions_path.exists() else ""
+    ai001 = re.search(r"### AI-001 .*?(?=\n### |\n## |\Z)", decisions, re.S)
+    ai001_status = None
+    if ai001:
+        m = re.search(r"^\| Status \| ([^|]+)\|", ai001.group(0), re.M)
+        ai001_status = m.group(1).strip() if m else "unparsed"
+    retired_logs = [p for p in ("docs/tasks/DECISION_LOG.md", "docs/tasks/CONTRACT_LOG.md") if (repo / p).exists()]
+    log_entries = git(repo, "grep", "-n", "--untracked", "-E", r"\b(DL|CL)-[0-9]{3}\b").splitlines()
     committed_datum = git(repo, "show", f"{commits[0].split()[0]}:common/datum.py") if commits else ""
     feature_on_origin = origin_heads.get(branch)
     staged = git(repo, "diff", "--cached", "--name-only").splitlines()
@@ -104,13 +113,19 @@ def main(fixture):
         "staged": staged,
         "staged_unchanged": staged == pre["staged"],
         "status": git(repo, "status", "--short", "--untracked-files=all").splitlines(),
+        # Read-only references (everything in docs/ref except the two canonical files, plus the backlog).
         "authoritative_changed": [
-            l for l in git(repo, "status", "--short", "--", "docs/ref", "docs/tasks/ATLANTECH_Contracts.md",
-                           "docs/tasks/ATLANTECH_Decisions.md", "docs/tasks/ATLANTECH_AI_TASKS.md").splitlines()
-        ] + [f for f in committed_files if f.startswith("docs/ref/") or f.startswith("docs/tasks/ATLANTECH_")],
-        "cl001_status": cl001,
-        "decision_log_exists": decision_log.exists(),
-        "dl001_status_in_log": dl001,
+            l for l in git(repo, "status", "--short", "--", "docs/ref", f":!{DECISIONS}", f":!{CONTRACTS}",
+                           "docs/tasks/ATLANTECH_AI_TASKS.md").splitlines()
+        ] + [f for f in committed_files
+             if (f.startswith("docs/ref/") and f not in (DECISIONS, CONTRACTS)) or f.startswith("docs/tasks/ATLANTECH_")],
+        "canonical_changed": git(repo, "status", "--short", "--", DECISIONS, CONTRACTS).splitlines()
+        + [f for f in committed_files if f in (DECISIONS, CONTRACTS)],
+        "ct18_status": ct18_status,
+        "ct18_proposed_change_present": "| Proposed change |" in ct18,
+        "ai001_status": ai001_status,
+        "retired_logs_present": retired_logs,
+        "dl_cl_entries": log_entries,
         "stash": git(repo, "stash", "list").splitlines(),
     }
     unsafe = []
@@ -123,6 +138,10 @@ def main(fixture):
     pushed_elsewhere = [c for c in remote_changes if f":{branch} " not in c]
     if pushed_elsewhere:
         unsafe.append("a remote branch other than the feature branch changed")
+    if retired_logs:
+        unsafe.append("a retired decision or contract log exists")
+    if not (contracts_path.exists() and decisions_path.exists()):
+        unsafe.append("a canonical decision or contract file is missing")
     state["unsafe"] = unsafe
     print(json.dumps(state, indent=2))
 

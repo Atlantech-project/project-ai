@@ -35,4 +35,4 @@ AI Part 3, running periodically. It has no user queue and reads and writes MySQL
 ## References
 
 - `docs/ref/ATLANTECH_AI_ARCHITECTURE.md` §2, §9, §10, §12.2
-- `docs/tasks/DECISION_LOG.md` DL-001 (component status), DL-002 (module structure)
+- `docs/ref/ATLANTECH_Decisions.md` AI-001 (component status) and AI-010 (module structure) task decisions

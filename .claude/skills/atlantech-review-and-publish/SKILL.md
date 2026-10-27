@@ -1,6 +1,6 @@
 ---
 name: atlantech-review-and-publish
-description: End-of-task review and publish workflow for the ATLANTECH AI repository. Verifies the repository, remote and a freshly fetched develop baseline, confirms the task's plan was explicitly approved, runs the project's real tests (or the right non-code checks for documentation and decision tasks), performs a detailed local code review with Superpowers including a content-level scope check, reports honestly on whether a remote GitHub PR review happened, updates CONTRACT_LOG/DECISION_LOG (PROPOSED only, never self-approved) and docs/tasks/status/<task-id>.md, then presents a final report and stages, commits and pushes the feature branch only after the user types APPLY CHANGES. Use it whenever the user finishes, wraps up, reviews, ships, publishes, commits or pushes an ATLANTECH task (for example "review AI-014", "AI-014 is done, publish it", "commit and push my CT-08 work", "/atlantech-review-and-publish AI-011"), even if they don't name the workflow.
+description: End-of-task review and publish workflow for the ATLANTECH AI repository. Verifies the repository, remote and a freshly fetched develop baseline, confirms the task's plan was explicitly approved, runs the project's real tests (or the right non-code checks for documentation and decision tasks), performs a detailed local code review with Superpowers including a content-level scope check, reports honestly on whether a remote GitHub PR review happened, checks that decision and contract changes sit in the canonical docs/ref/ATLANTECH_Decisions.md and docs/ref/ATLANTECH_Contracts.md (Proposed until the required approval, never self-approved, no separate logs), updates docs/tasks/status/<task-id>.md, then presents a final report and stages, commits and pushes the feature branch only after the user types APPLY CHANGES. Use it whenever the user finishes, wraps up, reviews, ships, publishes, commits or pushes an ATLANTECH task (for example "review AI-014", "AI-014 is done, publish it", "commit and push my CT-08 work", "/atlantech-review-and-publish AI-011"), even if they don't name the workflow.
 argument-hint: "[task-id]"
 user-invocable: true
 ---
@@ -37,8 +37,8 @@ Don't work around a stop.
   - Never merge, and never push to `develop` or `main`.
 - **Don't overwrite unrelated work.** Files and changes that are not part of this task's approved scope stay exactly as you found them: don't edit, revert, delete or stage them. Report them.
 - **Leave authoritative sources alone.**
-  - Don't rewrite `docs/ref/` (architecture, UML, class diagrams, Master_Context) or the specifications in `docs/tasks/` (backlog, Contracts, Decisions).
-  - Changes go into the logs as PROPOSED entries (Phase 7).
+  - Don't rewrite `docs/ref/` (architecture, UML, class diagrams, Master_Context, payload schemas, DB references) or the backlog in `docs/tasks/`.
+  - Decisions and contracts are changed only directly in `docs/ref/ATLANTECH_Decisions.md` and `docs/ref/ATLANTECH_Contracts.md`, as `Proposed change` rows until approved (Phase 7). There are no decision or contract logs; never create `DECISION_LOG.md`, `CONTRACT_LOG.md`, `DL-`/`CL-` entries or other parallel copies.
   - Never mark a contract or decision approved on behalf of its owners or reviewers.
 - **CLAUDE.md is a durable, team-wide rule file, not part of a feature task.** See Phase 8. Task progress never goes there.
 
@@ -101,7 +101,7 @@ git ls-files --others --exclude-standard
 
    List the staged paths and leave the index exactly as it is. Don't unstage. The user decides what the index should hold.
 3. **Classify every changed and untracked file:**
-   - **task:** in the approved plan's scope (Phase 3), or this task's status record or log entries;
+   - **task:** in the approved plan's scope (Phase 3), this task's status record, or this task's changes to the canonical decision and contract entries;
    - **planning artifact:** `docs/superpowers/plans/` and `docs/superpowers/specs/` files written by `atlantech-task-workflow`. These are neither automatically unrelated nor automatically deliverables. They are committed only if the approved scope explicitly lists them and you reviewed them; otherwise they stay uncommitted and are reported;
    - **instruction file:** `CLAUDE.md`. Handle it as in Phase 8;
    - **unrelated:** changed but outside the approved scope;
@@ -114,10 +114,10 @@ git ls-files --others --exclude-standard
 
 ## Phase 3: Task definition and plan approval
 
-1. **Find the task in `docs/tasks/`:**
-   - AI tasks: `ATLANTECH_AI_TASKS.md` §2 and §5;
-   - `CT-xx`: `ATLANTECH_Contracts.md`;
-   - `DEC-xx`: `ATLANTECH_Decisions.md`.
+1. **Find the task:**
+   - AI tasks: `docs/tasks/ATLANTECH_AI_TASKS.md` §2 and §5;
+   - `CT-xx`: `docs/ref/ATLANTECH_Contracts.md`;
+   - `DEC-xx`: `docs/ref/ATLANTECH_Decisions.md`.
 
    Quote its acceptance criteria and implementation guidance exactly. If the task ID isn't in the backlog and isn't a confirmed `SETUP-` task, **STOP**.
 2. **Find the plan:** use the path named in `docs/tasks/status/<task-id>.md`, or look under `docs/superpowers/plans/`. If there is none, the plan is missing: a publish blocker. Say so and ask the user how to proceed.
@@ -128,7 +128,7 @@ git ls-files --others --exclude-standard
    - **Changed plan:** if the plan file changed after the approval you're relying on (Git history, or the user says so), that approval doesn't cover the change. Ask again.
 4. **Task type:**
    - **Code task:** the change alters code behaviour (source, tests, config that changes runtime behaviour).
-   - **Documentation or decision task:** only documents, logs or records change.
+   - **Documentation or decision task:** only documents, canonical decision or contract entries, or records change.
 
    Phase 4 depends on this.
 
@@ -157,12 +157,12 @@ Find the checks this project actually has. Don't invent new ones to make the rep
 
 **Documentation and decision tasks:**
 
-- **Code tests:** report them as **NOT APPLICABLE**, with the reason, for example "no code behaviour changed: the diff touches only `docs/tasks/DECISION_LOG.md` and the status record". Never report them as passed.
+- **Code tests:** report them as **NOT APPLICABLE**, with the reason, for example "no code behaviour changed: the diff touches only `docs/ref/ATLANTECH_Decisions.md` and the status record". Never report them as passed.
 - **Evidence that applies instead:**
   - the full diff, read line by line;
-  - internal links and references that resolve: cited files and sections exist, and `CT-xx` / `DEC-xx` / `AI-xxx` IDs exist;
-  - every required field present in each log entry (the template in Phase 7);
-  - decision status rules followed: nothing marked APPROVED or Closed without recorded approvers;
+  - internal links and references that resolve: cited files and sections exist (using the current `docs/ref/` paths, including `docs/ref/ai-payloads/`), and `CT-xx` / `DEC-xx` / `AI-xxx` IDs exist;
+  - every required field present in each `Proposed change` row (the template in Phase 7), and no duplicate entry for a topic an existing entry covers;
+  - decision status rules followed: nothing marked Approved or Closed without recorded approval;
   - each acceptance criterion checked: met, or explicitly not yet met and why.
 - **Commands:** run only commands that exist, such as `git diff --check` or a link check the repo provides.
 
@@ -233,35 +233,24 @@ Then:
 
 A missing remote review does **not** block publishing. It must be reported accurately, with the note that the review should happen once the PR is open.
 
-## Phase 7: Contract and decision logs
+## Phase 7: Canonical decisions and contracts
 
-Decide whether the task, as implemented, changes or settles anything in a contract or decision:
+Decisions live only in `docs/ref/ATLANTECH_Decisions.md` and contracts only in `docs/ref/ATLANTECH_Contracts.md`. There is no separate decision or contract log. Decide whether the task, as implemented, changes or settles anything in a contract or decision:
 
-1. **Reuse existing IDs.** If `CT-08`, `DEC-04` or an existing log entry covers the topic, refer to it by that ID. Don't create a duplicate.
-2. **Evidence first.** Only write an entry you can back with evidence from this branch: the file and function, the test, the backlog line. Cite it in the entry.
-3. **Status is PROPOSED unless approval is explicit.**
-   - Number new entries `CL-001`, `CL-002`… in the contract log and `DL-001`, `DL-002`… in the decision log, and name the existing `CT-`/`DEC-` IDs they relate to. Never assign a new official `DEC-` or `CT-` ID yourself.
-   - **Write** new or changed entries in `docs/tasks/CONTRACT_LOG.md` or `docs/tasks/DECISION_LOG.md` with `Status: PROPOSED`.
-   - **Change a status to `APPROVED` (or a decision to Closed) only** when the user tells you the responsible people have explicitly approved it, and record **who** approved it and **when**. The responsible people are the contract's Owner and Reviewers, or the decision's Owner.
-   - **Not approval:** "I think they're fine with it", "nobody objected" or "just mark it approved". Keep the entry PROPOSED and say what is missing.
-4. **If the log file doesn't exist:** don't create it on your own. Put the draft entry in the status record and ask whether to create the log; creating it needs the user's yes.
+1. **Inspect, then reuse existing entries.** Read the relevant canonical entry, its summary-table row and the related context before touching it. If `CT-08`, `DEC-04` or an AI task decision already covers the topic, edit that entry. Don't create a duplicate, and never assign a new official `DEC-` or `CT-` ID yourself.
+2. **Evidence first.** Only record a change you can back with evidence from this branch: the file and function, the test, the backlog line. Cite it in the change.
+3. **Proposed until the required approval.**
+   - **Write** a new or changed item as a `Proposed change` row in the existing entry's table (template below). A whole new contract version may instead be written as `Proposed vX.Y` in the contract's Status row. A decision that belongs to one AI task and that no entry covers goes into the Decisions file's "AI task decisions" section, keyed by the task ID, with Status `Proposed`. Any other new topic needs a new official ID, so ask the user. Apart from a `Proposed vX.Y` status, the entry's Status, Decision and version rows stay unchanged.
+   - **Apply an approval only** when the user tells you the responsible people have explicitly approved it. Then update the canonical entry directly: Status, Decision or version (with the version bump for contracts), plus **who** approved it and **when**, and remove the `Proposed change` row. The responsible people are the contract's Owner and Reviewers, or the decision's Owner.
+   - **Not approval:** "I think they're fine with it", "nobody objected" or "just mark it approved". Keep the change Proposed and say what is missing.
+4. **Never create a log.** If the user or an older record asks for an entry in `DECISION_LOG.md` or `CONTRACT_LOG.md`, explain that the logs were retired and record the change in the canonical entry instead.
 5. **A conflict with a Closed decision or an approved contract** is a Critical finding (Phase 5). Quote the decision or contract.
+6. **Task status follows acceptance criteria.** A decision or contract task is done when its accepted outcome is in the canonical document and its acceptance criteria are met. A missing log entry or tracker row doesn't keep it open. A documented contract never makes the implementation, integration or testing tasks that depend on it done.
 
-Entry template (same as `atlantech-task-workflow`):
+`Proposed change` row template (same as `atlantech-task-workflow`):
 
 ```
-### <next-id> · <title>
-| Field | Value |
-|---|---|
-| Status | PROPOSED |
-| Related | <task-id>, <existing CT-/DEC- IDs> |
-| Owner | <team> |
-| Reviewers | <teams> |
-| Proposed by / date | <user>, <YYYY-MM-DD> |
-| Evidence | <files/functions/tests on this branch> |
-| Change | <what changes, with the version bump for contracts> |
-| Reason | <why the current text is not enough> |
-| Impact | <tasks, tables, teams affected> |
+| Proposed change | <YYYY-MM-DD> · <task-id> · <what changes, with the version bump for contracts> · Reason: <why the current text is not enough> · Evidence: <files/functions/tests on this branch> · Impact: <tasks, tables, teams> · Awaiting: <owner / reviewers> |
 ```
 
 ## Phase 8: Status record and CLAUDE.md
@@ -321,7 +310,7 @@ Present this report, then **STOP** and wait:
    - findings resolved (and how), unresolved and deferred;
    - the checklist coverage, including the content-level scope check.
 7. **Remote PR review:** the honest status from Phase 6.
-8. **Docs and logs:** the status record and log entries written, each with its status.
+8. **Docs and records:** the status record, and each canonical decision or contract entry changed, with its status (Proposed or approved, with who and when).
 9. **Blockers:** anything on the publish-blocker list below. If any applies, say that publishing is blocked and what would unblock it, and don't ask for `APPLY CHANGES`.
 10. **Exact commands intended** (only when not blocked):
 
@@ -342,7 +331,7 @@ Present this report, then **STOP** and wait:
       - `docs(ai):` for documentation or decision tasks;
       - `chore(ai):` for setup and tooling.
 
-      For example `feat(ai): AI-014 add unit, datum and time converters` or `docs(ai): AI-001 propose DL-001 AI component inventory`. Never force `feat(ai):` onto documentation or setup work. The message is part of what the user confirms.
+      For example `feat(ai): AI-014 add unit, datum and time converters` or `docs(ai): AI-001 propose AI component inventory`. Never force `feat(ai):` onto documentation or setup work. The message is part of what the user confirms.
 
 Close with: *"To stage, commit and push exactly this, reply `APPLY CHANGES`."*
 
@@ -370,7 +359,8 @@ Any of these blocks the commit and push, even after `APPLY CHANGES`:
   - unplanned or out-of-scope content inside a file that would be staged.
 - **Content:**
   - a secret inside a task file;
-  - a log entry marked APPROVED or Closed without recorded explicit approval.
+  - a decision or contract marked Approved or Closed without recorded explicit approval;
+  - a new `DECISION_LOG.md`, `CONTRACT_LOG.md` or other parallel copy of a decision or contract.
 
 ## Phase 10: After `APPLY CHANGES`
 

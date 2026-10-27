@@ -26,7 +26,7 @@ SCENARIOS = (
     "untracked-secrets",
     "unresolved-finding",
     "no-pr-review",
-    "unapproved-log",
+    "unapproved-contract-change",
     "commit-without-apply",
     # hardening round
     "claude-md-change",
@@ -36,14 +36,16 @@ SCENARIOS = (
     "wrong-origin",
     "push-rejected",
     "docs-only-decision",
-    "missing-decision-log",
+    "log-requested",
     "pre-staged",
     "changed-after-report",
     "unplanned-change-in-task-file",
 )
 AI014_BRANCH = "feature/AI-014-unit-datum-time-utilities"
 AI001_BRANCH = "feature/AI-001-confirm-ai-scope-and-component-inventory"
-DECISION_SCENARIOS = ("docs-only-decision", "missing-decision-log")
+DECISION_SCENARIOS = ("docs-only-decision", "log-requested")
+DECISIONS = "docs/ref/ATLANTECH_Decisions.md"
+CONTRACTS = "docs/ref/ATLANTECH_Contracts.md"
 
 
 def git(repo, *args):
@@ -277,21 +279,11 @@ STATUS_AI014 = '''
 - FU-1: IANA zone names and daylight-saving transitions (out of AI-014's approved scope; agreed with the plan).
 '''
 
-CONTRACT_LOG = '''
-# Contract change log
-
-### CL-001 · Add KM_PER_HOUR to the CT-18 unit seed values
-| Field | Value |
-|---|---|
-| Status | PROPOSED |
-| Related | AI-014, CT-18 |
-| Owner | AI Team |
-| Reviewers | Backend Team |
-| Proposed by / date | mostafa, 2026-10-21 |
-| Change | Add `KM_PER_HOUR` to the `constraint_type.unit` seed list (CT-18 v1.0 → v1.1) |
-| Reason | Weather providers report wind in km/h; AI-014 converts it |
-| Impact | AI-014, AI-020; Backend seeders |
-'''
+CT18_PROPOSED_CHANGE = (
+    "| Proposed change | 2026-10-21 · AI-014 · Add `KM_PER_HOUR` to the `constraint_types.unit` seed list "
+    "(CT-18 v1.0 → v1.1) · Reason: weather providers report wind in km/h; AI-014 converts it · "
+    "Evidence: `common/units.py` · Impact: AI-014, AI-020; Backend seeders · Awaiting: Backend Team (reviewers) |\n"
+)
 
 
 SPEC = '''
@@ -338,33 +330,33 @@ PLAN_AI001 = '''
 
 - **Task:** AI-001 · branch `feature/AI-001-confirm-ai-scope-and-component-inventory` · documentation/decision task (no code).
 - **Scope:** in: record the AI component inventory (A1–A7, B1–B8, C1–C4 with MVP / DATA-GATED / OUT-OF-SCOPE)
-  as decision entry DL-001 with status PROPOSED in the decision log, and update the AI-001 status record.
-  Out: any code; approving DL-001 (the AI lead and team lead approve it, not this task).
-- **Files likely to change:** `docs/tasks/DECISION_LOG.md` (DL-001 entry), `docs/tasks/status/AI-001.md`.
+  as the AI-001 entry, Status `Proposed`, in the "AI task decisions" section of `docs/ref/ATLANTECH_Decisions.md`,
+  and update the AI-001 status record.
+  Out: any code; approving the entry (the AI lead and team lead approve it, not this task).
+- **Files likely to change:** `docs/ref/ATLANTECH_Decisions.md` (AI-001 entry), `docs/tasks/status/AI-001.md`.
 - **Dependencies:** none.
 - **Tests:** no code changes; verify the entry's fields, its references to Master_Context §6 and DEC-55,
-  and that it stays PROPOSED.
+  and that it stays Proposed.
 - **Risks:** the FRD v3 is not in the workspace (C3/C4 status).
-- **Contract/decision changes:** DL-001 (new, PROPOSED). Reuses DEC-55 (Closed: TIMING/NCT are future work).
+- **Contract/decision changes:** AI-001 task decision (new, Proposed; no new DEC ID). Reuses DEC-55 (Closed: TIMING/NCT are future work).
 - **Acceptance criteria:** see backlog §5 AI-001.
 '''
 
-DL001 = '''
-### DL-001 · AI component inventory and MVP scope
-| Field | Value |
-|---|---|
-| Status | PROPOSED |
-| Related | AI-001, DEC-55 |
-| Owner | AI Team |
-| Reviewers | AI lead, team lead |
-| Proposed by / date | mostafa, 2026-10-22 |
-| Evidence | docs/ref/Master_Context.md §6; docs/tasks/ATLANTECH_Decisions.md DEC-55 |
-| Change | MVP: A1–A6, B1, B2, B5–B7, C1, C2; A7/B3/B4 Phase 1 rule paths in MVP, their ML models DATA-GATED; B8 yard placement (working label) MVP; C3/C4 DATA-GATED; TIMING and NCT storage allocation OUT-OF-SCOPE (DEC-55) |
-| Reason | AI-001 requires one recorded inventory before AI-010 and later tasks |
-| Impact | AI-009, AI-010, AI-065, AI-073 |
-'''
+AI001_ENTRY = '''
 
-DECISION_LOG_HEADER = "# Decision change log\n\nEntries are PROPOSED until their owners approve them (who / when recorded).\n"
+## AI task decisions
+
+### AI-001 · AI component inventory and MVP scope
+
+| | |
+| --- | --- |
+| Source | AI-001 · Master_Context §6 · DEC-55 |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-009 · AI-010 · AI-065 · AI-073 |
+| Decision | ______ |
+| Proposed change | 2026-10-22 · AI-001 · MVP: A1–A6, B1, B2, B5–B7, C1, C2; A7/B3/B4 Phase 1 rule paths in MVP, their ML models DATA-GATED; B8 yard placement (working label) MVP; C3/C4 DATA-GATED; TIMING and NCT storage allocation OUT-OF-SCOPE (DEC-55) · Reason: AI-001 requires one recorded inventory before AI-010 and later tasks · Evidence: docs/ref/Master_Context.md §6; DEC-55 · Awaiting: AI lead, team lead |
+'''
 
 STATUS_AI001 = '''
 # AI-001 · Confirm AI scope and component inventory
@@ -423,9 +415,17 @@ def build(scenario, dest, docs):
     git(repo, "config", "core.autocrlf", "false")
     git(repo, "remote", "add", "origin", str(origin))
 
-    # Reference specs only: each scenario sets up its own logs, status records and plans.
-    shutil.copytree(docs, repo / "docs", ignore=shutil.ignore_patterns(
-        "CONTRACT_LOG.md", "DECISION_LOG.md", "WORK_STATUS.md", "status", "superpowers"))
+    # Reference specs only: each scenario sets up its own status records and plans.
+    shutil.copytree(docs, repo / "docs", ignore=shutil.ignore_patterns("WORK_STATUS.md", "status", "superpowers"))
+    # The fixtures start before AI-001 and AI-010 were decided: drop their recorded task decisions.
+    decisions = repo / DECISIONS
+    text = decisions.read_text(encoding="utf-8")
+    cut = text.find("\n## AI task decisions")
+    if cut != -1:
+        text = text[:cut].rstrip("\n") + "\n"
+        decisions.write_text(text, encoding="utf-8", newline="\n")
+    if "### AI-001 " in text:
+        sys.exit(f"{DECISIONS} still holds an AI-001 decision after stripping; update the fixture builder")
     write(repo, "README.md", "# ATLANTECH AI\n\nAI services for the ATLANTECH port platform.\n")
     write(repo, ".gitignore", "__pycache__/\n*.pyc\n")
     write(repo, "CLAUDE.md", CLAUDE_MD.format(origin=str(origin)))
@@ -436,10 +436,17 @@ def build(scenario, dest, docs):
     git(repo, "checkout", "-b", "develop")
     write(repo, "docs/tasks/status/AI-010.md", STATUS_AI010)
     write(repo, "pyproject.toml", '[project]\nname = "atlantech-ai"\nversion = "0.1.0"\nrequires-python = ">=3.11"\n')
-    if scenario == "unapproved-log":
-        write(repo, "docs/tasks/CONTRACT_LOG.md", CONTRACT_LOG)
-    if scenario == "docs-only-decision":
-        write(repo, "docs/tasks/DECISION_LOG.md", DECISION_LOG_HEADER)
+    if scenario == "unapproved-contract-change":
+        # A Proposed change on the canonical CT-18 entry, committed on develop.
+        contracts = repo / CONTRACTS
+        text = contracts.read_text(encoding="utf-8")
+        start = text.find("## CT-18 ")
+        stop = text.find("\n## CT-19 ", start)
+        status = text.find("\n| Status |", start, stop if stop != -1 else len(text))
+        if start == -1 or status == -1:
+            sys.exit("CT-18 Status row not found in " + CONTRACTS)
+        end = text.index("\n", status + 1) + 1
+        contracts.write_text(text[:end] + CT18_PROPOSED_CHANGE + text[end:], encoding="utf-8", newline="\n")
     git(repo, "add", "-A")
     git(repo, "commit", "-m", "chore: AI-010 repository setup")
     git(repo, "push", "origin", "develop")
@@ -465,14 +472,9 @@ def build(scenario, dest, docs):
     if scenario in DECISION_SCENARIOS:
         # Uncommitted AI-001 documentation work (no code).
         write(repo, "docs/superpowers/plans/2026-10-20-ai-001-confirm-ai-scope.md", PLAN_AI001)
-        if scenario == "docs-only-decision":
-            (repo / "docs/tasks/DECISION_LOG.md").write_text(
-                DECISION_LOG_HEADER + textwrap.dedent(DL001), encoding="utf-8", newline="\n")
-            items = "- DL-001 · AI component inventory: PROPOSED, in docs/tasks/DECISION_LOG.md."
-        else:
-            items = ("- DL-001 · AI component inventory: PROPOSED. docs/tasks/DECISION_LOG.md does not exist yet,\n"
-                     "  so the draft entry is kept here until the team decides where the log lives.\n"
-                     + textwrap.dedent(DL001))
+        with open(repo / DECISIONS, "a", encoding="utf-8", newline="\n") as f:
+            f.write(textwrap.dedent(AI001_ENTRY))
+        items = f"- AI-001 · AI component inventory: Proposed, in the \"AI task decisions\" section of {DECISIONS}."
         write(repo, "docs/tasks/status/AI-001.md", textwrap.dedent(STATUS_AI001).replace("{decision_items}", items))
     else:
         # Uncommitted AI-014 implementation.

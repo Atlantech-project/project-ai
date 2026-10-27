@@ -30,4 +30,4 @@ EDI Parser, consuming `queue:edi`. The Backend creates the `baplie_file` row bef
 ## References
 
 - `docs/ref/ATLANTECH_AI_ARCHITECTURE.md` §2, §6, §12.2
-- `docs/tasks/DECISION_LOG.md` DL-001 (component status), DL-002 (module structure)
+- `docs/ref/ATLANTECH_Decisions.md` AI-001 (component status) and AI-010 (module structure) task decisions

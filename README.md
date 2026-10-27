@@ -112,7 +112,7 @@ part3/    AI Part 3 worker (C1-C4), periodic
 
 Each part is one deployable worker. See [common](common/README.md), [edi](edi/README.md), [part1](part1/README.md), [part2](part2/README.md) and [part3](part3/README.md).
 
-Schemas, an API service, tests, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is proposed in [DL-002](docs/tasks/DECISION_LOG.md).
+Schemas, an API service, tests, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is decided in the [AI-010 task decision](docs/ref/ATLANTECH_Decisions.md#ai-010--ai-code-repository-location-and-module-structure).
 
 ## Getting started
 
