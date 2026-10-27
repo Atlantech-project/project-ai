@@ -30,6 +30,6 @@ Nothing is created yet. Later tasks add, among others (all PROPOSED in the backl
 ## References
 
 - `docs/ref/ATLANTECH_AI_ARCHITECTURE.md` §2, §11, §12.2, §12.4, §13
-- `docs/tasks/ATLANTECH_Contracts.md` CT-15
+- `docs/ref/ATLANTECH_Contracts.md` CT-15
 - `docs/tasks/ATLANTECH_AI_TASKS.md` AI-011 to AI-014
-- `docs/tasks/DECISION_LOG.md` DL-002 (module structure)
+- `docs/ref/ATLANTECH_Decisions.md` AI-010 task decision (module structure)

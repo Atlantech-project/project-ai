@@ -41,4 +41,4 @@ AI Part 1, consuming `queue:part1` (enqueued by the Backend at Customs Approval,
 ## References
 
 - `docs/ref/ATLANTECH_AI_ARCHITECTURE.md` §2, §4.3, §7, §12.2
-- `docs/tasks/DECISION_LOG.md` DL-001 (component status), DL-002 (module structure)
+- `docs/ref/ATLANTECH_Decisions.md` AI-001 (component status) and AI-010 (module structure) task decisions

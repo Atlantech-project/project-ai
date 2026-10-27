@@ -21,8 +21,15 @@ init_repo() {       # $1 run dir; leaves cwd in the repo on main
   git config core.longpaths true; git config core.autocrlf false
   git config user.name fixture; git config user.email fixture@example.com
   cp -r "$SRC/docs" docs
-  # Reference specs only: each scenario sets up its own logs, status records and plans.
-  rm -rf docs/tasks/CONTRACT_LOG.md docs/tasks/DECISION_LOG.md docs/tasks/WORK_STATUS.md docs/tasks/status docs/superpowers
+  # Reference specs only: each scenario sets up its own status records and plans.
+  rm -rf docs/tasks/WORK_STATUS.md docs/tasks/status docs/superpowers
+  # Drop the recorded AI task decisions, so scenarios that start AI-001 (onboarding,
+  # conflicts-closed-decision) don't find it already Closed; each scenario's status records set the rest.
+  awk '/^## AI task decisions/{exit} {print}' docs/ref/ATLANTECH_Decisions.md > docs/ref/Decisions.tmp
+  mv docs/ref/Decisions.tmp docs/ref/ATLANTECH_Decisions.md
+  if grep -q '^### AI-001 ' docs/ref/ATLANTECH_Decisions.md; then
+    echo "ATLANTECH_Decisions.md still holds an AI-001 decision after stripping; update the fixture builder" >&2; exit 1
+  fi
   printf '# ATLANTECH AI\n' > README.md
 }
 
@@ -80,7 +87,7 @@ EOF
 
 ## Prerequisites and dependencies
 AI-010 DONE.
-## Contract / decision items (existing IDs, PROPOSED entries)
+## Contract / decision items (existing IDs, Proposed changes in the canonical documents)
 None.
 ## References inspected
 Backlog §5 AI-014; ClassDiagramContext enums.
@@ -203,7 +210,7 @@ for sc in "$@"; do
     conflicts-closed-decision|unknown-task-id|setup-unconfirmed|setup-confirmed|\
     claude-md-proposal|onboarding|post-approval-implementation|conflicting-status-evidence|\
     develop-not-yet-fetched|develop-local-ahead|develop-diverged|fetch-fails|ls-remote-fails|\
-    wrong-origin|develop-local-only|pull-ff-fails) build "$sc" ;;
+    wrong-origin|develop-local-only|pull-ff-fails|decision-change-canonical) build "$sc" ;;
     *) echo "unknown scenario: $sc" >&2; exit 1 ;;
   esac
 done
