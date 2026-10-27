@@ -51,8 +51,8 @@ Before anyone talks about berths, we need to know when a ship can safely come in
 | Surge | `Surge(t) = SeaLevel(t) - Tide(t)`, a definition rather than a guess |
 | Feasibility | Wind, gusts, visibility, waves, tide and surge checked against operating limits |
 | Under-keel clearance | UKC including Barrass squat |
-| Safety margin | Statistical margin or provider ensemble spread |
-| Demand forecast (M3) | Simple aggregates today, a LightGBM regressor in phase 2 |
+| Safety margin | Statistical margin or provider ensemble spread (future work; the MVP uses zero margin) |
+| Demand forecast (M3) | Simple aggregates today, a LightGBM regressor in phase 2 (data-gated) |
 
 It returns `feasible_windows`, `blocked_periods`, a `peak_congestion_score` and the `data_versions` it used.
 
@@ -63,8 +63,8 @@ Once a person has confirmed the entry window, Part 2 decides who gets which **be
 | Piece | How it works |
 |---|---|
 | Constraint filter | Length, draft, terminal type, the safety officer's rules and the Part 1 windows |
-| Service time (M2) | A formula for now, LightGBM quantile regression (P50 / P90) later |
-| Delay risk (M4) | A rule-based score until there is enough history, then a LightGBM classifier |
+| Service time (M2) | A formula for now, LightGBM quantile regression (P50 / P90) later (data-gated) |
+| Delay risk (M4) | A rule-based score (or NULL until DEC-21 is approved) until there is enough history, then a LightGBM classifier (data-gated) |
 | Solver | Google OR-Tools **CP-SAT**, a joint berth allocation problem that includes tugs and pilots |
 | Fallback | A plain FIFO plan, used only if the solver itself fails |
 | Rationale | Fixed, versioned templates that explain each choice. No language model involved. |
@@ -80,8 +80,8 @@ After the ship leaves, Part 3 compares the plan with what really happened.
 |---|---|
 | Evaluation | MAE, override rate, waiting time and accuracy of the entry windows |
 | Drift watch | PSI and rolling MAE on M2, M3 and M4 |
-| Retraining | A time-based split with a champion and a challenger, under guard |
-| Bias correction | Regression or quantile mapping on forecast error, fed back to Part 1 |
+| Retraining | A time-based split with a champion and a challenger, under guard (data-gated) |
+| Bias correction | Regression or quantile mapping on forecast error, fed back to Part 1 (data-gated) |
 
 A new model replaces the old one **only if it is no worse** on MAE and override rate. The old one is always kept for rollback. Hard safety limits are never adjusted automatically.
 
@@ -100,6 +100,20 @@ A strict, deterministic reader for **UN/EDIFACT BAPLIE D.17A** (SMDG 2019) files
 | Messaging | Redis queues |
 | Storage | MySQL, shared with the backend |
 
+## Repository layout
+
+```
+common/   code shared by every worker; no worker logic
+edi/      EDI Parser worker (B1), queue:edi
+part1/    AI Part 1 worker (A1-A7), queue:part1 plus its internal scheduler
+part2/    AI Part 2 worker (B2-B8), queue:part2
+part3/    AI Part 3 worker (C1-C4), periodic
+```
+
+Each part is one deployable worker. See [common](common/README.md), [edi](edi/README.md), [part1](part1/README.md), [part2](part2/README.md) and [part3](part3/README.md).
+
+Schemas, an API service, tests, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is proposed in [DL-002](docs/tasks/DECISION_LOG.md).
+
 ## Getting started
 
 ```bash
@@ -107,7 +121,7 @@ git clone https://github.com/Atlantech-project/project-ai.git
 cd project-ai
 ```
 
-Setup steps will be added here as each worker takes shape.
+Setup steps will be added once the team decides the Python tooling and environment (open question OQ-1 in the [AI-010 status record](docs/tasks/status/AI-010.md)).
 
 ## Neighbours
 

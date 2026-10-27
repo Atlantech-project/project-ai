@@ -7,3 +7,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | Task | Title | Status | Branch | Record | Updated |
 |---|---|---|---|---|---|
 | SETUP-001 | Shared AI Workflow Bootstrap (setup task, not in the backlog) | IN REVIEW | `feature/SETUP-001-ai-workflow-bootstrap` | [SETUP-001](status/SETUP-001.md) | 2026-10-27 |
+| AI-010 | Decide AI code repository and module structure | IN REVIEW | `feature/AI-010-ai-repository-module-structure` | [AI-010](status/AI-010.md) | 2026-10-27 |
