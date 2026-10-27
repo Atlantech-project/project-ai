@@ -1,0 +1,4 @@
+# Local Claude Code state (never shared)
+.claude/worktrees/
+.claude/settings.local.json
+.claude/skills/*-workspace/
