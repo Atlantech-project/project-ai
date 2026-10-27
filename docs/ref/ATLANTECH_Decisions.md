@@ -1516,6 +1516,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | --- | --- | --- | --- |
 | AI-001 | AI scope and component inventory | AI Team | Closed |
 | AI-010 | AI code repository location and module structure | AI Team | Closed |
+| AI-016 | CI provider, Python tooling and quality gates | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1550,3 +1551,21 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - **Worker-to-module mapping for yard and validation.** The module READMEs from AI-010 still place B8 on `queue:part2` and have no validation worker. The newer closed decisions use a separate yard worker on `queue:yard` (`w_yard`, DEC-16, CT-11) and a validation worker on `queue:validate` (`w_validate`, DEC-03, DEC-18, CT-13), with accounts set by DEC-08. Where these two workers live in the module tree, and the matching README text, still need to be decided. That README update should also refresh the "Pending" list in `common/README.md`, which still names DEC-02 and DEC-10, both now Closed.
 - **Left open by AI-010:** Python tooling, version, dependency management and environment (OQ-1); the in-repo location of schemas (OQ-2); tests, tools and model-artefact locations (OQ-7). The "FastAPI module" question is moot, because DEC-10 cancelled FastAPI.
 - `Master_Context.md` §5.4 lists `project-backend`, `project-frontend` and `project-mobile` but not `project-ai`. Its owner should add it.
+
+### AI-016 · CI provider, Python tooling and quality gates
+
+| | |
+| --- | --- |
+| Source | AI-016 (backlog: "CI provider not documented") · AI-010 follow-ups OQ-1 (Python tooling, version, dependency management, environment) and OQ-7 (test location) · CT-17 §2 (MySQL 8.4, UTC sessions) · CT-08 (unprefixed keys, RPUSH/BLPOP) · AI-012 AC "No secret in the repository (scan in CI)" |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-011 – AI-015 (all code is written under these gates) · AI-012 (CI secret scan) · AI-008 / DEC-30 (coverage figure) |
+| Decision | ______ |
+| Proposed change | 2026-10-28 · AI-016 · (1) **CI:** GitHub Actions, `.github/workflows/ci.yml`, on every push and every pull request, no path filters. (2) **Python 3.14** (`requires-python = ">=3.14,<3.15"`, `.python-version`). (3) **uv** with a committed `uv.lock`; the project is not packaged (`tool.uv.package = false`). (4) **Tools:** Ruff (lint and format), mypy strict with an explicit `files` scope, pytest and pytest-cov. PyMySQL and redis-py are test-only (`test` dependency group); production DB and Redis clients are chosen by AI-011 / AI-013. (5) **Tests:** `tests/unit/`, `tests/integration/`, `tests/support/` at the root; the production package layout (OQ-8) stays with AI-011. (6) **Services in CI:** `mysql:8.4` (CT-17) and `redis:7.4`, the latter **provisional** until the Backend Team confirms its Redis version. (7) **Secret scan:** Gitleaks CLI 8.30.1, pinned and checksum-verified (not the separately licensed Gitleaks Action), over the full fetched history; no allowlist (none needed, see the AI-016 status record); GitHub secret scanning and push protection to be enabled by a repository admin. (8) **Coverage:** measured and reported, **no threshold** until AI-008 / DEC-30 agrees the figure. (9) **Required check:** the aggregate job `ci-ok`, to be required by branch protection on `develop`, `main` and `release` (PR required, branch up to date, no bypass), applied by a repository admin · Reason: AI-016 needs a CI provider and tooling, and AI-010 left OQ-1 open · Evidence: `docs/tasks/status/AI-016.md` (Python 3.14 compatibility check, local and Linux-container runs) · Impact: every AI task's local setup and CI; Backend (Redis version) · Awaiting: AI Team owner |
+| Approval | None yet as the team decision. The repository user (Git user `mostafa`) approved these choices for the AI-016 implementation on 2026-10-28. |
+
+**Follow-ups (open):**
+
+- The Backend Team confirms the Redis version; until then `redis:7.4` is provisional.
+- A repository admin enables branch protection with `ci-ok` required and GitHub secret scanning with push protection; both are verified afterwards and recorded in the AI-016 status record.
+- AI-008 / DEC-30 supplies the coverage figure, which becomes `fail_under` in `pyproject.toml`.

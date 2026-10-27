@@ -1,13 +1,15 @@
 # SETUP-002 · Canonical Decisions and Contracts
 | Field | Value |
 |---|---|
-| Status | IN REVIEW |
+| Status | DONE |
 | Owner | AI Team |
 | Branch | feature/SETUP-002-canonical-decisions-contracts |
 | Plan | docs/superpowers/plans/2026-10-28-setup-002-canonical-decisions-contracts.md · approval: explicit user approval in this conversation after the plan was presented ("I approve the SETUP-002 plan", 2026-10-28), plus the user's rulings; the file is a transcription written after that approval |
 | Updated | 2026-10-28 |
 
 Setup task, not in the official AI backlog. Repository governance only; no production AI code.
+
+**Merged:** PR #4 into `develop` (`ea51824`), confirmed by `git log origin/develop` on 2026-10-28. Status corrected from `IN REVIEW` to `DONE` by AI-016, on the user's instruction; nothing else in this record was changed.
 
 ## Summary of the change
 - **Single source of truth.** `docs/ref/ATLANTECH_Decisions.md` and `docs/ref/ATLANTECH_Contracts.md` are the only records for decisions and contracts.
