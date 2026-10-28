@@ -112,7 +112,7 @@ part3/    AI Part 3 worker (C1-C4), periodic
 
 Each part is one deployable worker. See [common](common/README.md), [edi](edi/README.md), [part1](part1/README.md), [part2](part2/README.md) and [part3](part3/README.md).
 
-Schemas, an API service, tests, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is decided in the [AI-010 task decision](docs/ref/ATLANTECH_Decisions.md#ai-010--ai-code-repository-location-and-module-structure).
+Tests live in `tests/unit/`, `tests/integration/` and `tests/support/` (AI-016). Schemas, an API service, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is decided in the [AI-010 task decision](docs/ref/ATLANTECH_Decisions.md#ai-010--ai-code-repository-location-and-module-structure).
 
 ## Getting started
 
@@ -121,7 +121,41 @@ git clone https://github.com/Atlantech-project/project-ai.git
 cd project-ai
 ```
 
-Setup steps will be added once the team decides the Python tooling and environment (open question OQ-1 in the [AI-010 status record](docs/tasks/status/AI-010.md)).
+The project uses Python 3.14 and [uv](https://docs.astral.sh/uv/) with a committed `uv.lock` (AI-016 task decision, Proposed). Runtime dependencies arrive with the worker tasks; today only the development and test tools are installed.
+
+```bash
+uv sync --frozen                 # creates .venv with the locked tools
+uv run ruff check .              # lint
+uv run ruff format --check .     # formatting
+uv run mypy                      # strict type check (scope: [tool.mypy] files)
+uv run pytest --cov              # unit tests; integration tests skip without services
+```
+
+To run the integration smoke tests locally, start the same services as CI and point the tests at them:
+
+```bash
+docker run -d --rm --name ai-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=ci_only -e MYSQL_DATABASE=ai_ci mysql:8.4
+docker run -d --rm --name ai-redis -p 6379:6379 redis:7.4
+export MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=ci_only MYSQL_DATABASE=ai_ci
+export REDIS_URL=redis://127.0.0.1:6379/0 ATLANTECH_REQUIRE_SERVICES=1
+uv run pytest --cov
+```
+
+`ci_only` is a throwaway password for these local and CI containers, never for a real environment.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push and every pull request:
+
+| Job | Checks |
+|---|---|
+| `lint` | `ruff check`, `ruff format --check` |
+| `typecheck` | `mypy` in strict mode |
+| `tests` | unit and integration tests against MySQL 8.4 (CT-17) and Redis 7.4 (provisional until the Backend confirms its version); coverage is reported in the job summary, with no threshold until AI-008 / DEC-30 agrees one |
+| `secret-scan` | Gitleaks 8.30.1 (pinned, checksum-verified CLI) over the full fetched Git history |
+| `ci-ok` | passes only when all four jobs succeed; this is the check to require in branch protection |
+
+Branch protection is set by a repository admin, not by this file, and is **not yet applied**. See the [AI-016 status record](docs/tasks/status/AI-016.md) for the required settings and whether they have been verified.
 
 ## Neighbours
 
