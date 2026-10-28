@@ -1,13 +1,15 @@
 # SETUP-001 · Shared AI Workflow Bootstrap
 | Field | Value |
 |---|---|
-| Status | IN REVIEW |
+| Status | DONE |
 | Owner | AI Team |
 | Branch | feature/SETUP-001-ai-workflow-bootstrap |
 | Plan | docs/superpowers/plans/2026-10-27-setup-001-ai-workflow-bootstrap.md · approval: explicit user approval in the planning conversation, 2026-10-27 |
-| Updated | 2026-10-27 |
+| Updated | 2026-10-28 |
 
 Setup task, not in the official AI backlog. No production AI code.
+
+**Merged:** PR #2 into `develop` (`1cec937`). Set to DONE by SETUP-002 on 2026-10-28, from that merge and the user's confirmation. **Later change:** SETUP-002 retired the decision and contract logs this task created and moved the canonical Contracts and Decisions files to `docs/ref/`. Mentions of the logs below are historical.
 
 ## Summary of the change
 Bootstraps the shared AI workflow: root `CLAUDE.md`, the two project skills (`atlantech-task-workflow`, `atlantech-review-and-publish`) with their evals, the contract and decision logs, this status structure, `.gitignore`, the shared `.claude/settings.json`, and the existing reference documents (added unchanged).

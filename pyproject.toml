@@ -1,0 +1,66 @@
+# Tooling and quality gates for the AI workers (AI-016).
+# The production package layout and runtime dependencies are owned by AI-011 onwards;
+# this file only configures the checks that CI runs.
+
+[project]
+name = "project-ai"
+version = "0.0.0"
+description = "ATLANTECH AI workers"
+requires-python = ">=3.14,<3.15"
+# Runtime dependencies are added by the tasks that implement the workers.
+dependencies = []
+
+[dependency-groups]
+# Test-only: PyMySQL and redis-py serve the integration smoke tests, not the workers.
+test = [
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pymysql>=1.2.3",
+    "redis>=8.1.0",
+]
+lint = [
+    "ruff>=0.17.3",
+    "mypy>=2.4.0",
+    "types-pymysql>=1.1.0",
+]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+# Claude Code skill tooling is not AI code; it stays outside these gates.
+extend-exclude = [".claude"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert and the throwaway CI service password.
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+# Explicit scope. Each module directory is added here when it gains Python code.
+files = ["tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs the MySQL and Redis services"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+branch = true
+# Only non-test code is measured. Module directories are added as they gain code.
+source = ["tests/support"]
+
+[tool.coverage.report]
+show_missing = true
+# No fail_under: the coverage gate waits for the agreed figure (AI-008 / DEC-30).

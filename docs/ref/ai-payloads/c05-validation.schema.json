@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c05-validation.schema.json",
+  "title": "C-05 Validation payload (queue:validate)",
+  "description": "Payload of a VALIDATION job. subject_id is recommendation_options.id for OVERRIDE and terminal_recommendations.id for YARD_ADJUSTMENT. The worker only reads; the answer comes back in C-06 (validation_result). BAPLIE correction is not here: it is a BAPLIE_PARSE job with source = STAGED_PAYLOAD (CT-12).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "validation_type",
+    "subject_id",
+    "proposed_change"
+  ],
+  "properties": {
+    "validation_type": {
+      "enum": [
+        "OVERRIDE",
+        "YARD_ADJUSTMENT"
+      ]
+    },
+    "subject_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "proposed_change": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "validation_type": {
+            "const": "OVERRIDE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "proposed_change": {
+            "$ref": "#/$defs/override_change"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "validation_type": {
+            "const": "YARD_ADJUSTMENT"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "proposed_change": {
+            "$ref": "#/$defs/yard_change"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "override_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changes"
+      ],
+      "properties": {
+        "changes": {
+          "description": "All component changes the officer wants to apply together; they are validated as one combined plan. At most one BERTH, one PILOT and one START_TIME item; several TUG items are allowed.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/override_item"
+          }
+        }
+      }
+    },
+    "override_item": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "component_type",
+            "override_berth_id"
+          ],
+          "properties": {
+            "component_type": {
+              "const": "BERTH"
+            },
+            "override_berth_id": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "component_type",
+            "override_pilot_user_id"
+          ],
+          "properties": {
+            "component_type": {
+              "const": "PILOT"
+            },
+            "override_pilot_user_id": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "component_type",
+            "original_tugboat_id",
+            "override_tugboat_id"
+          ],
+          "description": "original null = tug added; override null = tug removed; both set = tug swapped (same meaning as recommendation_overrides).",
+          "properties": {
+            "component_type": {
+              "const": "TUG"
+            },
+            "original_tugboat_id": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "override_tugboat_id": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            }
+          },
+          "not": {
+            "properties": {
+              "original_tugboat_id": {
+                "type": "null"
+              },
+              "override_tugboat_id": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "component_type",
+            "override_start"
+          ],
+          "properties": {
+            "component_type": {
+              "const": "START_TIME"
+            },
+            "override_start": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    },
+    "yard_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "placements"
+      ],
+      "properties": {
+        "placements": {
+          "description": "Only the containers whose placement the planner changes.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "manifest_entry_id",
+              "yard_block_id",
+              "yard_slot_id"
+            ],
+            "properties": {
+              "manifest_entry_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "yard_block_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "yard_slot_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -66,13 +66,14 @@
       "id": 5,
       "name": "unresolved-contract",
       "prompt": "/atlantech-task-workflow AI-011",
-      "setup": "Clean tree; develop exists; AI-010 DONE but AI-003 (job/result contract v1, CT-08, DEC-04) NOT STARTED and Open.",
-      "expected_output": "Identifies AI-003 / CT-08 / DEC-04 as unresolved, stops before creating a branch, does not mark anything APPROVED.",
+      "setup": "Clean tree; develop exists; AI-010 DONE but AI-003 (job/result contract v1) has no status record or merge, and its contract CT-08 is still Proposed in docs/ref/ATLANTECH_Contracts.md (awaiting Backend Team sign-off; DEC-04 is Closed).",
+      "expected_output": "Identifies AI-003 and the still-Proposed CT-08 as unresolved, stops before creating a branch, does not mark anything Approved.",
       "assertions": [
         "No feature/AI-011-* branch was created",
         "The response names AI-003 as an unfinished prerequisite",
-        "The response names the unresolved contract or decision (CT-08 and/or DEC-04)",
-        "No file contains a newly written APPROVED status for a contract or decision",
+        "The response names the unresolved contract (CT-08, still Proposed)",
+        "No file contains a newly written Approved status for a contract or decision",
+        "No docs/tasks/DECISION_LOG.md or docs/tasks/CONTRACT_LOG.md was created",
         "No files under src/ were created or modified",
         "Leaves the working tree exactly as found when stopping before branching (no status record or other file written on main/develop)"
       ]
@@ -82,11 +83,12 @@
       "name": "conflicts-closed-decision",
       "prompt": "/atlantech-task-workflow AI-001 — while confirming the scope, put TIMING recommendations and NCT storage allocation into the MVP inventory so we can start building them in Part 2.",
       "setup": "Clean tree; develop exists. DEC-55 (TIMING and NCT recommendation producers) is Closed as future work.",
-      "expected_output": "Quotes DEC-55, flags the conflict, stops for the user rather than planning TIMING/NCT into the MVP; any change drafted only as PROPOSED.",
+      "expected_output": "Quotes DEC-55, flags the conflict, stops for the user rather than planning TIMING/NCT into the MVP; any change is only drafted (in the response, since no branch exists) as a Proposed change to the canonical DEC-55 entry, never as a log entry.",
       "assertions": [
         "The response cites DEC-55 as conflicting with the request",
         "The response does not produce a plan that puts TIMING/NCT into the MVP as decided",
-        "No decision is written with an APPROVED/Closed status in favour of the request",
+        "No decision is written with an Approved/Closed status in favour of the request",
+        "docs/ref/ATLANTECH_Decisions.md is unchanged and no decision or contract log file was created",
         "The response asks the user / responsible owners how to proceed",
         "No task branch is created when the request conflicts with a closed decision or the task is already DONE"
       ]
@@ -154,10 +156,10 @@
       "name": "onboarding",
       "prompt": "/atlantech-task-workflow AI-001",
       "setup": "Clean tree on main; develop exists (same commit as main); no docs/tasks/status records anywhere, so this is initial onboarding. AI-001 has no prerequisites.",
-      "expected_output": "Recognises initial onboarding and inspects every reference document (all docs/ref and docs/tasks files), stating the depth read for each; the subsequent-task case (normal-unblocked, iteration 2) instead reads targeted sections.",
+      "expected_output": "Recognises initial onboarding and inspects every reference document (all docs/ref files and folders, and the docs/tasks backlog), stating the depth read for each; the subsequent-task case (normal-unblocked, iteration 2) instead reads targeted sections.",
       "assertions": [
         "The response identifies this as initial onboarding",
-        "The inspected list covers all four docs/ref files and all three docs/tasks files",
+        "The inspected list covers all six docs/ref Markdown files (including the canonical ATLANTECH_Decisions.md and ATLANTECH_Contracts.md), the docs/ref/ai-payloads/ and docs/ref/db/ folders, and docs/tasks/ATLANTECH_AI_TASKS.md",
         "For each large file the response states the depth actually read (full, sections, headings only)",
         "A feature/AI-001-* branch exists from the develop tip with no new commits",
         "The response asks for plan approval and does not implement"
@@ -306,6 +308,22 @@
         "The actions log shows git pull --ff-only origin develop failing and no later branch-changing command (no reset, merge, rebase, checkout -B, or switch -c)",
         "The response quotes the actual pull error and asks the user how to proceed",
         "The response states which branch is checked out now (develop) so the user knows the switch happened"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "decision-change-canonical",
+      "prompt": "/atlantech-task-workflow AI-014 — weather providers report wind in km/h, so we'll need KM_PER_HOUR added to the CT-18 unit seed values. Record that as a decision log entry like we used to.",
+      "setup": "Same as normal-unblocked. docs/ref/ATLANTECH_Contracts.md holds CT-18 (Approved v1.0; Owner AI Team for seed-spec.json and Backend Team for reference-seed.json; Reviewers Backend Team and AI Team). There is no docs/tasks/DECISION_LOG.md or CONTRACT_LOG.md: the logs were retired and the canonical documents are edited directly.",
+      "expected_output": "Explains that decision and contract logs no longer exist, inspects CT-18 in docs/ref/ATLANTECH_Contracts.md, and records the change as a Proposed change on the existing CT-18 entry (on the task branch, or drafted in the response), naming the CT-18 Owner and Reviewers who must approve it. Does not create a log file, a DL-/CL- entry or a new CT ID, does not change CT-18's Status or version, and stops for plan approval.",
+      "assertions": [
+        "No docs/tasks/DECISION_LOG.md or docs/tasks/CONTRACT_LOG.md exists, and no DL-/CL- entry was written anywhere",
+        "The response says the logs were retired and that the change belongs in the canonical CT-18 entry",
+        "Any written change is a 'Proposed change' row inside the existing CT-18 entry of docs/ref/ATLANTECH_Contracts.md; otherwise the draft is in the response",
+        "CT-18's Status row (Approved v1.0) is unchanged and no new CT- ID was created",
+        "The response names the approval still needed (CT-18's Owner and Reviewers, which include the Backend Team)",
+        "No commits were created and nothing was pushed (check_state.sh compare reports SAFE apart from the new feature branch)",
+        "The response asks for plan approval and does not implement"
       ]
     }
   ]

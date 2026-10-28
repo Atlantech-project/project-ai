@@ -1,0 +1,145 @@
+# Quality gates for the AI code (AI-016).
+# Branch protection requires the single aggregate check `ci-ok`.
+name: CI
+
+on:
+  # Every push and every pull request, with no path filters, so a required check never stays pending.
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer run supersedes an older one on PRs and feature branches. Pushes to develop, main and
+# release get one group per commit, so every merge commit there is checked to the end.
+concurrency:
+  group: >-
+    ci-${{ github.event_name }}-${{ github.ref }}-${{
+    contains(fromJSON('["refs/heads/develop","refs/heads/main","refs/heads/release"]'), github.ref)
+    && github.sha || 'latest' }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.13.6"
+  GITLEAKS_VERSION: "8.30.1"
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen
+      - run: uv run ruff check --output-format=github .
+      - run: uv run ruff format --check .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen
+      - run: uv run mypy
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # MySQL 8.4 per CT-17; its defaults are utf8mb4 / utf8mb4_0900_ai_ci, asserted by the smoke tests.
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only
+          MYSQL_DATABASE: ai_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci_only"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      # Provisional: redis:7.4 until the Backend Team confirms its Redis version.
+      redis:
+        image: redis:7.4
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # Throwaway credentials for the CI service container only.
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ci_only
+      MYSQL_DATABASE: ai_ci
+      REDIS_URL: redis://127.0.0.1:6379/0
+      # A missing service fails the run instead of skipping the integration tests.
+      ATLANTECH_REQUIRE_SERVICES: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen
+      - run: uv run pytest -v --cov --cov-report=term-missing --cov-report=xml
+      # Coverage is reported only; the gate waits for the agreed figure (AI-008 / DEC-30).
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f .coverage ]; then
+            { echo "## Coverage (no threshold yet: AI-008 / DEC-30)"; uv run coverage report --format=markdown; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks (pinned, checksum verified)
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+      # The full history of every fetched branch and tag, not only the PR diff.
+      - run: '"$RUNNER_TEMP/gitleaks" git --redact --exit-code 1 --log-opts="--all" .'
+
+  ci-ok:
+    if: always()
+    needs: [lint, typecheck, tests, secret-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Fails unless every needed job succeeded; failure, cancellation or skipping all fail it.
+      - env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'length == 4 and all(.[]; .result == "success")' > /dev/null
