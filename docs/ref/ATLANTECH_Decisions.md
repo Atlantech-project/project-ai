@@ -1517,6 +1517,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-001 | AI scope and component inventory | AI Team | Closed |
 | AI-010 | AI code repository location and module structure | AI Team | Closed |
 | AI-016 | CI provider, Python tooling and quality gates | AI Team | Proposed |
+| AI-014 | Unit, datum and time utilities | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1569,3 +1570,15 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - The Backend Team confirms the Redis version; until then `redis:7.4` is provisional.
 - A repository admin enables branch protection with `ci-ok` required and GitHub secret scanning with push protection; both are verified afterwards and recorded in the AI-016 status record.
 - AI-008 / DEC-30 supplies the coverage figure, which becomes `fail_under` in `pyproject.toml`.
+
+### AI-014 · Unit, datum and time utilities
+
+| | |
+| --- | --- |
+| Source | AI-014 (backlog: "Reject unknown units; never guess") · `ATLANTECH_AI_ARCHITECTURE.md` §7.2, §7.3, §13.1 · `ClassDiagramContext.md` (`SpeedUnit`, `VisibilityUnit`, `ConstraintUnit`, `PortShift`, `PortProfile.timezone`) · AI-010 follow-up OQ-8 (package layout) · DEC-27 (datum, Open) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-020 · AI-021 · AI-025 · AI-044 and every later worker using `common` · AI-011 (OQ-8) |
+| Decision | ______ |
+| Proposed change | 2026-10-29 · AI-014 · (1) **Layout:** `common/__init__.py`, `common/units.py`, `common/time.py`, `common/datum.py`, imported as `common.units` / `common.time` / `common.datum`; tests in `tests/unit/common/`; the final package layout is left to AI-011 (OQ-8). `common/time.py` shares the stdlib `time` name: safe with absolute imports, and no script is ever run from inside `common/`. (2) **Time-zone data:** `tzdata` is an unconditional runtime dependency (`tzdata>=2026.6`, locked in `uv.lock`), so every platform uses the same IANA database version; zones come only from `zoneinfo.ZoneInfo`, with no OS fallback. (3) **Datum:** consistency check only; `MissingDatumError` for a missing or empty value, `DatumMismatchError` unless the tide set's `datum_reference`, the channel's `depth_datum` and the berth's `depth_datum` are exactly equal (no normalisation); no conversion between datums, which depends on DEC-27. (4) **DST:** a local time in a spring-forward gap raises `NonExistentLocalTimeError`, one in a fall-back overlap `AmbiguousLocalTimeError` (both `LocalTimeError`); no fold or earlier/later option, and any such option needs its own decision · Reason: AI-014 must convert units and times in one place and never guess (backlog guidance) · Evidence: `docs/tasks/status/AI-014.md`, tests in `tests/unit/common/` · Impact: AI-020, AI-021, AI-025, AI-044 and every later worker using `common`; AI-011 (OQ-8) · Awaiting: AI Team owner |
+| Approval | None yet as the team decision. The repository user approved these choices for the AI-014 implementation on 2026-10-29. |
