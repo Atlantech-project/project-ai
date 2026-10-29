@@ -6,14 +6,21 @@ Code shared by every worker (`edi`, `part1`, `part2`, `part3`). It holds no work
 
 None. `common` is not a worker and consumes no queue.
 
+## Contents
+
+- `units.py`: conversions between the PortSync speed and distance units; unknown units and cross-dimension conversions raise (AI-014)
+- `time.py`: UTC ↔ port-local time and `port_shift` intervals, with errors for daylight-saving gaps and overlaps (AI-014). Shares the stdlib `time` name: import it as `common.time` and never run a script from inside `common/`.
+- `datum.py`: datum consistency check across tide set, channel and berth; no datum conversion (DEC-27) (AI-014)
+
+The layout is Proposed by AI-014; the final package layout is OQ-8 (AI-011).
+
 ## Planned contents
 
-Nothing is created yet. Later tasks add, among others (all PROPOSED in the backlog):
+Later tasks add, among others (all PROPOSED in the backlog):
 
 - runtime: queue consumer, idempotent claim, retries, logging (AI-011)
 - config: environment and `port_setting` loader (AI-012)
 - db: data-access layer (AI-013)
-- units and time: unit, datum and time utilities (AI-014)
 - quality (AI-025), registry (AI-070), health (AI-091), observability (AI-092)
 
 ## Never

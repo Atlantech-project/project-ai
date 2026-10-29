@@ -15,3 +15,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-004 | Decide location of shared validation rule sets | DONE | — (decision task) | [AI-004](status/AI-004.md) | 2026-10-28 |
 | SETUP-002 | Canonical Decisions and Contracts (setup task, not in the backlog) | DONE | `feature/SETUP-002-canonical-decisions-contracts` | [SETUP-002](status/SETUP-002.md) | 2026-10-28 |
 | AI-016 | Set up CI for AI code | IN REVIEW | `feature/AI-016-ci-for-ai-code` | [AI-016](status/AI-016.md) | 2026-10-28 |
+| AI-014 | Implement unit, datum and time utilities | IN REVIEW | `feature/AI-014-unit-datum-time-utilities` | [AI-014](status/AI-014.md) | 2026-10-29 |
