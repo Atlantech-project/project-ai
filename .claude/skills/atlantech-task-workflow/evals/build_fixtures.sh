@@ -103,6 +103,11 @@ build() {           # $1 scenario name
   local sc="$1" run="$WS/$1/w"
   init_repo "$run"
   case "$sc" in
+    unresolved-contract)
+      # The live CT-08 is Approved (2026-10-30, SETUP-003); this scenario needs it still Proposed.
+      sed -i 's/^\(| Status | \)Approved v1\.0 · 2026-10-30 on Backend Team sign-off (DEC-04)\. Consolidates/\1Proposed v1.0 · 2026-10-27 (DEC-04). Consolidates/' docs/ref/ATLANTECH_Contracts.md
+      grep -q 'Status | Proposed v1\.0 · 2026-10-27 (DEC-04)' docs/ref/ATLANTECH_Contracts.md \
+        || { echo "CT-08 status line not found; update the fixture builder" >&2; exit 1; } ;;
     claude-md-proposal)
       printf '# ATLANTECH AI — project instructions\n\n- Branch from develop as feature/<task-id>-<slug>.\n- Commits and pushes only through atlantech-review-and-publish, after the exact `APPLY CHANGES`.\n- Python code lives under src/ (see AI-010).\n' > CLAUDE.md ;;
   esac

@@ -66,7 +66,7 @@
       "id": 5,
       "name": "unresolved-contract",
       "prompt": "/atlantech-task-workflow AI-011",
-      "setup": "Clean tree; develop exists; AI-010 DONE but AI-003 (job/result contract v1) has no status record or merge, and its contract CT-08 is still Proposed in docs/ref/ATLANTECH_Contracts.md (awaiting Backend Team sign-off; DEC-04 is Closed).",
+      "setup": "Clean tree; develop exists; AI-010 DONE but AI-003 (job/result contract v1) has no status record or merge, and its contract CT-08 is still Proposed in docs/ref/ATLANTECH_Contracts.md (awaiting Backend Team sign-off; DEC-04 is Closed). The live CT-08 was approved on 2026-10-30, so build_fixtures.sh pins it to Proposed for this scenario.",
       "expected_output": "Identifies AI-003 and the still-Proposed CT-08 as unresolved, stops before creating a branch, does not mark anything Approved.",
       "assertions": [
         "No feature/AI-011-* branch was created",

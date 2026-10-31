@@ -1,6 +1,6 @@
 # ATLANTECH — Decisions, Conflicts and Open Points
 
-This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-56`.
+This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-57`.
 
 - **Closing task:** has the same ID as the item and belongs to the owner team. It sits in the sprint where the first task that needs the decision starts, and is closed at that sprint's FRR or earlier.
 - **Status:** `Open` needs a decision by its closing sprint. `Closed` is already settled and kept for reference.
@@ -22,7 +22,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-02 | Who writes status transitions, history, audit and run rows | Backend Team | Closed | Sprint 1 |
 | DEC-03 | Location of the shared validation rule sets (override, yard adjustment, BAPLIE correction, window re-check) | AI Team | Closed | Sprint 1 |
 | DEC-04 | Job envelope, versioning, retries and stale-run timeout | AI Team | Closed | Sprint 1 |
-| DEC-05 | SSE source for the dashboard | Backend Team | Open | Sprint 1 |
+| DEC-05 | SSE source for the dashboard | Backend Team | Closed | Sprint 1 |
 | DEC-06 | Joint solve scope: which requests may change per trigger | AI Team | Closed | Sprint 1 |
 | DEC-07 | Storing a NO_FEASIBLE_WINDOW result | AI Team | Open | Sprint 5 |
 | DEC-08 | Database read source and worker privileges | Backend Team | Closed | Sprint 1 |
@@ -30,7 +30,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-10 | Scope of the AI FastAPI service | AI Team | Closed | Sprint 1 |
 | DEC-11 | Redis persistence | Backend Team | Open | Sprint 3 |
 | DEC-12 | AI `port_settings` keys | AI Team | Closed | Sprint 1 |
-| DEC-13 | Who keeps the OpenAPI file current | Backend Team | Open | Sprint 1 |
+| DEC-13 | Who keeps the OpenAPI file current | Backend Team | Closed | Sprint 1 |
 | DEC-14 | C-01 · Part 1 run | AI Team | Closed | Sprint 1 |
 | DEC-15 | C-02 · Part 2 solve | AI Team | Closed | Sprint 1 |
 | DEC-16 | C-03 · Yard placement | AI Team | Closed | Sprint 1 |
@@ -52,8 +52,8 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-32 | Availability semantics for pilots and tug masters | AI Team | Open | Sprint 3 |
 | DEC-33 | Manual-planning baseline | AI Team | Open | Sprint 7 |
 | DEC-34 | Building A4 rules on synthetic data | AI Team | Open | Sprint 3 |
-| DEC-35 | Sign-in identifier | Backend Team | Open | Sprint 1 |
-| DEC-36 | One role per user vs role history | Backend Team | Open | Sprint 2 |
+| DEC-35 | Sign-in identifier | Backend Team | Closed | Sprint 1 |
+| DEC-36 | One role per user vs role history | Backend Team | Closed | Sprint 2 |
 | DEC-37 | "Reject with reason" on P-44 and P-47 | Backend Team | Open | Sprint 6 |
 | DEC-38 | Where to activate the tide constituent set | UI/UX Team | Open | Sprint 3 |
 | DEC-39 | CT Supervisor status list | Backend Team | Open | Sprint 6 |
@@ -64,7 +64,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-44 | Storing the clock-skew review note | Backend Team | Open | Sprint 6 |
 | DEC-45 | Display time zone | Frontend Team | Open | Sprint 1 |
 | DEC-46 | Supported browsers and viewports | Frontend Team | Open | Sprint 1 |
-| DEC-47 | Backend environment for development and testing | Backend Team | Open | Sprint 2 |
+| DEC-47 | Backend environment for development and testing | Backend Team | Closed | Sprint 2 |
 | DEC-48 | Field roles on the web | Leads Council | Open | Sprint 2 |
 | DEC-49 | Status and error colours and the icon set | UI/UX Team | Closed | — |
 | DEC-50 | BAPLIE correction and withdraw | Leads Council | Closed | — |
@@ -74,6 +74,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-54 | Licence, SaaS and READ_ONLY in the task files | Leads Council | Closed | — |
 | DEC-55 | TIMING and NCT recommendation producers | Leads Council | Closed | — |
 | DEC-56 | SaaS API location and licence signing key | Leads Council | Closed | — |
+| DEC-57 | Port API status codes, error catalogue and version token | Backend Team | Closed | — |
 
 ## Backend–AI integration decisions
 
@@ -166,8 +167,7 @@ This file lists every decision that must be closed before implementation, every 
 | Status | Closed |
 | Closing task | DEC-04 · Sprint 1 |
 | Affects | P3-I1 · AI-011 · CT-08 |
-| Decision | Closed (2026-10-27): Option 1. JSON envelope pushed with RPUSH on unprefixed queue names (`queue:part1`, `queue:part2`, `queue:yard`, `queue:edi`, `queue:validate`), `contract_version = "1.0"`; payload schemas per job type referenced from `envelope.schema.json` (CT-08). Retries: Part 1 up to `part1_max_retries` (3), other jobs once, VALIDATION never. A run RUNNING longer than `run_stale_after_seconds` is marked FAILED / TIMEOUT by the Backend sweeper (`part1_run_timeout_seconds` from DEC-14 is dropped). Full envelope, worker and error-category rules in CT-08 v1.0 (proposed 2026-10-27, awaiting Backend Team sign-off). |
-| Open dependency | CT-08 v1.0 stays **Proposed** until the Backend Team's sign-off is recorded there. This file's closing rules don't make that sign-off a condition for closing DEC-04, so the Option 1 decision above stands. Until CT-08 is approved, its detailed envelope, worker and error-category rules are not settled, and work that depends on them (AI-003, and through it AI-011, AI-013, AI-048, AI-080) waits for it. |
+| Decision | Closed (2026-10-27): Option 1. JSON envelope pushed with RPUSH on unprefixed queue names (`queue:part1`, `queue:part2`, `queue:yard`, `queue:edi`, `queue:validate`), `contract_version = "1.0"`; payload schemas per job type referenced from `envelope.schema.json` (CT-08). Retries: Part 1 up to `part1_max_retries` (3), other jobs once, VALIDATION never. A run RUNNING longer than `run_stale_after_seconds` is marked FAILED / TIMEOUT by the Backend sweeper (`part1_run_timeout_seconds` from DEC-14 is dropped). Full envelope, worker and error-category rules in CT-08 v1.0 (approved 2026-10-30 on Backend Team sign-off). |
 
 <div dir="rtl">
 
@@ -190,10 +190,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | D-06 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-05 · Sprint 1 |
 | Affects | P3-I4 · FE-033 · CT-05 |
-| Decision | ______ |
+| Decision | Closed (2026-10-30): Option 1. A Laravel streamed endpoint, `GET /api/v1/events`, filtered by role and terminal, with `Last-Event-ID` catch-up from a short-lived Redis store. Reverb for mobile only. Risk for P3-I4: each open browser holds a PHP worker, so limit the connection time and size the worker pool. |
 
 <div dir="rtl">
 
@@ -295,9 +295,11 @@ This file lists every decision that must be closed before implementation, every 
 | `w_part1` | `queue:part1` + Part 1 scheduler (weather pull, daily tide, demand forecast) | `entry_window_proposals` · `feasible_windows` · `blocked_periods` · `forecast_runs` (SCHEDULED / ON_DEMAND) · `environment_forecast_points` · `tide_prediction_runs` · `tide_prediction_points` · `demand_forecast_slots` | `part1_runs` (`status`, `outcome`, `retry_count`, `entry_window_proposal_id`, `started_at`, `finished_at`) on its own run only |
 | `w_part2` | `queue:part2` | `solver_run_model_versions` · `recommendations` · `recommendation_options` · `recommendation_option_tugs` · `recommendation_rationale_factors` | `solver_runs` (`status`, `objective_value`, `solve_time_ms`, `solver_version`, `result_detail`, `started_at`, `finished_at`) |
 | `w_yard` | `queue:yard` | `yard_placement_items` | `yard_runs` (`status`, `outcome`, `error_category`, `result_detail`, `worker_version`, `started_at`, `finished_at`) · `terminal_recommendations` (`lifecycle_status`, `confidence`, `rationale_template_id`, `rationale_params`, `failure_reason`) |
-| `w_edi` | `queue:edi` (parse and BAPLIE correction) | `baplie_parse_issues` · `containers` (new numbers only) · `container_manifest_entries` | `baplie_parse_runs` (`status`, `outcome`, `error_category`, `container_count`, `result_detail`, `worker_version`, `started_at`, `finished_at`) · `baplie_files` (`parse_status`, `staged_payload`) · `vessels` (`call_sign`, `flag_state`, only when NULL) |
+| `w_edi` | `queue:edi` (parse and BAPLIE correction) | `baplie_parse_issues` · `containers` (new numbers only) · `container_manifest_entries` | `baplie_parse_runs` (`status`, `outcome`, `error_category`, `retry_count`, `container_count`, `result_detail`, `worker_version`, `started_at`, `finished_at`) · `baplie_files` (`parse_status`, `staged_payload`) · `vessels` (`call_sign`, `flag_state`, only when NULL) |
 | `w_validate` | `queue:validate` (override and yard-adjustment validation) | — | — |
 | `w_part3` | Part 3 scheduler (host per DEC-31) | `evaluation_metrics` · `drift_measurements` | — |
+
+**Update 2026-10-28:** `retry_count` added to `w_edi` on `baplie_parse_runs` so the grants match CT-15 v1.1, which lists it among the AI columns (backend `feature/CT-15-edi-retry-count`). The full matrix, generated from the grants script, is `contracts/ai/table-ownership.md` (CT-15 output).
 
 **Read grants (all accounts):** SELECT on every port table, except: `users` column-level (`id`, `name`, `is_active`); `license_states` column-level (`mode`, `read_only_reason`); no access to `audit_logs`, `notification_logs`, `user_devices`, `recommendation_reviews` or the SaaS database.
 
@@ -431,10 +433,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | Backend open inputs |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-13 · Sprint 1 |
 | Affects | P1-A4 · CT-02 |
-| Decision | ______ |
+| Decision | Closed (2026-10-29): Option 1. The Backend Team is the single owner of the OpenAPI file (CT-02). Its source is project-backend `ATLANTECH/openapi/port-api.yaml`, published unchanged to PortHub `contracts/openapi/port-api.yaml` with `composer contracts:openapi`. Every backend PR that adds or changes an endpoint updates the file in the same PR, opens the paired PortHub PR, and the backend drift test and the Spectral CI check fail otherwise. The API readiness pack (CT-23) links the OpenAPI diff. Decided by Marwan (Backend lead) in P1-A4. |
 
 <div dir="rtl">
 
@@ -999,10 +1001,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | Screens P-16/P-52 · FR-AC-01 · FR-AC-09 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-35 · Sprint 1 |
 | Affects | P1-C1 · P1-C3 · FE-025 · MB-P52 |
-| Decision | ______ |
+| Decision | Closed (2026-10-28): Option 1. Users sign in with `username` on the web (P-16) and the tablet (P-52); the `users` table has no email column. `username` is unique and stored lowercase; `phone` is contact only and never used for sign-in. P-16 shows a Username field instead of Email. CT-03 and CT-04 use `{ "username", "password" }`. |
 
 <div dir="rtl">
 
@@ -1025,10 +1027,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | Screens P-24 · P2-E2 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-36 · Sprint 2 |
 | Affects | P2-E2 · FE-045 |
-| Decision | ______ |
+| Decision | Closed (2026-10-28): Option 1. A user has one active role at a time. Assigning a new role ends the current one (`active_to` set) and inserts the new row in the same transaction; rows are never deleted, so `user_role_assignments` keeps the full history. Schema: `uq_ura_active` becomes unique on (`user_id`, `active_assignment_key`) so the database refuses a second active role. P-24 shows the active role and the history list. |
 
 <div dir="rtl">
 
@@ -1308,10 +1310,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | FE-OQ-29 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-47 · Sprint 2 |
 | Affects | FE-101 · MB-F4B · QA-01 |
-| Decision | ______ |
+| Decision | Closed (2026-10-29): Option 1 as the target. A shared dev server is updated on every merge to `develop`, and a separate demo on every release; the host and the deployment come with P6-R6 (or earlier if a host becomes available). Until then Frontend, Mobile and QA run the backend from `develop` on their own machine with `docker compose --profile server up -d --build` (app, nginx, MySQL 8.4, Redis 7.4; no local PHP needed; http://localhost:8000). Seed data arrives with P1-B6. Decided by Marwan (Backend lead). |
 
 <div dir="rtl">
 
@@ -1507,6 +1509,25 @@ This file lists every decision that must be closed before implementation, every 
 </div>
 
 **Topic.** Both belong to SaaS and licensing.
+
+### DEC-57 · Port API status codes, error catalogue and version token
+
+| | |
+| --- | --- |
+| Source | CT-01 draft and FR-GL-08 vs the code; NFR-CONC-1 vs FR-GL-05 |
+| Owner | Backend Team |
+| Status | Closed |
+| Closing task | CT-01 |
+| Affects | FR-GL-08 · NFR-CONC-1 · CT-01 · P1-A2 · P1-C1 · P2-D4 · FE-030 |
+| Decision | Closed: (1) the API status set adds 400, 404, 405, 419, 429 and 500 to FR-GL-08's list, with 423 reserved (DEC-54). (2) Stable codes live in `contracts/error-codes.md`. (3) The version token is `updated_at DATETIME(6)`, returned as `version`, not an integer. (4) v1.0 of CT-01 is adopted by the Backend lead without team review. (5) The Backend code is the source of truth for CT-01 and CT-02: Frontend and Mobile review critical changes only, and QA tests without reviewing. |
+
+<div dir="rtl">
+
+**القصة.** الـ FR-GL-08 كان بيعد 7 أكواد بس، والـ API بيرجع أكواد تانية زي 404 و 405 و 419. فاتسجلت القايمة الكاملة، والأكواد الثابتة اتنقلت لملف لوحدها. وكمان الـ NFR-CONC-1 كان بيقول version رقم، والـ FR-GL-05 بيقول `updated_at`، فاتثبت `updated_at` بدقة الـ microseconds.
+
+</div>
+
+**Topic.** The full API status set, one error catalogue file, and one version token.
 
 ## AI task decisions
 

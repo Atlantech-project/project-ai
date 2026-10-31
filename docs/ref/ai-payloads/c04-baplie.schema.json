@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c04-baplie.schema.json",
+  "title": "C-04 BAPLIE parse payload (queue:edi)",
+  "description": "Payload of a BAPLIE_PARSE job (CT-12). The EDI Parser accepts SMDG BAPLIE 2.2.1 (UN/EDIFACT D.95B) and SMDG BAPLIE 3.1.1 (UN/EDIFACT D.13B), detected from the UNH message identifier. Any other version, message type or non-EDIFACT file ends as outcome REJECTED (parse_status FAILED) with an ERROR issue on segment UNH.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "baplie_file_id",
+    "source"
+  ],
+  "properties": {
+    "baplie_file_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "enum": [
+        "FILE",
+        "STAGED_PAYLOAD"
+      ],
+      "description": "FILE parses the uploaded file. STAGED_PAYLOAD re-validates and commits the staff-corrected staged_payload of a QUARANTINED file."
+    }
+  }
+}
