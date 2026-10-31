@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c03-yard.schema.json",
+  "title": "C-03 Yard placement payload (queue:yard)",
+  "description": "Payload of a YARD_PLACEMENT job (CT-11). operational_plan_id lets the worker check that the plan is still the confirmed plan of that recommendation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "terminal_recommendation_id",
+    "operational_plan_id"
+  ],
+  "properties": {
+    "terminal_recommendation_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "operational_plan_id": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

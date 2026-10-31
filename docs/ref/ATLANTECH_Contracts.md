@@ -17,7 +17,7 @@ All contracts are written and approved in **Sprint 1**. Each contract has a task
 
 **Proposed location:** a `contracts/` folder in the `PortHub` repository. Every OpenAPI file and JSON Schema in that folder is the single source of truth.
 
-**Local reference copies in `project-ai`:** `docs/ref/ai-payloads/` mirrors `contracts/ai/` (today `envelope.schema.json`, `c05-validation.schema.json`, `c06-completion.schema.json` and `worker-heartbeat.schema.json`). `docs/ref/db/` mirrors `contracts/db/` (today `table-names.md`). The contract paths and the schemas' `$id` URLs below keep their `contracts/ai/` and `contracts/db/` names.
+**Local reference copies in `project-ai`:** `docs/ref/ai-payloads/` mirrors `contracts/ai/` (today the envelope, C-01 to C-06 and worker-heartbeat schemas, `table-ownership.md` and `contract-v1-record.md`). `docs/ref/db/` mirrors `contracts/db/` for `table-names.md` only; the schema snapshot `schema.sql` is not mirrored and is read from PortHub `contracts/db/schema.sql`. `api-conventions.md`, `error-codes.md`, `auth-web.md` and `openapi/port-api.yaml` are read from PortHub `contracts/`. The contract paths and the schemas' `$id` URLs below keep their `contracts/ai/` and `contracts/db/` names.
 
 **Table names:** plural, as set by CT-17 (`users`, `solver_runs`, …); the full list is `contracts/db/table-names.md`. Column and foreign-key names stay singular (`vessel_id`).
 
@@ -60,51 +60,16 @@ All contracts are written and approved in **Sprint 1**. Each contract has a task
 | --- | --- |
 | Between | Backend → Frontend · Mobile · QA |
 | Owner | Backend Team |
-| Reviewers | Frontend Team · Mobile Team · QA Team |
+| Reviewers | Frontend Team · Mobile Team, critical changes only (DEC-57) |
 | Output | `contracts/api-conventions.md` |
 
-**Content:**
+**Full text:** PortHub `contracts/api-conventions.md` and PortHub `contracts/error-codes.md`. Those files win over this summary.
 
-- **Base path:** `/api/v1`. All times are ISO 8601 in UTC.
-- **Headers:**
-  - Web: cookie + `X-XSRF-TOKEN`.
-  - Mobile: `Authorization: Bearer <token>`, `X-App-Version` and `X-Device-Id`.
-  - Every mobile write carries an `Idempotency-Key`.
-- **Version token:** every editable record returns a `version` (the `updated_at` value). Every update must send it back; a stale version returns 409.
-- **Errors:** RFC 9457 format with a stable `code` and a `message_key`.
-- **Error codes:** 401 · 403 · 409 · 422 · 426 · 503.
-- **Pagination:** `?page=&per_page=`.
-
-**Error example:**
-
-```json
-{
-  "type": "https://atlantech.io/errors/version-conflict",
-  "title": "Record changed",
-  "status": 409,
-  "code": "VERSION_CONFLICT",
-  "message_key": "errors.version_conflict",
-  "detail": "The berth was changed by another user.",
-  "current": { "id": 12, "version": "2026-11-02T10:15:04Z" }
-}
-```
-
-**422 example:**
-
-```json
-{
-  "status": 422,
-  "code": "VALIDATION_FAILED",
-  "message_key": "errors.validation_failed",
-  "errors": { "max_vessel_loa": ["errors.berth.loa_exceeds_length"] }
-}
-```
-
-**Pagination example:**
-
-```json
-{ "data": [ { "id": 1 } ], "meta": { "page": 1, "per_page": 25, "total": 132 } }
-```
+- **Base path:** `/api/v1`. All times are ISO 8601 in UTC with microseconds on output.
+- **Headers:** web uses the cookie and `X-XSRF-TOKEN`; mobile uses `Authorization: Bearer <token>`, `X-App-Version`, `X-Device-Id` and, on writes, `Idempotency-Key`.
+- **Version token:** every editable record returns `version` (the `updated_at` value) and every update sends it back; a stale value returns 409.
+- **Errors:** RFC 9457 with a stable `code` and a `message_key` (DEC-57).
+- **Pagination:** `?page=&per_page=` with `meta`.
 
 ---
 
@@ -114,7 +79,8 @@ All contracts are written and approved in **Sprint 1**. Each contract has a task
 | --- | --- |
 | Between | Backend → Frontend · Mobile · QA |
 | Owner | Backend Team (single owner, DEC-13) |
-| Reviewers | Frontend Team · Mobile Team |
+| Reviewers | Frontend Team · Mobile Team, critical changes only (DEC-57) |
+| Status | Approved v1.0.0 · 2026-10-30 by Marwan (Backend lead), without team review |
 | Output | `contracts/openapi/port-api.yaml` (OpenAPI 3.0), updated in the same PR that changes an endpoint |
 
 **Example:**
@@ -156,6 +122,7 @@ components:
 | Between | Backend → Frontend |
 | Owner | Backend Team |
 | Reviewers | Frontend Team |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
 | Output | Auth section of `port-api.yaml` + the flow steps in `contracts/auth-web.md` |
 
 **Flow:**
@@ -165,7 +132,9 @@ components:
 3. If `must_change_password = true`: `POST /api/v1/auth/change-password`
 4. `POST /api/v1/auth/logout`
 
-The sign-in identifier is set by DEC-35 (proposed: username).
+Full text: PortHub `contracts/auth-web.md`, which wins over this summary.
+
+The sign-in identifier is `username` (DEC-35, closed); users have no email.
 
 ```json
 // POST /api/v1/auth/login
@@ -175,7 +144,7 @@ The sign-in identifier is set by DEC-35 (proposed: username).
 {
   "id": 41,
   "name": "Port Staff",
-  "role": "PORT_AUTHORITY_STAFF",
+  "role": "PORT_STAFF",
   "terminal_ids": [],
   "must_change_password": false
 }
@@ -316,7 +285,7 @@ data: {"entity":"berthing_request","id":1550,"recommendation_id":880,"status":"R
 | Owner | AI Team (JSON Schema) · Backend Team (sending with RPUSH) |
 | Reviewers | Backend Team · AI Team |
 | Output | `contracts/ai/envelope.schema.json` |
-| Status | Proposed v1.0 · 2026-10-27 (DEC-04). Consolidates the envelope rules already approved in CT-09 to CT-14 and CT-16; becomes Approved on Backend Team sign-off |
+| Status | Approved v1.0 · 2026-10-30 on Backend Team sign-off (DEC-04). Consolidates the envelope rules already approved in CT-09 to CT-14 and CT-16 |
 
 The envelope is the outer JSON message for every job the Backend sends to an AI worker. Each job type's payload has its own schema (C-01 to C-05); this contract covers everything around it. The completion message going the other way is C-06 (CT-14).
 

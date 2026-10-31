@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c02-part2-solve.schema.json",
+  "title": "C-02 Part 2 solve payload (queue:part2)",
+  "description": "Payload of a PART2_SOLVE job (CT-10). payload.trigger_type is the highest-precedence type in triggers (REPLAN > RESOURCE_CHANGE > MANUAL > NEW_REQUEST), and a request id appears in at most one entry; the Backend enforces both before RPUSH, since a schema cannot express them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trigger_type",
+    "triggers"
+  ],
+  "properties": {
+    "trigger_type": {
+      "$ref": "#/$defs/trigger_type"
+    },
+    "triggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/trigger"
+      }
+    }
+  },
+  "$defs": {
+    "trigger_type": {
+      "enum": [
+        "NEW_REQUEST",
+        "MANUAL",
+        "RESOURCE_CHANGE",
+        "REPLAN"
+      ]
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger_type",
+        "berthing_request_ids"
+      ],
+      "properties": {
+        "trigger_type": {
+          "$ref": "#/$defs/trigger_type"
+        },
+        "berthing_request_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "context_note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500,
+          "description": "Logs only: not stored in result tables, not used by the solve, never in the rationale."
+        },
+        "requested_by_user_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "changed_resources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/changed_resource"
+          }
+        },
+        "operational_plan_id": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "trigger_type": {
+                "const": "MANUAL"
+              }
+            },
+            "required": [
+              "trigger_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "requested_by_user_id"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "requested_by_user_id"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "trigger_type": {
+                "const": "RESOURCE_CHANGE"
+              }
+            },
+            "required": [
+              "trigger_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "changed_resources"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "changed_resources"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "trigger_type": {
+                "const": "REPLAN"
+              }
+            },
+            "required": [
+              "trigger_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "operational_plan_id"
+            ],
+            "properties": {
+              "berthing_request_ids": {
+                "maxItems": 1
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "operational_plan_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "changed_resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "BERTH",
+            "TUG",
+            "PILOT"
+          ]
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "berths.id, tugboats.id or the pilot's users.id."
+        }
+      }
+    }
+  }
+}

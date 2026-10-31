@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlantech.io/contracts/ai/c01-part1-run.schema.json",
+  "title": "C-01 Part 1 run payload (queue:part1)",
+  "description": "Payload of a PART1_RUN job (CT-09). manual_forecast_run_id is carried with reason MANUAL_DATA and only then. The result goes to the database and comes back through C-06.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "berthing_request_id",
+    "reason"
+  ],
+  "properties": {
+    "berthing_request_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reason": {
+      "enum": [
+        "CUSTOMS_APPROVAL",
+        "RECOMPUTE",
+        "MANUAL_DATA",
+        "REOPEN"
+      ]
+    },
+    "manual_forecast_run_id": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "if": {
+    "properties": {
+      "reason": {
+        "const": "MANUAL_DATA"
+      }
+    },
+    "required": [
+      "reason"
+    ]
+  },
+  "then": {
+    "required": [
+      "manual_forecast_run_id"
+    ]
+  },
+  "else": {
+    "not": {
+      "required": [
+        "manual_forecast_run_id"
+      ]
+    }
+  }
+}
