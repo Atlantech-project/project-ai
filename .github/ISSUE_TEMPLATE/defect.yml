@@ -1,0 +1,89 @@
+name: Defect
+description: Report a defect found while testing a release branch (CT-26)
+title: "[Defect] <short summary>"
+labels: ["defect"]
+body:
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature
+      options:
+        - FT-01 Platform foundation and contracts
+        - FT-02 Sign-in and session
+        - FT-03 Access control, users, devices and audit
+        - FT-04 Port master data and safety limits
+        - FT-05 Department and terminal master data
+        - FT-06 Berthing requests and BAPLIE
+        - FT-07 Customs approval and entry window (AI Part 1)
+        - FT-08 Recommendation review and plan (AI Part 2)
+        - FT-09 Dispatch, notifications and field execution
+        - FT-10 Deviations, re-plan and monitoring
+        - FT-11 Yard placement and TOS hand-off
+        - FT-12 Model evaluation and drift (AI Part 3)
+        - FT-13 Integration, quality and release
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Page ID / Endpoint
+      description: The page ID from the screens list, or the endpoint, for example POST /api/v1/sync/events
+    validations:
+      required: true
+  - type: dropdown
+    id: repository
+    attributes:
+      label: Repository
+      options:
+        - project-backend
+        - project-frontend
+        - project-mobile
+        - project-ai
+        - PortHub
+    validations:
+      required: true
+  - type: input
+    id: branch
+    attributes:
+      label: Found on (release branch)
+      description: Branch and commit, for example release@abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Blocker stops the release. Major breaks a feature with no workaround. Minor is cosmetic or has a workaround.
+      options:
+        - Blocker
+        - Major
+        - Minor
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: Numbered steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshot, log or response with status code. A defect without evidence is not accepted.
