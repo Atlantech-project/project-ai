@@ -1,0 +1,12 @@
+# Secret scan config (AI-016). All default rules apply. Each entry below is a checked false
+# positive, justified in docs/tasks/status/AI-016.md.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "AI-009: two ModelKey enum values required verbatim by CT-18 in seed-spec.json"
+condition = "AND"
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+paths = ['''^docs/(drafts|ref)/ai-payloads/seed-spec\.json$''']
+regexes = ['''^model_key":\s*"(M3_DEMAND_FORECAST|M4_DELAY_RISK)"$''']
