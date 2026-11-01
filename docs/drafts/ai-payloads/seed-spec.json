@@ -1,0 +1,31 @@
+{
+  "spec_version": "1.0",
+  "constraint_types": [
+    { "code": "MAX_WIND_KN", "category": "ENVIRONMENTAL", "unit": "KNOTS", "comparator": "MAX_ALLOWED", "is_hard_safety_limit": true, "description": "Maximum sustained wind for entry" },
+    { "code": "MIN_UKC_M", "category": "UKC", "unit": "METRES", "comparator": "MIN_REQUIRED", "is_hard_safety_limit": true, "description": "Minimum under-keel clearance" },
+    { "code": "MAX_WAVE_HEIGHT_M", "category": "ENVIRONMENTAL", "unit": "METRES", "comparator": "MAX_ALLOWED", "is_hard_safety_limit": true, "description": "Maximum wave height for entry" }
+  ],
+  "safety_constraints": [],
+  "objective_terms": [
+    { "code": "WAITING_TIME", "name": "Vessel waiting time" },
+    { "code": "RESOURCE_COST", "name": "Resource cost" }
+  ],
+  "rationale_templates": [],
+  "ml_models": [
+    { "model_key": "M2_SERVICE_TIME", "algorithm_family": "GRADIENT_BOOSTING", "description": "Berth service time (P50 / P90)" },
+    { "model_key": "M3_DEMAND_FORECAST", "algorithm_family": "GRADIENT_BOOSTING", "description": "Arrivals per demand slot (Phase 2)" },
+    { "model_key": "M4_DELAY_RISK", "algorithm_family": "GRADIENT_BOOSTING", "description": "Probability of a significant delay deviation (Phase 2)" }
+  ],
+  "ml_model_versions": [],
+  "port_settings": [
+    { "setting_key": "part1_stored_data_max_age_hours", "value_type": "INT", "value": "48", "min": 1, "max": 168, "description": "Maximum age of stored environmental data usable by Part 1" },
+    { "setting_key": "solver_time_limit_seconds", "value_type": "INT", "value": "10", "min": 1, "max": 120, "description": "CP-SAT time limit per solve" },
+    { "setting_key": "solver_options_per_request", "value_type": "INT", "value": "3", "min": 1, "max": 3, "description": "Maximum number of options per request" },
+    { "setting_key": "solver_option_equivalence_pct", "value_type": "DECIMAL", "value": "10", "min": 0, "max": 50, "description": "Options 2 and 3 only within this percentage of option 1" },
+    { "setting_key": "objective_weight_waiting_time", "value_type": "DECIMAL", "value": "1.0", "min": 0, "max": 10, "description": "Weight of the WAITING_TIME objective term" },
+    { "setting_key": "objective_weight_resource", "value_type": "DECIMAL", "value": "1.0", "min": 0, "max": 10, "description": "Weight of the RESOURCE_COST objective term" },
+    { "setting_key": "part1_max_retries", "value_type": "INT", "value": "3", "min": 0, "max": 10, "description": "Maximum retries of a Part 1 job" },
+    { "setting_key": "validation_timeout_seconds", "value_type": "INT", "value": "15", "min": 5, "max": 60, "description": "Wait for a validation result before the change is refused" },
+    { "setting_key": "validation_result_ttl_seconds", "value_type": "INT", "value": "600", "min": 60, "max": 3600, "description": "How long a validation result is kept" }
+  ]
+}
