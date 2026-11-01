@@ -17,3 +17,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-016 | Set up CI for AI code | IN REVIEW (PR #5 merged `451daff`; 2 criteria outstanding) | `feature/AI-016-ci-for-ai-code` | [AI-016](status/AI-016.md) | 2026-10-31 |
 | AI-014 | Implement unit, datum and time utilities | DONE (PR #7, merge `2f3b89e`) | `feature/AI-014-unit-datum-time-utilities` | [AI-014](status/AI-014.md) | 2026-10-31 |
 | SETUP-003 | PortHub contracts and decisions synchronization (setup task, not in the backlog) | IN REVIEW | `feature/SETUP-003-porthub-contracts-decisions-sync` | [SETUP-003](status/SETUP-003.md) | 2026-10-31 |
+| AI-008 | Agree thresholds register and evaluation baseline | IN REVIEW (DEC-30 approval and QA H-44 outstanding) | `feature/AI-008-thresholds-register-evaluation-baseline` | [AI-008](status/AI-008.md) | 2026-10-31 |
