@@ -1583,6 +1583,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-014 | Unit, datum and time utilities | AI Team | Proposed |
 | AI-003 | AIBD-032 and AIBD-036 outcome for contract v1 | AI Team | Closed |
 | AI-012 | Configuration management | AI Team | Proposed |
+| AI-011 | Shared worker runtime | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1674,3 +1675,21 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | Decision | ______ |
 | Proposed change | 2026-11-03 · AI-012 · (1) **Layout:** `common/config.py`, imported as `common.config`; final package layout left to AI-011 (OQ-8). (2) **Environment names:** `AI_DB_HOST`, `AI_DB_USER_<PART>`, `AI_REDIS_URL`, `AI_PROVIDER_PRIMARY_KEY`, `AI_PROVIDER_SECONDARY_KEY`, `AI_ARTIFACT_DIR`, `AI_BAPLIE_VOLUME` (AIBD §6.1), plus `AI_DB_PASSWORD_<PART>`, `AI_DB_PORT` and `AI_DB_NAME`. `<PART>` is `PART1`, `PART2`, `YARD`, `EDI`, `VALIDATE` or `PART3`, one per DEC-08 account. CI maps its existing `MYSQL_*` and `REDIS_URL` values to these names without renaming them. (3) **Missing configuration:** a missing database or Redis variable stops the worker at startup. The startup check covers only keys the worker uses that have an approved value in CT-18 today; ⟨AI⟩ keys are read when a job needs them, and a problem during a job fails that job with `CONFIGURATION_ERROR` (CT-08 §7, CT-18 §4). (4) **Refresh rule:** per job, no cache (DEC-12), on an autocommit connection, or committing or rolling back after every read. (5) **BOOL text:** exactly `1`, `0`, `true`, `false`; anything else is an error. (6) **DECIMAL:** parsed with `Decimal`, never `float`. · Reason: no contract names the environment variables or the BOOL text, and backlog criterion 1 ("stops the worker") needs reconciling with CT-08 §7 and CT-18 §4 · Evidence: `common/config.py`, `tests/unit/common/test_config.py`, `tests/integration/test_port_settings.py` · Impact: AI-011, AI-013, AI-020 and every worker; Backend for (2) and (5) · Awaiting: AI Team owner; Backend Team to confirm the environment names and what Laravel writes for BOOL values |
 | Approval | None yet as the team decision. The repository user approved these choices for the AI-012 implementation on 2026-11-03. `AI_DB_PORT` and `AI_DB_NAME` were added by the implementer, not taken from AIBD §6.1, because a connection needs them and code holds no defaults; the user approved them the same day. All the names stay Proposed, awaiting Backend confirmation. |
+
+### AI-011 · Shared worker runtime
+
+| | |
+| --- | --- |
+| Source | AI-011 (backlog) · CT-08 §2, §6 and §7 · CT-10 · CT-11 · CT-12 · CT-14 · CT-15 · CT-17 · DEC-04 · DEC-08 · AI-010 follow-ups OQ-2 and OQ-8 |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-013 and every worker · AI-090 (schema files) · Backend Team (`AI_SCHEMA_DIR`, CT-08, CT-15, DEC-08, `chk_p1r_retry`) |
+| Decision | ______ |
+| Proposed change | 2026-11-03 · AI-011 · (1) **Layout (OQ-8):** `common/runtime/`, imported as `common.runtime.<module>`; no packaging; workers run as `python -m <module>` from the repository root. (2) **Connections:** the runtime takes a DB-API connection factory, in manual commit; AI-013 owns the driver and pool. (3) **Wrong queue:** a `job_type` that doesn't match the queue is logged at ERROR with `job_type`, `run_id` and queue, dropped and never claimed. This deviates from CT-08 §6 step 3; a `Proposed change` to CT-08 is on PortHub. A missing `job_type` isn't treated as a wrong queue. (4) **Retries:** immediate, no delay. (5) **Schemas (OQ-2):** loaded from `AI_SCHEMA_DIR`, Proposed like the AI-012 names. It defaults to `docs/ref/ai-payloads/` only inside a Git checkout (development and CI), with a warning. A missing schema stops the worker at startup. (6) **`part1_max_retries` above 3:** `CONFIGURATION_ERROR`, never clamped, until the Backend resolves it against `chk_p1r_retry`. (7) **`yard_runs.retry_count`:** used; a `Proposed change` to CT-15 and DEC-08 is on PortHub. (8) **Before settings are read:** a failed read gets one retry, since Part 1's limit isn't known yet. (9) **Logs:** an exception is logged as its type and traceback location, never its text. · Reason: no contract covers (1), (2), (4), (5), (8) and (9), and (3) and (6) handle gaps in the approved text · Evidence: `common/runtime/`, `tests/unit/common/runtime/`, `tests/integration/test_worker_runtime.py` · Impact: AI-013, AI-090 and every worker; Backend for (3), (5), (6) and (7) · Awaiting: AI Team owner; Backend Team for (3), (5), (6) and (7) |
+| Approval | None yet as the team decision. The repository user approved these choices for the AI-011 implementation on 2026-11-03, including `yard_runs.retry_count` for the AI Team. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- Retry delay is undefined. If a provider needs one, it should come from `port_settings`.
+- AI-090 ships the schema files and sets `AI_SCHEMA_DIR`.
+- Where the yard and validation workers live in the module tree (AI-010 follow-up).
