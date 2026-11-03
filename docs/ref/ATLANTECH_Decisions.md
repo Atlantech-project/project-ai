@@ -1581,6 +1581,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-010 | AI code repository location and module structure | AI Team | Closed |
 | AI-016 | CI provider, Python tooling and quality gates | AI Team | Proposed |
 | AI-014 | Unit, datum and time utilities | AI Team | Proposed |
+| AI-012 | Configuration management | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1645,3 +1646,15 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | Decision | ______ |
 | Proposed change | 2026-10-29 · AI-014 · (1) **Layout:** `common/__init__.py`, `common/units.py`, `common/time.py`, `common/datum.py`, imported as `common.units` / `common.time` / `common.datum`; tests in `tests/unit/common/`; the final package layout is left to AI-011 (OQ-8). `common/time.py` shares the stdlib `time` name: safe with absolute imports, and no script is ever run from inside `common/`. (2) **Time-zone data:** `tzdata` is an unconditional runtime dependency (`tzdata>=2026.6`, locked in `uv.lock`), so every platform uses the same IANA database version; zones come only from `zoneinfo.ZoneInfo`, with no OS fallback. (3) **Datum:** consistency check only; `MissingDatumError` for a missing or empty value, `DatumMismatchError` unless the tide set's `datum_reference`, the channel's `depth_datum` and the berth's `depth_datum` are exactly equal (no normalisation); no conversion between datums, which depends on DEC-27. (4) **DST:** a local time in a spring-forward gap raises `NonExistentLocalTimeError`, one in a fall-back overlap `AmbiguousLocalTimeError` (both `LocalTimeError`); no fold or earlier/later option, and any such option needs its own decision · Reason: AI-014 must convert units and times in one place and never guess (backlog guidance) · Evidence: `docs/tasks/status/AI-014.md`, tests in `tests/unit/common/` · Impact: AI-020, AI-021, AI-025, AI-044 and every later worker using `common`; AI-011 (OQ-8) · Awaiting: AI Team owner |
 | Approval | None yet as the team decision. The repository user approved these choices for the AI-014 implementation on 2026-10-29. |
+
+### AI-012 · Configuration management
+
+| | |
+| --- | --- |
+| Source | AI-012 (backlog) · DEC-12 · DEC-08 · CT-18 §4 and §7 · CT-08 §7 · `ATLANTECH_AI_ARCHITECTURE.md` (secrets live in environment configuration) · AIBD §6.1 as quoted by the user on 2026-11-03 (`ATLANTECH_AI_BACKEND_DEPENDENCIES.md` is not in the repository, so the names were not checked against it) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-011 · AI-013 · AI-020 and every worker · Backend Team (deployment environment, BOOL text) |
+| Decision | ______ |
+| Proposed change | 2026-11-03 · AI-012 · (1) **Layout:** `common/config.py`, imported as `common.config`; final package layout left to AI-011 (OQ-8). (2) **Environment names:** `AI_DB_HOST`, `AI_DB_USER_<PART>`, `AI_REDIS_URL`, `AI_PROVIDER_PRIMARY_KEY`, `AI_PROVIDER_SECONDARY_KEY`, `AI_ARTIFACT_DIR`, `AI_BAPLIE_VOLUME` (AIBD §6.1), plus `AI_DB_PASSWORD_<PART>`, `AI_DB_PORT` and `AI_DB_NAME`. `<PART>` is `PART1`, `PART2`, `YARD`, `EDI`, `VALIDATE` or `PART3`, one per DEC-08 account. CI maps its existing `MYSQL_*` and `REDIS_URL` values to these names without renaming them. (3) **Missing configuration:** a missing database or Redis variable stops the worker at startup. The startup check covers only keys the worker uses that have an approved value in CT-18 today; ⟨AI⟩ keys are read when a job needs them, and a problem during a job fails that job with `CONFIGURATION_ERROR` (CT-08 §7, CT-18 §4). (4) **Refresh rule:** per job, no cache (DEC-12), on an autocommit connection, or committing or rolling back after every read. (5) **BOOL text:** exactly `1`, `0`, `true`, `false`; anything else is an error. (6) **DECIMAL:** parsed with `Decimal`, never `float`. · Reason: no contract names the environment variables or the BOOL text, and backlog criterion 1 ("stops the worker") needs reconciling with CT-08 §7 and CT-18 §4 · Evidence: `common/config.py`, `tests/unit/common/test_config.py`, `tests/integration/test_port_settings.py` · Impact: AI-011, AI-013, AI-020 and every worker; Backend for (2) and (5) · Awaiting: AI Team owner; Backend Team to confirm the environment names and what Laravel writes for BOOL values |
+| Approval | None yet as the team decision. The repository user approved these choices for the AI-012 implementation on 2026-11-03. `AI_DB_PORT` and `AI_DB_NAME` were added by the implementer, not taken from AIBD §6.1, because a connection needs them and code holds no defaults; the user approved them the same day. All the names stay Proposed, awaiting Backend confirmation. |

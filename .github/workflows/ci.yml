@@ -99,6 +99,25 @@ jobs:
           version: ${{ env.UV_VERSION }}
       - run: uv sync --frozen
       - run: uv run pytest -v --cov --cov-report=term-missing --cov-report=xml
+        env:
+          # AI-012 names (Proposed), mapped from the service values above. In CI every part uses
+          # the one service account; production gives each part its own (DEC-08).
+          AI_DB_HOST: ${{ env.MYSQL_HOST }}
+          AI_DB_PORT: ${{ env.MYSQL_PORT }}
+          AI_DB_NAME: ${{ env.MYSQL_DATABASE }}
+          AI_REDIS_URL: ${{ env.REDIS_URL }}
+          AI_DB_USER_PART1: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_PART1: ${{ env.MYSQL_PASSWORD }}
+          AI_DB_USER_PART2: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_PART2: ${{ env.MYSQL_PASSWORD }}
+          AI_DB_USER_YARD: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_YARD: ${{ env.MYSQL_PASSWORD }}
+          AI_DB_USER_EDI: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_EDI: ${{ env.MYSQL_PASSWORD }}
+          AI_DB_USER_VALIDATE: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_VALIDATE: ${{ env.MYSQL_PASSWORD }}
+          AI_DB_USER_PART3: ${{ env.MYSQL_USER }}
+          AI_DB_PASSWORD_PART3: ${{ env.MYSQL_PASSWORD }}
       # Coverage is reported only; the gate waits for the agreed figure (AI-008 / DEC-30).
       - name: Coverage summary
         if: always()
