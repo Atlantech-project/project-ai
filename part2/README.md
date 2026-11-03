@@ -18,6 +18,18 @@ AI Part 2, consuming `queue:part2`. Solve triggers (`solver_run.trigger_type`, A
 | B7 | Re-planning | MVP |
 | B8 | Yard placement (new identifier; method set by DEC-29, Open) | MVP |
 
+## Tug requirement (AI-054, DEC-20)
+
+`part2/tugs.py` computes one result per berthing request, before the solver: `compute_tug_requirement(request, tugs, load_rules())` returns `n_min`, `n_cap`, `bp_req`, `eligible_tugs` and `flags`. It is a pure function with no solver import. AI-055 passes the integers to CP-SAT.
+
+- **Numbers:** all in `part2/tug_rules.json`, each section with its `source` and an `interim` note. The rules are PROPOSED and unvalidated, and DEC-20 is still Open, pending the Leads Council. Every result carries `rules_unvalidated` until the file's status is `APPROVED`. This deviates from AI-012: `port_settings.setting_value` is `varchar(255)` and can't hold the table or its sources. Changing a value needs a deploy, not a code change.
+- **Inputs:** `arrival_draft`, or `max_draft` with `max_draft_used`. The request's `block_coefficient`, or the type table if it's missing or outside the valid range, with `cb_fallback_used`.
+- **Zero tugs:** only when GT is below the threshold and `pilot_requested` is `False`. `None` applies the table with `pilot_request_unknown`. The Backend has no such field yet.
+- **Tugs not rated in bollard pull:** excluded with `tug_power_not_bollard_pull`, because no conversion from HP or kW is agreed.
+- **Eligibility:** `eligible_tugs` is by rating only. AI-055 must filter by availability (DEC-32).
+- **Vessels with power only:** the table is MPA's column for vessels with power. A dead ship needs more tugs, and no field says which applies.
+- **Infeasible:** AI-055 reports it. The requirement is never relaxed.
+
 ## Writes
 
 - `solver_run`, `solver_run_model_version`

@@ -1085,7 +1085,7 @@ Any delay on these tasks delays readiness for system-level testing. `AI-005` (do
   - Options ranked by the approved objective
 - **Verification evidence:** Algorithm test report
 - **Flags:** requires an architectural or domain decision
-- **Assumptions and open questions:** Objective and scope decisions required.
+- **Assumptions and open questions:** Objective and scope decisions required. From AI-054: `eligible_tugs` is by tug rating only; filtering by availability is AI-055's job.
 
 #### AI-056 — Implement solver outcome handling: FIFO fallback and NO_FEASIBLE_PLAN
 

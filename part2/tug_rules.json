@@ -1,0 +1,60 @@
+{
+  "decision": "DEC-20",
+  "status": "PROPOSED",
+  "note": "Provisional and unvalidated: rules from literature, tagged PROPOSED as AI-005 requires. Changing a value here needs a deploy, not a code change. Decimal values are strings.",
+  "compulsory_towage": {
+    "gt_threshold": 1000,
+    "interim": true,
+    "source": "Conservative interim value. Egyptian Ministry of Transport, https://www.mts.gov.eg/en/port/%D9%85%D9%8A%D9%86%D8%A7%D8%A1-%D8%A7%D9%84%D8%AF%D8%AE%D9%8A%D9%84%D8%A9/ (>=1000); Alexandria Port Authority, https://apa.gov.eg/en/alex-port-navigation-data/ (>2000). To be confirmed with the Alexandria Port Authority."
+  },
+  "block_coefficient": {
+    "valid_min": "0.50",
+    "valid_max": "0.90",
+    "by_vessel_type": {
+      "BULK_CARRIER": "0.80",
+      "TANKER": "0.80",
+      "CONTAINER": "0.65"
+    },
+    "default": "0.85",
+    "interim": true,
+    "source": "DEC-20 fallback when the request's block_coefficient is missing or outside the valid range. Default 0.85 is conservative for other or unknown types."
+  },
+  "displacement": {
+    "water_density_factor": "1.025",
+    "interim": false,
+    "source": "DEC-20: displacement = LOA x beam x draught x Cb x 1.025 (sea water, t/m3). LOA instead of LBP slightly overestimates, accepted as conservative."
+  },
+  "mass_bollard_pull": {
+    "vessel_types": ["BULK_CARRIER", "TANKER"],
+    "coefficient": "60",
+    "divisor": "100000",
+    "constant": "40",
+    "interim": true,
+    "source": "BP = 60 x displacement / 100,000 + 40. Formula and example (10,000 t gives 46 t) checked on 2026-11-03 at https://www.seanews.com.tr/authors/cahit-istikbal/what-is-bollard-pull-and-how-to-calculate-it/162591/, which calls it a rough minimum and names neither Hensen nor ship types. Attribution to Hensen, Tug Use in Port (IMO MSC.1/Circ.1101), and the limit to tankers and bulk carriers are cited by the requester, not checked."
+  },
+  "loa_bands": {
+    "bands": [
+      { "loa_max": "60", "n_base": 1, "min_bp_per_tug": "10", "bp_floor": 10 },
+      { "loa_max": "122", "n_base": 2, "min_bp_per_tug": "10", "bp_floor": 20 },
+      { "loa_max": "200", "n_base": 2, "min_bp_per_tug": "17", "bp_floor": 34 },
+      { "loa_max": "280", "n_base": 2, "min_bp_per_tug": "25", "bp_floor": 50 }
+    ],
+    "interim": true,
+    "source": "MPA Singapore Tug Assignment Guidelines, rev. 11 Feb 2025, https://www.mpa.gov.sg/api/media/c3d47522-816b-4197-b4f2-8bbaa3f87097/tug_assignment_guidelines.pdf, checked on 2026-11-03: the column for vessels with power (1S, 2S, 2M, 2B; S from 10 t, M from 17 t, B from 25 t). bp_floor is N x the minimum, derived by DEC-20; MPA doesn't state it. Upper limits are inclusive, so a decimal LOA between bands takes the higher band. To be replaced by the Alexandria Port Authority's own table."
+  },
+  "large_vessel": {
+    "gt_min": 75000,
+    "draught_split": "17",
+    "bands": [
+      { "draught": "below_split", "n_base": 4, "min_bp_per_tug": "25", "bp_floor": 100 },
+      { "draught": "at_or_above_split", "n_base": 4, "min_bp_per_tug": "45", "bp_floor": 180 }
+    ],
+    "interim": true,
+    "source": "MPA Singapore Tug Assignment Guidelines, rev. 11 Feb 2025, https://www.mpa.gov.sg/api/media/c3d47522-816b-4197-b4f2-8bbaa3f87097/tug_assignment_guidelines.pdf, checked on 2026-11-03: the column for vessels with power (4B; 4B of at least 45 t at draft 17 m or more). bp_floor is derived as above. Applies when LOA is above the last band or GT is at least gt_min."
+  },
+  "n_cap": {
+    "offset": 1,
+    "interim": true,
+    "source": "DEC-20: N_cap = N_min + 1."
+  }
+}

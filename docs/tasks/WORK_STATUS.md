@@ -21,3 +21,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-008 | Agree thresholds register and evaluation baseline | IN REVIEW (DEC-30 approval and QA H-44 outstanding) | `feature/AI-008-thresholds-register-evaluation-baseline` | [AI-008](status/AI-008.md) | 2026-10-31 |
 | AI-003 | Define and approve AI job and result contract v1 | IN REVIEW | `feature/AI-003-ai-job-result-contract-v1` | [AI-003](status/AI-003.md) | 2026-11-03 |
 | AI-012 | Implement configuration management | IN REVIEW (criterion 1 partial until AI-011) | `feature/AI-012-configuration-management` | [AI-012](status/AI-012.md) | 2026-11-03 |
+| AI-054 | Implement tug-requirement computation | IN REVIEW (scope exception on AI-005; DEC-20 Open, pending Leads Council) | `feature/AI-054-tug-requirement-computation` | [AI-054](status/AI-054.md) | 2026-11-03 |
