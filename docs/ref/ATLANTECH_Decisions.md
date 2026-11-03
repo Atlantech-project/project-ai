@@ -1582,6 +1582,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-016 | CI provider, Python tooling and quality gates | AI Team | Proposed |
 | AI-014 | Unit, datum and time utilities | AI Team | Proposed |
 | AI-003 | AIBD-032 and AIBD-036 outcome for contract v1 | AI Team | Closed |
+| AI-012 | Configuration management | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1662,3 +1663,14 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 - AI-090 chooses the supervisor tool. The AI lead cites implementation plan §7, "supervisor tool chosen in AI-090"; that plan is not in this repository.
 - AI-009 delivers the seed content and the ⟨AI⟩ values in CT-18. This decision doesn't make AI-009 done.
+### AI-012 · Configuration management
+
+| | |
+| --- | --- |
+| Source | AI-012 (backlog) · DEC-12 · DEC-08 · CT-18 §4 and §7 · CT-08 §7 · `ATLANTECH_AI_ARCHITECTURE.md` (secrets live in environment configuration) · AIBD §6.1 as quoted by the user on 2026-11-03 (`ATLANTECH_AI_BACKEND_DEPENDENCIES.md` is not in the repository, so the names were not checked against it) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-011 · AI-013 · AI-020 and every worker · Backend Team (deployment environment, BOOL text) |
+| Decision | ______ |
+| Proposed change | 2026-11-03 · AI-012 · (1) **Layout:** `common/config.py`, imported as `common.config`; final package layout left to AI-011 (OQ-8). (2) **Environment names:** `AI_DB_HOST`, `AI_DB_USER_<PART>`, `AI_REDIS_URL`, `AI_PROVIDER_PRIMARY_KEY`, `AI_PROVIDER_SECONDARY_KEY`, `AI_ARTIFACT_DIR`, `AI_BAPLIE_VOLUME` (AIBD §6.1), plus `AI_DB_PASSWORD_<PART>`, `AI_DB_PORT` and `AI_DB_NAME`. `<PART>` is `PART1`, `PART2`, `YARD`, `EDI`, `VALIDATE` or `PART3`, one per DEC-08 account. CI maps its existing `MYSQL_*` and `REDIS_URL` values to these names without renaming them. (3) **Missing configuration:** a missing database or Redis variable stops the worker at startup. The startup check covers only keys the worker uses that have an approved value in CT-18 today; ⟨AI⟩ keys are read when a job needs them, and a problem during a job fails that job with `CONFIGURATION_ERROR` (CT-08 §7, CT-18 §4). (4) **Refresh rule:** per job, no cache (DEC-12), on an autocommit connection, or committing or rolling back after every read. (5) **BOOL text:** exactly `1`, `0`, `true`, `false`; anything else is an error. (6) **DECIMAL:** parsed with `Decimal`, never `float`. · Reason: no contract names the environment variables or the BOOL text, and backlog criterion 1 ("stops the worker") needs reconciling with CT-08 §7 and CT-18 §4 · Evidence: `common/config.py`, `tests/unit/common/test_config.py`, `tests/integration/test_port_settings.py` · Impact: AI-011, AI-013, AI-020 and every worker; Backend for (2) and (5) · Awaiting: AI Team owner; Backend Team to confirm the environment names and what Laravel writes for BOOL values |
+| Approval | None yet as the team decision. The repository user approved these choices for the AI-012 implementation on 2026-11-03. `AI_DB_PORT` and `AI_DB_NAME` were added by the implementer, not taken from AIBD §6.1, because a connection needs them and code holds no defaults; the user approved them the same day. All the names stay Proposed, awaiting Backend confirmation. |
