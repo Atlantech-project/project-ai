@@ -162,6 +162,7 @@ def test_optional_env_var_names() -> None:
         "AI_PROVIDER_SECONDARY_KEY",
         "AI_ARTIFACT_DIR",
         "AI_BAPLIE_VOLUME",
+        "AI_SCHEMA_DIR",
     }
 
 
