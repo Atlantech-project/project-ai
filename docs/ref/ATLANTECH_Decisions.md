@@ -1581,6 +1581,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-010 | AI code repository location and module structure | AI Team | Closed |
 | AI-016 | CI provider, Python tooling and quality gates | AI Team | Proposed |
 | AI-014 | Unit, datum and time utilities | AI Team | Proposed |
+| AI-003 | AIBD-032 and AIBD-036 outcome for contract v1 | AI Team | Closed |
 | AI-012 | Configuration management | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
@@ -1647,6 +1648,21 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | Proposed change | 2026-10-29 · AI-014 · (1) **Layout:** `common/__init__.py`, `common/units.py`, `common/time.py`, `common/datum.py`, imported as `common.units` / `common.time` / `common.datum`; tests in `tests/unit/common/`; the final package layout is left to AI-011 (OQ-8). `common/time.py` shares the stdlib `time` name: safe with absolute imports, and no script is ever run from inside `common/`. (2) **Time-zone data:** `tzdata` is an unconditional runtime dependency (`tzdata>=2026.6`, locked in `uv.lock`), so every platform uses the same IANA database version; zones come only from `zoneinfo.ZoneInfo`, with no OS fallback. (3) **Datum:** consistency check only; `MissingDatumError` for a missing or empty value, `DatumMismatchError` unless the tide set's `datum_reference`, the channel's `depth_datum` and the berth's `depth_datum` are exactly equal (no normalisation); no conversion between datums, which depends on DEC-27. (4) **DST:** a local time in a spring-forward gap raises `NonExistentLocalTimeError`, one in a fall-back overlap `AmbiguousLocalTimeError` (both `LocalTimeError`); no fold or earlier/later option, and any such option needs its own decision · Reason: AI-014 must convert units and times in one place and never guess (backlog guidance) · Evidence: `docs/tasks/status/AI-014.md`, tests in `tests/unit/common/` · Impact: AI-020, AI-021, AI-025, AI-044 and every later worker using `common`; AI-011 (OQ-8) · Awaiting: AI Team owner |
 | Approval | None yet as the team decision. The repository user approved these choices for the AI-014 implementation on 2026-10-29. |
 
+### AI-003 · AIBD-032 and AIBD-036 outcome for contract v1
+
+| | |
+| --- | --- |
+| Source | AI-003 (backlog: "Every AIBD contract marked PROPOSED is either approved or explicitly rejected") · AIBD §2.1 AIBD-032 and AIBD-036, as supplied by the AI lead on 2026-11-03 (`ATLANTECH_AI_BACKEND_DEPENDENCIES.md` is not in the repository) · CT-16 · CT-18 · AI-090 · AI-009 |
+| Owner | AI Team |
+| Status | Closed |
+| Affects | AI-003 · AI-009 · AI-090 |
+| Decision | (1) **AIBD-032** is rejected as a contract v1 item. Health visibility is covered by CT-16 (Approved). The supervision tool is a deployment choice, left to AI-090. (2) **AIBD-036:** CT-18 v1.0, approved on 2026-10-27, defines the seed shape and scope, and that counts as approval for contract v1. The seed content is AI-009's deliverable and stays tracked there. |
+| Approval | Decided by MennaGamal-87 (AI lead), 2026-11-03. Item (2) rests on the existing CT-18 approval by the Backend Team. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- AI-090 chooses the supervisor tool. The AI lead cites implementation plan §7, "supervisor tool chosen in AI-090"; that plan is not in this repository.
+- AI-009 delivers the seed content and the ⟨AI⟩ values in CT-18. This decision doesn't make AI-009 done.
 ### AI-012 · Configuration management
 
 | | |
