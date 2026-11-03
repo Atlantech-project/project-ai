@@ -1494,7 +1494,7 @@ Any delay on these tasks delays readiness for system-level testing. `AI-005` (do
   - Deployment repeatable from documentation
 - **Verification evidence:** Deployment log; restart test
 - **Flags:** coordination with the Backend
-- **Assumptions and open questions:** Supervisor tool not documented.
+- **Assumptions and open questions:** Supervisor tool not documented. The contract schema files must ship with the workers, with `AI_SCHEMA_DIR` set: outside a Git checkout a worker stops at startup without them (AI-011).
 
 #### AI-091 — Implement health checks and heartbeats
 

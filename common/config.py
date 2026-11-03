@@ -66,6 +66,8 @@ class OptionalEnvVar(StrEnum):
     PROVIDER_SECONDARY = "AI_PROVIDER_SECONDARY_KEY"
     ARTIFACT_DIR = "AI_ARTIFACT_DIR"
     BAPLIE_VOLUME = "AI_BAPLIE_VOLUME"
+    # Where the contract schemas are; defaults to the docs/ref mirror only in a checkout (AI-011).
+    SCHEMA_DIR = "AI_SCHEMA_DIR"
 
 
 # CT-18 §4: every AI key and its type. Values belong to the seed, never to this module.
