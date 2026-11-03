@@ -55,7 +55,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S"]
 python_version = "3.14"
 strict = true
 # Explicit scope. Each module directory is added here when it gains Python code.
-files = ["common", "tests"]
+files = ["common", "part2", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -65,7 +65,7 @@ addopts = "--strict-markers"
 [tool.coverage.run]
 branch = true
 # Only non-test code is measured. Module directories are added as they gain code.
-source = ["common", "tests/support"]
+source = ["common", "part2", "tests/support"]
 
 [tool.coverage.report]
 show_missing = true
