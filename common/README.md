@@ -13,6 +13,7 @@ None. `common` is not a worker and consumes no queue.
 - `datum.py`: datum consistency check across tide set, channel and berth; no datum conversion (DEC-27) (AI-014)
 - `config.py`: environment and `port_settings` loading with typed parsing (AI-012)
 - `runtime/`: the shared worker runtime: queue consumer, envelope validation, claim, retries, guarded completion, C-06, logs and graceful shutdown (AI-011)
+- `db/`: worker connections, table definitions, column-checked repositories and typed read models (AI-013)
 
 The layout is Proposed by AI-014 and AI-011 (OQ-8): `common.<module>` imports, no packaging, and workers run as `python -m <module>` from the repository root.
 
@@ -20,7 +21,6 @@ The layout is Proposed by AI-014 and AI-011 (OQ-8): `common.<module>` imports, n
 
 Later tasks add, among others (all PROPOSED in the backlog):
 
-- db: data-access layer (AI-013)
 - quality (AI-025), registry (AI-070), health (AI-091), observability (AI-092)
 
 ## Configuration (AI-012)
@@ -44,7 +44,7 @@ Later tasks add, among others (all PROPOSED in the backlog):
 A worker gives `run_worker` a `WorkerDefinition` and a `connect_with` function. It follows CT-08 §6: `BLPOP`, validate, claim, run with retries, one guarded transaction, then C-06.
 
 - **Handlers:** take a `JobContext`, write rows on `context.connection`, and return a `JobResult` or raise `JobError`. They must not commit: the runtime owns commit and rollback. A yard handler must itself re-check that its row is still `YARD_REC_REQUESTED` before finishing (CT-11).
-- **Connections:** manual commit, with `time_zone = '+00:00'` (CT-17). AI-013 owns how they are created. One is opened before each `BLPOP`, so a database outage leaves messages on the queue. A lost connection is replaced, and the attempt counts as a failed one.
+- **Connections:** manual commit, with `time_zone = '+00:00'` (CT-17). `common.db.connection.connect_worker` creates them. One is opened before each `BLPOP`, so a database outage leaves messages on the queue. A lost connection is replaced, and the attempt counts as a failed one.
 - **Redis:** use `connect_redis`, the default. redis-py's default socket timeout equals the `BLPOP` timeout, which can lose a message the server has popped. Redis is checked at startup.
 - **Logs:** an exception is logged as its type and traceback location, never its text, which can hold a provider key or a URL.
 - **Schemas:** loaded at startup from `AI_SCHEMA_DIR`. Inside a Git checkout (development and CI) it defaults to `docs/ref/ai-payloads/`, with a warning. A deployment must set it and ship the files (AI-090). A missing schema stops the worker.
@@ -52,6 +52,19 @@ A worker gives `run_worker` a `WorkerDefinition` and a `connect_with` function. 
 - **Retries:** immediate, with no delay. The delay is an open question.
 - **`part1_max_retries`:** above 3 the job fails with `CONFIGURATION_ERROR`, because `chk_p1r_retry` can't record more. It isn't clamped. An `ai-request` to the Backend is needed.
 - **Stale runs:** the Backend sweeps them. If it does so mid-job, the guarded update loses, everything rolls back and nothing is sent.
+
+## Data access (AI-013)
+
+Give `run_worker` the `connect_worker` function. Each worker then logs in with its own DEC-08 account, in manual commit and UTC.
+
+- **Writes:** a handler builds `WorkerRepository(context.connection, part, run_id)` and writes through it. It checks the table and columns against `rights.py` before sending anything, and raises `WriteRefused`. The grants enforce the same matrix on the server.
+- **Rules grants can't enforce:** `update_own_run` touches only this run, and only while it's RUNNING. `fill_vessel_nulls` never overwrites a value. `insert_new_containers` adds only unknown numbers. `forecast_runs` refuses `MANUAL`. `update_terminal_recommendation` sets only `YARD_REC_GENERATED` or `GENERATION_FAILED`, on a row still `YARD_REC_REQUESTED`. `entry_window_proposals` starts as `PROPOSED`, without the Backend's confirm and reject columns, and `recommendations` starts as `PENDING_REVIEW` (Proposed). `drift_measurements.notified_at` is refused.
+- **Transactions:** the repository never commits. Under the runtime, its writes commit with the guarded final update. Outside it, as in a scheduler, use `transaction(connection)`.
+- **Yard results:** start with `lock_yard_result`, which takes the CT-17 §8 locks in order, on this run's own recommendation.
+- **Time:** read the clock with `datetime.now(UTC)`, never `datetime.now()`, which on Windows returns Cairo time. A test scans production code for naive datetimes. A value with an offset is stored as UTC; one without is taken as UTC, as the database returns them.
+- **Sessions:** the pool reuses sessions across jobs, so handlers mustn't change session settings.
+- **Reads:** `read_request_with_vessel`, `read_tugboats` and `read_run`. A row with an ENUM value the code doesn't know logs a warning and is skipped.
+- **Schema copy:** `docs/ref/db/schema.sql` is a byte-exact PortHub mirror. A refresh updates it and `schema.sql.source.json` together, and a grants change then shows up in the diff and in the matrix tests. The tests don't contact PortHub, so they can't notice a newer schema until the refresh.
 
 ## Never
 

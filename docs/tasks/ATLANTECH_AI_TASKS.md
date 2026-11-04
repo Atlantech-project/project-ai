@@ -1494,7 +1494,7 @@ Any delay on these tasks delays readiness for system-level testing. `AI-005` (do
   - Deployment repeatable from documentation
 - **Verification evidence:** Deployment log; restart test
 - **Flags:** coordination with the Backend
-- **Assumptions and open questions:** Supervisor tool not documented. The contract schema files must ship with the workers, with `AI_SCHEMA_DIR` set: outside a Git checkout a worker stops at startup without them (AI-011).
+- **Assumptions and open questions:** Supervisor tool not documented. The contract schema files must ship with the workers, with `AI_SCHEMA_DIR` set: outside a Git checkout a worker stops at startup without them (AI-011). **Deployment risk (AI-013):** workers and MySQL share the port server, so TLS may be off there. PyMySQL 1.2.3 uses TLS when the server offers it; without TLS, its first `caching_sha2_password` login crashes, even with `cryptography` installed. Backend question: does production/prototype MySQL offer TLS to the worker accounts? If not, this must be fixed before deployment.
 
 #### AI-091 — Implement health checks and heartbeats
 

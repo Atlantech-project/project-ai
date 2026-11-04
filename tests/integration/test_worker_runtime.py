@@ -16,6 +16,8 @@ import pymysql
 import pytest
 import redis
 
+from common.config import EnvSettings
+from common.db.connection import connect_worker
 from common.runtime import worker as worker_module
 from common.runtime.envelope import QUEUES, JobType, Schemas, load_schemas
 from common.runtime.errors import ErrorCategory, JobError
@@ -91,18 +93,6 @@ NEW_ROWS = {
 }
 
 
-def _connect(settings: ServiceSettings) -> pymysql.connections.Connection:
-    return pymysql.connect(
-        host=settings.mysql_host,
-        port=settings.mysql_port,
-        user=settings.mysql_user,
-        password=settings.mysql_password,
-        database=settings.mysql_database,
-        charset="utf8mb4",
-        init_command="SET time_zone = '+00:00'",
-    )
-
-
 def _execute(conn: pymysql.connections.Connection, sql: str, args: Any = None) -> None:
     with conn.cursor() as cursor:
         cursor.execute(sql, args)
@@ -175,7 +165,15 @@ def _worker(
     schemas: Schemas,
 ) -> Worker:
     definition = WorkerDefinition(job, handler, ("part1_max_retries",), "0.1.0")
-    return Worker(definition, lambda: _connect(settings), client, schemas)
+    env = EnvSettings(
+        settings.mysql_host,
+        settings.mysql_port,
+        settings.mysql_database,
+        settings.mysql_user,
+        settings.mysql_password,
+        settings.redis_url,
+    )
+    return Worker(definition, lambda: connect_worker(env), client, schemas)
 
 
 def _completions(client: redis.Redis) -> list[dict[str, Any]]:

@@ -1657,6 +1657,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-003 | AIBD-032 and AIBD-036 outcome for contract v1 | AI Team | Closed |
 | AI-012 | Configuration management | AI Team | Proposed |
 | AI-011 | Shared worker runtime | AI Team | Proposed |
+| AI-013 | Data-access layer | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1766,3 +1767,21 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - Retry delay is undefined. If a provider needs one, it should come from `port_settings`.
 - AI-090 ships the schema files and sets `AI_SCHEMA_DIR`.
 - Where the yard and validation workers live in the module tree (AI-010 follow-up).
+
+### AI-013 · Data-access layer
+
+| | |
+| --- | --- |
+| Source | AI-013 (backlog) · CT-15 · CT-17 §2 and §6 · DEC-08 · AI-010 follow-up OQ-8 |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | Every worker · AI-015 · AI-090 (TLS, environment) · Backend Team (CT-17 test setup, environment names) |
+| Decision | ______ |
+| Proposed change | 2026-11-03 · AI-013 · (1) **Layout (OQ-8):** `common/db/`, imported as `common.db.<module>`. (2) **Driver:** SQLAlchemy Core, PyMySQL and `cryptography`, pinned in `uv.lock`. (3) **Connections:** `connect_worker` gives one transaction shared by the runtime's raw cursors and the repositories, with a pool of one and one overflow, and a pre-ping. (4) **Test setup, a deviation from CT-17 §6:** tests run on our own CI services, not the Backend's docker compose, from the full `schema.sql` with the six accounts created as `atlantech:worker-accounts` does, and without the CT-18 seed. (5) **Schema copy:** `docs/ref/db/schema.sql`, byte-exact, with its source commit and SHA-256 in `schema.sql.source.json`, checked offline. (6) The backlog's "PortSync.md DDL" is read as `contracts/db/schema.sql`. (7) **Initial status of `recommendations`:** workers insert only `PENDING_REVIEW`. CT-15 names no status; evidence: DEC-06 and CT-10 ("Only the previous PENDING_REVIEW version of a solved request becomes REPLACED"), the CT-20 example and the schema default. (8) **Datetimes:** a value with an offset is converted to UTC; one without is taken as UTC; workers create only aware values, with `datetime.now(UTC)`. Reason: the task needs these, and CT-17 §6's setup isn't usable from this repository's CI. Evidence: `common/db/`, `tests/integration/test_worker_accounts.py`, `tests/integration/test_db_layer.py`, `tests/integration/test_runtime_real_accounts.py`. Impact: AI-015 and every worker; Backend for points 4 and 7. Awaiting: AI Team; Backend Team for points 4 and 7 |
+| Approval | None yet as the team decision. The repository user approved these choices for the AI-013 implementation on 2026-11-03 and 2026-11-04. MennaGamal-87 (AI lead) approved on 2026-11-04 counting the privilege matrix as Backend-approved, because it is generated from Backend's `workers.sql` and CT-15 is approved by Backend; `yard_runs.retry_count` stays pending its PortHub Proposed change. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- CT-15 writes the worker's `lifecycle_status` value as `GENERATED`; the ENUM and CT-11 use `YARD_REC_GENERATED`. The code follows the ENUM. CT-15's wording should be corrected.
+- **Deployment risk for AI-090:** workers and MySQL share the port server, so TLS may be off there. PyMySQL 1.2.3 uses TLS by default, without checking the certificate. Without TLS, its first `caching_sha2_password` login crashes, even with `cryptography` installed. Backend question: does production/prototype MySQL offer TLS to the worker accounts? If not, it must be fixed before deployment.
+- `database/grants/workers.sql` on backend `develop` has a stray `-- DEMO (do not merge)` comment that isn't in `schema.sql`.
