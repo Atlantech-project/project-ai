@@ -567,3 +567,197 @@ YARD_RUNS: Final = sa.Table(
     sa.Column("active_key", _ID, info=GENERATED_INFO),
     sa.Column("result_handled_at", UtcDateTime()),
 )
+
+# Tables the Part 2 port-state loader only reads (AI-050); the Backend owns them (CT-15).
+
+BERTH_TERMINALS: Final = sa.Table(
+    "berth_terminals",
+    metadata,
+    sa.Column("berth_id", _ID, primary_key=True, autoincrement=False),
+    sa.Column("terminal_id", _ID, primary_key=True, autoincrement=False),
+)
+
+BERTHS: Final = sa.Table(
+    "berths",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(30), nullable=False),
+    sa.Column("name", mysql.VARCHAR(80)),
+    sa.Column("length", mysql.DECIMAL(7, 2), nullable=False),
+    sa.Column("water_depth", mysql.DECIMAL(6, 2), nullable=False),
+    sa.Column("depth_datum", mysql.VARCHAR(40), nullable=False),
+    sa.Column("max_vessel_loa", mysql.DECIMAL(7, 2), nullable=False),
+    sa.Column("status", KnownEnum("ACTIVE", "MAINTENANCE", "INACTIVE"), nullable=False),
+    sa.Column("latitude", mysql.DECIMAL(9, 6)),
+    sa.Column("longitude", mysql.DECIMAL(9, 6)),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+OPERATIONAL_PLANS: Final = sa.Table(
+    "operational_plans",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("berthing_request_id", _ID, nullable=False),
+    sa.Column("recommendation_id", _ID, nullable=False),
+    sa.Column("recommendation_option_id", _ID, nullable=False),
+    sa.Column("status", KnownEnum("CONFIRMED", "CANCELLED", "COMPLETED"), nullable=False),
+    sa.Column("active_key", _ID, info=GENERATED_INFO),
+    sa.Column("confirmed_by", _ID, nullable=False),
+    sa.Column("confirmed_at", UtcDateTime(), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+PILOT_PROFILES: Final = sa.Table(
+    "pilot_profiles",
+    metadata,
+    sa.Column("user_id", _ID, primary_key=True, autoincrement=False),
+    sa.Column("pilot_rank", KnownEnum("FIRST", "SECOND", "THIRD"), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+PILOT_RANK_LIMITS: Final = sa.Table(
+    "pilot_rank_limits",
+    metadata,
+    sa.Column(
+        "pilot_rank", KnownEnum("FIRST", "SECOND", "THIRD"), primary_key=True, autoincrement=False
+    ),
+    sa.Column("max_vessel_loa", mysql.DECIMAL(7, 2)),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+PILOT_SCHEDULES: Final = sa.Table(
+    "pilot_schedules",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("pilot_user_id", _ID, nullable=False),
+    sa.Column("shift_date", mysql.DATE(), nullable=False),
+    sa.Column("port_shift_id", _ID, nullable=False),
+    sa.Column("created_by", _ID, nullable=False),
+)
+
+PLAN_COMPONENTS: Final = sa.Table(
+    "plan_components",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("operational_plan_id", _ID, nullable=False),
+    sa.Column("component_type", KnownEnum("BERTH", "PILOT", "TUG", "TERMINAL_OPS"), nullable=False),
+    sa.Column("berth_id", _ID),
+    sa.Column("tugboat_id", _ID),
+    sa.Column("terminal_id", _ID),
+    sa.Column("assigned_user_id", _ID),
+    sa.Column("assigned_by", _ID),
+    sa.Column("assigned_at", UtcDateTime()),
+    sa.Column("planned_start", UtcDateTime(), nullable=False),
+    sa.Column("planned_end", UtcDateTime(), nullable=False),
+    sa.Column("reservation_state", KnownEnum("RESERVED", "RELEASED", "CONSUMED"), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+PORT_PROFILES: Final = sa.Table(
+    "port_profiles",
+    metadata,
+    sa.Column("id", _ID, primary_key=True, autoincrement=False),
+    sa.Column("public_id", mysql.CHAR(36), nullable=False),
+    sa.Column("port_code", mysql.VARCHAR(10)),
+    sa.Column("governorate_code", mysql.VARCHAR(6), nullable=False),
+    sa.Column("name", mysql.VARCHAR(150), nullable=False),
+    sa.Column("latitude", mysql.DECIMAL(9, 6), nullable=False),
+    sa.Column("longitude", mysql.DECIMAL(9, 6), nullable=False),
+    sa.Column("timezone", mysql.VARCHAR(64), nullable=False),
+    sa.Column("boundary_coordinates", mysql.JSON(none_as_null=True)),
+    sa.Column("created_at", UtcDateTime(), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+PORT_SHIFTS: Final = sa.Table(
+    "port_shifts",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(20), nullable=False),
+    sa.Column("name", mysql.VARCHAR(60), nullable=False),
+    sa.Column("start_time", mysql.TIME(), nullable=False),
+    sa.Column("end_time", mysql.TIME(), nullable=False),
+    sa.Column("is_active", mysql.TINYINT(1), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+SAFETY_CONSTRAINTS: Final = sa.Table(
+    "safety_constraints",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("constraint_type_id", _ID, nullable=False),
+    sa.Column("terminal_id", _ID),
+    sa.Column("berth_id", _ID),
+    sa.Column("vessel_type_id", _ID),
+    sa.Column("imdg_class", mysql.VARCHAR(3)),
+    sa.Column("equipment_category_id", _ID),
+    sa.Column("value", mysql.DECIMAL(12, 3), nullable=False),
+    sa.Column("created_by", _ID, nullable=False),
+    sa.Column("active_from", UtcDateTime(), nullable=False),
+    sa.Column("active_to", UtcDateTime()),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+TUG_MASTER_PROFILES: Final = sa.Table(
+    "tug_master_profiles",
+    metadata,
+    sa.Column("user_id", _ID, primary_key=True, autoincrement=False),
+    sa.Column("assigned_tugboat_id", _ID),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)
+
+TUG_MASTER_SCHEDULES: Final = sa.Table(
+    "tug_master_schedules",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("tug_master_user_id", _ID, nullable=False),
+    sa.Column("shift_date", mysql.DATE(), nullable=False),
+    sa.Column("port_shift_id", _ID, nullable=False),
+    sa.Column("created_by", _ID, nullable=False),
+)
+
+USER_ROLE_ASSIGNMENTS: Final = sa.Table(
+    "user_role_assignments",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("user_id", _ID, nullable=False),
+    sa.Column(
+        "role",
+        KnownEnum(
+            "PORT_GM",
+            "PORT_STAFF",
+            "MARINE_SAFETY_OFFICER",
+            "PILOTAGE_MANAGER",
+            "PILOTAGE_OFFICER",
+            "MARINE_PILOT",
+            "TUG_MANAGER",
+            "TUG_OFFICER",
+            "TUG_MASTER",
+            "TERMINAL_ADMIN",
+            "TERMINAL_OFFICER",
+            "TERMINAL_SUPERVISOR",
+        ),
+        nullable=False,
+    ),
+    sa.Column("organization_unit_id", _ID, nullable=False),
+    sa.Column(
+        "unit_type", KnownEnum("HARBOUR_AUTHORITY", "MARINE_SERVICES", "TERMINAL"), nullable=False
+    ),
+    sa.Column("active_from", UtcDateTime(), nullable=False),
+    sa.Column("active_to", UtcDateTime()),
+    sa.Column("active_assignment_key", mysql.TINYINT(), info=GENERATED_INFO),
+)
+
+USERS: Final = sa.Table(
+    "users",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("name", mysql.VARCHAR(120), nullable=False),
+    sa.Column("username", mysql.VARCHAR(50), nullable=False),
+    sa.Column("password_hash", mysql.VARCHAR(255), nullable=False),
+    sa.Column("phone", mysql.VARCHAR(30)),
+    sa.Column("is_active", mysql.TINYINT(1), nullable=False),
+    sa.Column("must_change_password", mysql.TINYINT(1), nullable=False),
+    sa.Column("created_at", UtcDateTime(), nullable=False),
+    sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
+)

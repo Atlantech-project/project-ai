@@ -27,3 +27,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-013 | Implement data-access layer and request worker DB accounts | IN REVIEW | `feature/AI-013-data-access-layer` | [AI-013](status/AI-013.md) | 2026-11-04 |
 | AI-015 | Build test harness and synthetic reference-port scenario generator | IN REVIEW | `feature/AI-015-test-harness-scenario-generator` | [AI-015](status/AI-015.md) | 2026-11-05 |
 | DEC-21 | Phase 1 delay-risk rule | IN REVIEW (decision Closed 2026-11-05, interim rule; PortHub PR to follow) | `feature/DEC-21-delay-risk-rule` | [DEC-21](status/DEC-21.md) | 2026-11-05 |
+| AI-050 | Implement port-state loader for Part 2 | IN PROGRESS (plan drafted, awaiting approval) | `feature/AI-050-port-state-loader` | [AI-050](status/AI-050.md) | 2026-11-05 |
