@@ -6,10 +6,12 @@ import signal
 import sys
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
 from common.config import EnvSettings
+from common.runtime import worker as worker_module
 from common.runtime.envelope import JobType, Schemas, load_schemas
 from common.runtime.errors import ErrorCategory, JobError
 from common.runtime.logs import JsonFormatter, log_event
@@ -573,3 +575,17 @@ def test_the_queue_read_retry_waits(schemas: Schemas, monkeypatch: pytest.Monkey
     worker = Worker(definition, FakeConnection, Queue(), schemas)
     worker.run()
     assert waits
+
+
+def test_closing_a_lost_connection_is_ignored() -> None:
+    connection = MagicMock()
+    connection.close.side_effect = OSError("gone")
+    worker_module._close_quietly(connection)
+    connection.close.assert_called_once_with()
+
+
+def test_a_check_violation_wrapped_by_sqlalchemy_is_recognised() -> None:
+    wrapped = RuntimeError("wrapped")
+    wrapped.orig = RuntimeError(3819, "Check constraint")  # type: ignore[attr-defined]
+    assert worker_module._is_check_violation(wrapped)
+    assert not worker_module._is_check_violation(RuntimeError("other"))

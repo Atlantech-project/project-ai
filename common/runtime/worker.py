@@ -173,7 +173,9 @@ def part1_retries_allowed(settings: PortSettings) -> int:
 
 
 def _is_check_violation(error: BaseException) -> bool:
-    return bool(error.args) and error.args[0] == _MYSQL_CHECK_VIOLATED
+    # SQLAlchemy keeps the driver's error in `orig`.
+    driver_error = getattr(error, "orig", None) or error
+    return bool(driver_error.args) and driver_error.args[0] == _MYSQL_CHECK_VIOLATED
 
 
 def _classify(error: BaseException, job_type: JobType) -> tuple[ErrorCategory, str]:

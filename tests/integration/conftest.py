@@ -12,6 +12,7 @@ import pymysql
 import pytest
 import redis
 
+from tests.support.port_db import PortDatabase, create_port_database, drop_port_database
 from tests.support.services import ServiceSettings, load_service_settings, services_required
 
 _CONNECT_ATTEMPTS = 30
@@ -65,6 +66,16 @@ def mysql_conn(service_settings: ServiceSettings) -> Iterator[pymysql.connection
         yield conn
     finally:
         conn.close()
+
+
+@pytest.fixture(scope="session")
+def port_db(service_settings: ServiceSettings) -> Iterator[PortDatabase]:
+    """The full schema.sql with the six real worker accounts, in a database of its own."""
+    database = _retry(lambda: create_port_database(service_settings))
+    try:
+        yield database
+    finally:
+        drop_port_database(database)
 
 
 @pytest.fixture
