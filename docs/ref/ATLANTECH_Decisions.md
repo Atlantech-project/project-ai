@@ -1,6 +1,6 @@
 # ATLANTECH — Decisions, Conflicts and Open Points
 
-This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-57`.
+This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-59`.
 
 - **Closing task:** has the same ID as the item and belongs to the owner team. It sits in the sprint where the first task that needs the decision starts, and is closed at that sprint's FRR or earlier.
 - **Status:** `Open` needs a decision by its closing sprint. `Closed` is already settled and kept for reference.
@@ -26,9 +26,9 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-06 | Joint solve scope: which requests may change per trigger | AI Team | Closed | Sprint 1 |
 | DEC-07 | Storing a NO_FEASIBLE_WINDOW result | AI Team | Open | Sprint 5 |
 | DEC-08 | Database read source and worker privileges | Backend Team | Closed | Sprint 1 |
-| DEC-09 | Where deviation thresholds live | Backend Team | Open | Sprint 6 |
+| DEC-09 | Where deviation thresholds live | Backend Team | Closed | Sprint 6 |
 | DEC-10 | Scope of the AI FastAPI service | AI Team | Closed | Sprint 1 |
-| DEC-11 | Redis persistence | Backend Team | Open | Sprint 3 |
+| DEC-11 | Redis persistence | Backend Team | Closed | Sprint 3 |
 | DEC-12 | AI `port_settings` keys | AI Team | Closed | Sprint 1 |
 | DEC-13 | Who keeps the OpenAPI file current | Backend Team | Closed | Sprint 1 |
 | DEC-14 | C-01 · Part 1 run | AI Team | Closed | Sprint 1 |
@@ -56,16 +56,16 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-36 | One role per user vs role history | Backend Team | Closed | Sprint 2 |
 | DEC-37 | "Reject with reason" on P-44 and P-47 | Backend Team | Open | Sprint 6 |
 | DEC-38 | Where to activate the tide constituent set | UI/UX Team | Open | Sprint 3 |
-| DEC-39 | CT Supervisor status list | Backend Team | Open | Sprint 6 |
-| DEC-40 | Mobile Acknowledge event type and payload | Backend Team | Open | Sprint 6 |
+| DEC-39 | CT Supervisor status list | Backend Team | Closed | Sprint 6 |
+| DEC-40 | Mobile Acknowledge event type and payload | Backend Team | Closed | Sprint 6 |
 | DEC-41 | Automatic sync right after saving an event while online | Mobile Team | Open | Sprint 4 |
-| DEC-42 | Staff pages on the tablet and a provisioning screen | Leads Council | Open | Sprint 2 |
+| DEC-42 | Staff pages on the tablet and a provisioning screen | Leads Council | Closed | Sprint 2 |
 | DEC-43 | Recommendation confidence field on P-38 | AI Team | Open | Sprint 6 |
-| DEC-44 | Storing the clock-skew review note | Backend Team | Open | Sprint 6 |
+| DEC-44 | Storing the clock-skew review note | Backend Team | Closed | Sprint 6 |
 | DEC-45 | Display time zone | Frontend Team | Open | Sprint 1 |
 | DEC-46 | Supported browsers and viewports | Frontend Team | Open | Sprint 1 |
 | DEC-47 | Backend environment for development and testing | Backend Team | Closed | Sprint 2 |
-| DEC-48 | Field roles on the web | Leads Council | Open | Sprint 2 |
+| DEC-48 | Field roles on the web | Leads Council | Closed | Sprint 2 |
 | DEC-49 | Status and error colours and the icon set | UI/UX Team | Closed | — |
 | DEC-50 | BAPLIE correction and withdraw | Leads Council | Closed | — |
 | DEC-51 | Shared berths | Leads Council | Closed | — |
@@ -75,6 +75,8 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-55 | TIMING and NCT recommendation producers | Leads Council | Closed | — |
 | DEC-56 | SaaS API location and licence signing key | Leads Council | Closed | — |
 | DEC-57 | Port API status codes, error catalogue and version token | Backend Team | Closed | — |
+| DEC-58 | Field task details from the CT-07 Mobile review | Backend Team | Closed | — |
+| DEC-59 | `port_settings` min and max, and CHAMPION `deployed_at` | Backend Team | Closed | Sprint 2 |
 
 ## Backend–AI integration decisions
 
@@ -328,10 +330,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | D-10 · OD-16 (part) · AIBD-020 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-09 · Sprint 6 |
 | Affects | P5-O6 · P5-O7 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `port_settings` keys per component type. The numbers come from DEC-30, and the keys are added to `reference-seed.json` then. |
 
 <div dir="rtl">
 
@@ -380,10 +382,10 @@ This file lists every decision that must be closed before implementation, every 
 | --- | --- |
 | Source | AIBD-029 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-11 · Sprint 3 |
 | Affects | P3-I2 · P6-R6 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. AOF enabled with `appendfsync everysec`, and the P3-I2 sweeper as the safety net. The SSE catch-up store (CT-05) stays short-lived: a client whose events are lost gets `RESYNC`. |
 
 <div dir="rtl">
 
@@ -1286,10 +1288,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | Screens P-55 · Flutter tasks |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-39 · Sprint 6 |
 | Affects | P5-O8 · MB-P55 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `new_status` is `STARTED` or `DONE` for terminal components too; P-55 labels them In progress and Executed. Full text in CT-07 v1.0. |
 
 <div dir="rtl">
 
@@ -1312,10 +1314,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | Flutter R1 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-40 · Sprint 6 |
 | Affects | P5-O3 · MB-P55 · MB-P19 · CT-07 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `type = "ACKNOWLEDGE"` and `payload = { notification_id }`. A repeat is recognised from the notification state and returns `DUPLICATE`; no new column. Full text in CT-07 v1.0. |
 
 <div dir="rtl">
 
@@ -1363,10 +1365,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | Screens OQ-9 · A-2 |
 | Owner | Leads Council |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-42 · Sprint 2 |
 | Affects | — |
-| Decision | ______ |
+| Decision | Closed (2026-11-01): Option 1. Staff pages on the tablet and a provisioning screen are not in the MVP, and no task builds them. Brought by Marwan (Backend lead) for the Leads Council. |
 
 <div dir="rtl">
 
@@ -1415,10 +1417,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | FE-OQ-31 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-44 · Sprint 6 |
 | Affects | P5-O5 · FE-065 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. The flag is shown with no review note for the MVP. |
 
 <div dir="rtl">
 
@@ -1517,10 +1519,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | FE-OQ-12 |
 | Owner | Leads Council |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-48 · Sprint 2 |
 | Affects | FE-021 |
-| Decision | ______ |
+| Decision | Closed (2026-11-01): Option 1. A pilot, tug master or CT Supervisor who signs in on the web lands on P-20 with a "use the mobile app" message; there is no web version of My Tasks. Brought by Marwan (Backend lead) for the Leads Council. |
 
 <div dir="rtl">
 
@@ -1710,6 +1712,58 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 </div>
 
 **Topic.** The full API status set, one error catalogue file, and one version token.
+
+### DEC-58 · Field task details from the CT-07 Mobile review
+
+| | |
+| --- | --- |
+| Source | CT-07 review on PortHub PR #27 |
+| Owner | Backend Team |
+| Status | Closed |
+| Closing task | — |
+| Affects | P1-C5 · P5-N3 · P5-O1 · P5-O3 · MB-P19 · MB-P54 · MB-P55 · CT-04 · CT-07 |
+| Decision | Closed (2026-10-31): (1) Acknowledging any notification of a re-sent task marks all its `SENT` rows `ACKNOWLEDGED`. (2) `notification_logs.status` stays `SENT` · `FAILED` · `ACKNOWLEDGED`; the `ESCALATED` value in the CT-21 example is corrected there. (3) Tasks carry a server-set `system_label` for the P-55 labels (CT-07). (4) `GET /api/v1/system/info` is the connectivity check, with no `GET /system/ping` (CT-04 v1.1). |
+
+<div dir="rtl">
+
+**القصة.** الـ Mobile راجع CT-07 ولقى حاجات مش متحددة: الإشعار بيتبعت أكتر من مرة، فالتأكيد يسري على مين؟ والشاشة بتعرض labels ملهاش مصدر، والـ UML بيعتمد على ping مش موجود في أي عقد.
+
+</div>
+
+**Topic.** The review found gaps between CT-07, CT-21, the P-55 screen and the UML.
+
+**Options:**
+
+1. For the labels: the app works them out from its cache, with a `reason` on `removed`.
+2. For the labels: the server sends `system_label`.
+
+**Recommendation.** The Backend recommended Option 1 to save time. The lead chose Option 2, so every client gets the same answer.
+
+### DEC-59 · `port_settings` min and max, and CHAMPION `deployed_at`
+
+| | |
+| --- | --- |
+| Source | CT-18 · `reference-seed.json` |
+| Owner | Backend Team |
+| Status | Closed |
+| Closing task | DEC-59 · Sprint 2 |
+| Affects | P1-B6 · P2-F9 · P2 settings page (P-62) · AI-009 · CT-17 · CT-18 |
+| Decision | Closed (2026-11-04): Option 1. `port_settings` has `min_value` and `max_value` (added by P1-B6, backend PR #48), and a `CHAMPION` row in the seed carries `deployed_at`. The AI Team approved CT-18 v1.1 (reported by Marwan). |
+
+<div dir="rtl">
+
+**القصة.** CT-18 بيطلب إن الـ min والـ max يتطبقوا لما الـ setting يتحفظ، بس جدول `port_settings` مفيهوش أعمدة ليهم. وكمان مثال الـ CHAMPION كان ناقصه `deployed_at`، فالصف ماكانش هيدخل الجدول أصلًا.
+
+</div>
+
+**Topic.** CT-18 needs min and max stored and enforced, and the schema has no columns for them. The CT-18 example also breaks the `chk_mlv_champion_deployed` check.
+
+**Options:**
+
+1. Add two columns to `port_settings`.
+2. Read min and max from the seed files at runtime.
+
+**Recommendation.** Option 1, chosen by the Backend lead on 2026-10-31, so the app does not depend on contract files in production. It closes when the AI Team approves CT-18 v1.1. A `CHAMPION` row in `seed-spec.json` also carries `deployed_at`.
 
 ## AI task decisions
 
