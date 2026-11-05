@@ -1725,6 +1725,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-012 | Configuration management | AI Team | Proposed |
 | AI-011 | Shared worker runtime | AI Team | Proposed |
 | AI-013 | Data-access layer | AI Team | Proposed |
+| AI-015 | Test harness and scenario generator | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1852,3 +1853,20 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - CT-15 writes the worker's `lifecycle_status` value as `GENERATED`; the ENUM and CT-11 use `YARD_REC_GENERATED`. The code follows the ENUM. CT-15's wording should be corrected.
 - **Deployment risk for AI-090:** workers and MySQL share the port server, so TLS may be off there. PyMySQL 1.2.3 uses TLS by default, without checking the certificate. Without TLS, its first `caching_sha2_password` login crashes, even with `cryptography` installed. Backend question: does production/prototype MySQL offer TLS to the worker accounts? If not, it must be fixed before deployment.
 - `database/grants/workers.sql` on backend `develop` has a stray `-- DEMO (do not merge)` comment that isn't in `schema.sql`.
+
+### AI-015 · Test harness and synthetic scenario generator
+
+| | |
+| --- | --- |
+| Source | AI-015 (backlog: "Never present results on synthetic data as operational performance"; "Distribution choices are assumptions; document them") · `Master_Context.md` §4 · NFR-CAP-1 (`UML_Context.md`) · AI-010 follow-up OQ-7 (locations for tests and tools) · AI-013 follow-up (real seed data with parent rows) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-022 · AI-061 · AI-062 and every later test that needs master data |
+| Decision | ______ |
+| Proposed change | 2026-11-05 · AI-015 · (1) **Locations (OQ-7):** `tools/scenario_generator/` (generator, command line `python -m tools.scenario_generator`), `tests/fixtures/` (sample scenarios and the seed register `scenario_seeds.json`), `tests/support/scenarios.py` (fixture loader). (2) **Format:** one JSON file per scenario, `SYNTHETIC_<size>_seed<N>.json`, with a `metadata` block (`synthetic: true`, `label`, `size`, `seed`, `days`, `generator_version`, `start_date`, `counts`, `assumptions`) and rows per table in insert order. (3) **Label rule:** every file name starts with `SYNTHETIC_`, every name inside the data starts with "SYNTHETIC" (the generator does this and a test checks it), and the loader refuses a file or scenario whose file name or metadata isn't labelled. The port has no UN/LOCODE, sits at latitude 0, longitude 0, and IMO numbers carry a deliberately wrong check digit, so no real port or ship can be meant. (4) **Reproducibility:** one `random.Random(seed)`, a fixed start date (2026-01-05 UTC) and no wall clock; the samples are compared byte for byte with a fresh run. (5) **Loading:** with foreign key checks on, in one transaction, into the schema copy `docs/ref/db/schema.sql`. (6) **Assumptions:** the distribution choices are listed in `tools/scenario_generator/README.md` and in each file's metadata. They are assumptions, not Damietta data. (7) **Scope:** master data for the port, terminals, berths, channel, tugboats, vessels and berthing requests only; users, tides, weather, pilots, containers and BAPLIE data are not generated · Reason: the backlog asks for repeatable scenarios before real data exists, and no document fixes the file format or locations · Evidence: `tools/scenario_generator/`, `tests/unit/tools/`, `tests/integration/test_scenario_load.py`, `docs/tasks/status/AI-015.md` · Impact: AI-022, AI-061, AI-062 · Awaiting: AI Team owner |
+| Approval | None yet as the team decision. Mostafa Rashwan (Lead Council) approved the AI-015 task and its PROPOSED justification on 2026-11-05, and the implementation plan the same day. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- The schema copy is at PortHub `b4d2deb`. A Backend migration adds `port_settings.min_value` and `port_settings.max_value`; the generator writes no `port_settings` rows, so it is not affected, but the copy needs refreshing when PortHub regenerates `schema.sql`.
+- AI-022 supplies real reference-port master data; this generator doesn't replace it.

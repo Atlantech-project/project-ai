@@ -1,0 +1,4 @@
+{
+  "minimum_seed1": {"size": "minimum", "seed": 1, "days": 7},
+  "reference_seed1": {"size": "reference", "seed": 1, "days": 7}
+}

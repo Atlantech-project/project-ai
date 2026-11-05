@@ -1,2 +1,4 @@
 # Byte-exact PortHub mirror: never convert line endings, or its SHA-256 check fails (AI-013).
 docs/ref/db/schema.sql -text
+# Sample scenarios are compared byte for byte with a fresh run of the generator (AI-015).
+tests/fixtures/*.json -text
