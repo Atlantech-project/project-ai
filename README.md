@@ -112,7 +112,7 @@ part3/    AI Part 3 worker (C1-C4), periodic
 
 Each part is one deployable worker. See [common](common/README.md), [edi](edi/README.md), [part1](part1/README.md), [part2](part2/README.md) and [part3](part3/README.md).
 
-Tests live in `tests/unit/`, `tests/integration/` and `tests/support/` (AI-016). Schemas, an API service, tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is decided in the [AI-010 task decision](docs/ref/ATLANTECH_Decisions.md#ai-010--ai-code-repository-location-and-module-structure).
+Tests live in `tests/unit/`, `tests/integration/`, `tests/support/` (AI-016) and `tests/fixtures/` (AI-015, synthetic sample scenarios). The synthetic scenario generator is in [tools/scenario_generator](tools/scenario_generator/README.md) (AI-015). Schemas, an API service, other tools, model-artefact tooling, data and deployment files have no directory yet (open questions OQ-2, OQ-3 and OQ-7, and the `data/` and `deploy/` locations later tasks propose; see the [AI-010 status record](docs/tasks/status/AI-010.md)). This structure is decided in the [AI-010 task decision](docs/ref/ATLANTECH_Decisions.md#ai-010--ai-code-repository-location-and-module-structure).
 
 ## Getting started
 

@@ -1,0 +1,911 @@
+{
+  "metadata": {
+    "assumptions": [
+      "All figures are assumptions, not data from any real port.",
+      "Size: minimum is 1 terminal and 5 berths; reference is 8 terminals and 36 berths (Master_Context section 4). Berths are spread over terminals as evenly as possible.",
+      "Terminal types: reference has 5 CONTAINER and 3 NON_CONTAINER; minimum has 1 CONTAINER.",
+      "Berths: length uniform 180-400 m (container) or 150-300 m (non-container); max_vessel_loa is length minus 10 m; depth alongside uniform 11-16 m, datum LAT.",
+      "Arrivals: mean 26 requests a day at reference scale and 4 at minimum (26 x 5/36, rounded), plus integer noise in [-3, +3] with a floor of 1. ETAs are uniform within the day. The start date is fixed at 2026-01-05 00:00:00 UTC.",
+      "Vessels: one vessel per request. Types GENERAL_CARGO, CONTAINER, BULK_CARRIER and TANKER with weights 0.15, 0.55, 0.20 and 0.10 where a non-container terminal exists; minimum has container vessels only. LOA, beam ratio and max draft are drawn with triangular distributions inside per-type bounds. Arrival draft is 60-95% of max draft. Block coefficient is uniform 0.55-0.85. GT = 0.25 x LOA x beam x max draft; DWT = 1.4 x GT.",
+      "Per-type bounds (LOA in m as low-high with mode; beam as a share of LOA; max draft in m as low-high with mode): GENERAL_CARGO 90-200 mode 140, 0.15-0.18, 5-10 mode 7.5; CONTAINER 150-400 mode 300, 0.14-0.16, 8-16 mode 13; BULK_CARRIER 150-290 mode 220, 0.15-0.17, 9-17 mode 13; TANKER 120-250 mode 180, 0.15-0.17, 7-14 mode 10. Net tonnage = 0.6 x GT.",
+      "Vessel-to-berth fit is not guaranteed: a vessel's LOA or draft can exceed every berth or the channel depth. Feasibility tests must filter or expect that.",
+      "IMO numbers are random, unique seven-digit numbers whose check digit is deliberately wrong, so none can be a real ship.",
+      "Exact bytes depend on Python's random module (3.14 here); a Python upgrade can change them, and the samples are then regenerated from the register.",
+      "Requests: source EXTERNAL through one synthetic external system, status SUBMITTED. Container vessels request CONTAINER terminals; other vessels request NON_CONTAINER ones.",
+      "Tugboats: 12 at reference scale, 3 at minimum; 40-80 tonnes bollard pull, all AVAILABLE.",
+      "One navigation channel (depth 16 m, width 250 m, 10 knots, datum LAT) with 4 waypoints.",
+      "The port is at latitude 0, longitude 0 with no UN/LOCODE. Time zone is Africa/Cairo.",
+      "Not generated: users, tides, weather, pilots, tug masters, containers, BAPLIE data, recommendations. The schema copy is docs/ref/db/schema.sql (PortHub b4d2deb)."
+    ],
+    "counts": {
+      "berth_terminals": 5,
+      "berthing_requests": 28,
+      "berths": 5,
+      "channel_waypoints": 4,
+      "external_systems": 1,
+      "navigation_channels": 1,
+      "port_profiles": 1,
+      "terminals": 1,
+      "tugboats": 3,
+      "vessel_types": 4,
+      "vessels": 28
+    },
+    "days": 7,
+    "generator_version": "1",
+    "label": "SYNTHETIC - generated test data, not operational data",
+    "seed": 1,
+    "size": "minimum",
+    "start_date": "2026-01-05 00:00:00",
+    "synthetic": true
+  },
+  "tables": {
+    "berth_terminals": [
+      {
+        "berth_id": 1,
+        "terminal_id": 1
+      },
+      {
+        "berth_id": 2,
+        "terminal_id": 1
+      },
+      {
+        "berth_id": 3,
+        "terminal_id": 1
+      },
+      {
+        "berth_id": 4,
+        "terminal_id": 1
+      },
+      {
+        "berth_id": 5,
+        "terminal_id": 1
+      }
+    ],
+    "berthing_requests": [
+      {
+        "arrival_draft": "6.09",
+        "block_coefficient": "0.832",
+        "deadweight_tonnes": 57844,
+        "external_reference": "SYNTHETIC-000001",
+        "external_system_id": 1,
+        "gross_tonnage": 41317,
+        "id": 1,
+        "requested_eta": "2026-01-05 16:12:57",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 1
+      },
+      {
+        "arrival_draft": "9.57",
+        "block_coefficient": "0.828",
+        "deadweight_tonnes": 44857,
+        "external_reference": "SYNTHETIC-000002",
+        "external_system_id": 1,
+        "gross_tonnage": 32041,
+        "id": 2,
+        "requested_eta": "2026-01-06 01:03:26",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 2
+      },
+      {
+        "arrival_draft": "6.42",
+        "block_coefficient": "0.819",
+        "deadweight_tonnes": 69594,
+        "external_reference": "SYNTHETIC-000003",
+        "external_system_id": 1,
+        "gross_tonnage": 49710,
+        "id": 3,
+        "requested_eta": "2026-01-06 07:53:10",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 3
+      },
+      {
+        "arrival_draft": "8.83",
+        "block_coefficient": "0.804",
+        "deadweight_tonnes": 57487,
+        "external_reference": "SYNTHETIC-000004",
+        "external_system_id": 1,
+        "gross_tonnage": 41062,
+        "id": 4,
+        "requested_eta": "2026-01-06 15:22:07",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 4
+      },
+      {
+        "arrival_draft": "8.28",
+        "block_coefficient": "0.660",
+        "deadweight_tonnes": 48825,
+        "external_reference": "SYNTHETIC-000005",
+        "external_system_id": 1,
+        "gross_tonnage": 34875,
+        "id": 5,
+        "requested_eta": "2026-01-06 19:12:37",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 5
+      },
+      {
+        "arrival_draft": "7.69",
+        "block_coefficient": "0.744",
+        "deadweight_tonnes": 35113,
+        "external_reference": "SYNTHETIC-000006",
+        "external_system_id": 1,
+        "gross_tonnage": 25081,
+        "id": 6,
+        "requested_eta": "2026-01-07 03:08:53",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 6
+      },
+      {
+        "arrival_draft": "8.03",
+        "block_coefficient": "0.836",
+        "deadweight_tonnes": 31193,
+        "external_reference": "SYNTHETIC-000007",
+        "external_system_id": 1,
+        "gross_tonnage": 22281,
+        "id": 7,
+        "requested_eta": "2026-01-07 03:55:46",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 7
+      },
+      {
+        "arrival_draft": "9.31",
+        "block_coefficient": "0.706",
+        "deadweight_tonnes": 51033,
+        "external_reference": "SYNTHETIC-000008",
+        "external_system_id": 1,
+        "gross_tonnage": 36452,
+        "id": 8,
+        "requested_eta": "2026-01-07 05:57:36",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 8
+      },
+      {
+        "arrival_draft": "9.53",
+        "block_coefficient": "0.695",
+        "deadweight_tonnes": 53704,
+        "external_reference": "SYNTHETIC-000009",
+        "external_system_id": 1,
+        "gross_tonnage": 38360,
+        "id": 9,
+        "requested_eta": "2026-01-07 13:38:33",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 9
+      },
+      {
+        "arrival_draft": "9.88",
+        "block_coefficient": "0.791",
+        "deadweight_tonnes": 47744,
+        "external_reference": "SYNTHETIC-000010",
+        "external_system_id": 1,
+        "gross_tonnage": 34103,
+        "id": 10,
+        "requested_eta": "2026-01-07 15:58:55",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 10
+      },
+      {
+        "arrival_draft": "6.06",
+        "block_coefficient": "0.575",
+        "deadweight_tonnes": 42970,
+        "external_reference": "SYNTHETIC-000011",
+        "external_system_id": 1,
+        "gross_tonnage": 30693,
+        "id": 11,
+        "requested_eta": "2026-01-07 18:30:40",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 11
+      },
+      {
+        "arrival_draft": "7.27",
+        "block_coefficient": "0.600",
+        "deadweight_tonnes": 53031,
+        "external_reference": "SYNTHETIC-000012",
+        "external_system_id": 1,
+        "gross_tonnage": 37879,
+        "id": 12,
+        "requested_eta": "2026-01-08 16:29:35",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 12
+      },
+      {
+        "arrival_draft": "7.05",
+        "block_coefficient": "0.653",
+        "deadweight_tonnes": 60047,
+        "external_reference": "SYNTHETIC-000013",
+        "external_system_id": 1,
+        "gross_tonnage": 42891,
+        "id": 13,
+        "requested_eta": "2026-01-09 06:07:19",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 13
+      },
+      {
+        "arrival_draft": "11.93",
+        "block_coefficient": "0.618",
+        "deadweight_tonnes": 42181,
+        "external_reference": "SYNTHETIC-000014",
+        "external_system_id": 1,
+        "gross_tonnage": 30129,
+        "id": 14,
+        "requested_eta": "2026-01-09 19:12:04",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 14
+      },
+      {
+        "arrival_draft": "9.66",
+        "block_coefficient": "0.843",
+        "deadweight_tonnes": 23654,
+        "external_reference": "SYNTHETIC-000015",
+        "external_system_id": 1,
+        "gross_tonnage": 16896,
+        "id": 15,
+        "requested_eta": "2026-01-09 23:54:29",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 15
+      },
+      {
+        "arrival_draft": "8.38",
+        "block_coefficient": "0.813",
+        "deadweight_tonnes": 58838,
+        "external_reference": "SYNTHETIC-000016",
+        "external_system_id": 1,
+        "gross_tonnage": 42027,
+        "id": 16,
+        "requested_eta": "2026-01-10 01:07:03",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 16
+      },
+      {
+        "arrival_draft": "11.03",
+        "block_coefficient": "0.589",
+        "deadweight_tonnes": 87767,
+        "external_reference": "SYNTHETIC-000017",
+        "external_system_id": 1,
+        "gross_tonnage": 62691,
+        "id": 17,
+        "requested_eta": "2026-01-10 08:07:34",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 17
+      },
+      {
+        "arrival_draft": "7.23",
+        "block_coefficient": "0.663",
+        "deadweight_tonnes": 66807,
+        "external_reference": "SYNTHETIC-000018",
+        "external_system_id": 1,
+        "gross_tonnage": 47719,
+        "id": 18,
+        "requested_eta": "2026-01-10 16:24:53",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 18
+      },
+      {
+        "arrival_draft": "7.74",
+        "block_coefficient": "0.639",
+        "deadweight_tonnes": 36947,
+        "external_reference": "SYNTHETIC-000019",
+        "external_system_id": 1,
+        "gross_tonnage": 26391,
+        "id": 19,
+        "requested_eta": "2026-01-10 18:48:31",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 19
+      },
+      {
+        "arrival_draft": "9.69",
+        "block_coefficient": "0.793",
+        "deadweight_tonnes": 54008,
+        "external_reference": "SYNTHETIC-000020",
+        "external_system_id": 1,
+        "gross_tonnage": 38577,
+        "id": 20,
+        "requested_eta": "2026-01-10 19:04:28",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 20
+      },
+      {
+        "arrival_draft": "10.44",
+        "block_coefficient": "0.824",
+        "deadweight_tonnes": 28679,
+        "external_reference": "SYNTHETIC-000021",
+        "external_system_id": 1,
+        "gross_tonnage": 20485,
+        "id": 21,
+        "requested_eta": "2026-01-10 23:36:41",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 21
+      },
+      {
+        "arrival_draft": "10.08",
+        "block_coefficient": "0.652",
+        "deadweight_tonnes": 31195,
+        "external_reference": "SYNTHETIC-000022",
+        "external_system_id": 1,
+        "gross_tonnage": 22282,
+        "id": 22,
+        "requested_eta": "2026-01-11 01:28:15",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 22
+      },
+      {
+        "arrival_draft": "8.87",
+        "block_coefficient": "0.646",
+        "deadweight_tonnes": 45319,
+        "external_reference": "SYNTHETIC-000023",
+        "external_system_id": 1,
+        "gross_tonnage": 32371,
+        "id": 23,
+        "requested_eta": "2026-01-11 02:22:41",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 23
+      },
+      {
+        "arrival_draft": "6.68",
+        "block_coefficient": "0.573",
+        "deadweight_tonnes": 42349,
+        "external_reference": "SYNTHETIC-000024",
+        "external_system_id": 1,
+        "gross_tonnage": 30249,
+        "id": 24,
+        "requested_eta": "2026-01-11 03:04:59",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 24
+      },
+      {
+        "arrival_draft": "10.92",
+        "block_coefficient": "0.819",
+        "deadweight_tonnes": 57529,
+        "external_reference": "SYNTHETIC-000025",
+        "external_system_id": 1,
+        "gross_tonnage": 41092,
+        "id": 25,
+        "requested_eta": "2026-01-11 08:32:34",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 25
+      },
+      {
+        "arrival_draft": "9.64",
+        "block_coefficient": "0.606",
+        "deadweight_tonnes": 24233,
+        "external_reference": "SYNTHETIC-000026",
+        "external_system_id": 1,
+        "gross_tonnage": 17309,
+        "id": 26,
+        "requested_eta": "2026-01-11 17:38:24",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 26
+      },
+      {
+        "arrival_draft": "8.03",
+        "block_coefficient": "0.681",
+        "deadweight_tonnes": 54657,
+        "external_reference": "SYNTHETIC-000027",
+        "external_system_id": 1,
+        "gross_tonnage": 39041,
+        "id": 27,
+        "requested_eta": "2026-01-11 19:23:18",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 27
+      },
+      {
+        "arrival_draft": "11.81",
+        "block_coefficient": "0.580",
+        "deadweight_tonnes": 80199,
+        "external_reference": "SYNTHETIC-000028",
+        "external_system_id": 1,
+        "gross_tonnage": 57285,
+        "id": 28,
+        "requested_eta": "2026-01-11 19:27:15",
+        "requested_terminal_id": 1,
+        "source": "EXTERNAL",
+        "status": "SUBMITTED",
+        "vessel_id": 28
+      }
+    ],
+    "berths": [
+      {
+        "code": "SYN-B01",
+        "depth_datum": "LAT",
+        "id": 1,
+        "length": "209.56",
+        "max_vessel_loa": "199.56",
+        "name": "SYNTHETIC BERTH 01",
+        "status": "ACTIVE",
+        "water_depth": "15.24"
+      },
+      {
+        "code": "SYN-B02",
+        "depth_datum": "LAT",
+        "id": 2,
+        "length": "348.03",
+        "max_vessel_loa": "338.03",
+        "name": "SYNTHETIC BERTH 02",
+        "status": "ACTIVE",
+        "water_depth": "12.28"
+      },
+      {
+        "code": "SYN-B03",
+        "depth_datum": "LAT",
+        "id": 3,
+        "length": "289.00",
+        "max_vessel_loa": "279.00",
+        "name": "SYNTHETIC BERTH 03",
+        "status": "ACTIVE",
+        "water_depth": "13.25"
+      },
+      {
+        "code": "SYN-B04",
+        "depth_datum": "LAT",
+        "id": 4,
+        "length": "323.35",
+        "max_vessel_loa": "313.35",
+        "name": "SYNTHETIC BERTH 04",
+        "status": "ACTIVE",
+        "water_depth": "14.94"
+      },
+      {
+        "code": "SYN-B05",
+        "depth_datum": "LAT",
+        "id": 5,
+        "length": "200.65",
+        "max_vessel_loa": "190.65",
+        "name": "SYNTHETIC BERTH 05",
+        "status": "ACTIVE",
+        "water_depth": "11.14"
+      }
+    ],
+    "channel_waypoints": [
+      {
+        "channel_id": 1,
+        "id": 1,
+        "label": "SYN-WP1",
+        "latitude": "0.010000",
+        "longitude": "0.010000",
+        "sequence_order": 1
+      },
+      {
+        "channel_id": 1,
+        "id": 2,
+        "label": "SYN-WP2",
+        "latitude": "0.020000",
+        "longitude": "0.020000",
+        "sequence_order": 2
+      },
+      {
+        "channel_id": 1,
+        "id": 3,
+        "label": "SYN-WP3",
+        "latitude": "0.030000",
+        "longitude": "0.030000",
+        "sequence_order": 3
+      },
+      {
+        "channel_id": 1,
+        "id": 4,
+        "label": "SYN-WP4",
+        "latitude": "0.040000",
+        "longitude": "0.040000",
+        "sequence_order": 4
+      }
+    ],
+    "external_systems": [
+      {
+        "code": "SYN-EXT",
+        "id": 1,
+        "name": "SYNTHETIC external system"
+      }
+    ],
+    "navigation_channels": [
+      {
+        "depth": "16.00",
+        "depth_datum": "LAT",
+        "id": 1,
+        "is_active": 1,
+        "name": "SYNTHETIC CHANNEL",
+        "speed_limit_knots": "10.0",
+        "width": "250.00"
+      }
+    ],
+    "port_profiles": [
+      {
+        "governorate_code": "EG-SYN",
+        "id": 1,
+        "latitude": "0.000000",
+        "longitude": "0.000000",
+        "name": "SYNTHETIC MINIMUM PORT",
+        "port_code": null,
+        "public_id": "06faadb1-0a24-4cff-9142-3286a6ecc31f",
+        "timezone": "Africa/Cairo"
+      }
+    ],
+    "terminals": [
+      {
+        "code": "SYN-T01",
+        "id": 1,
+        "is_active": 1,
+        "name": "SYNTHETIC TERMINAL 01",
+        "terminal_type": "CONTAINER"
+      }
+    ],
+    "tugboats": [
+      {
+        "id": 1,
+        "name": "SYNTHETIC TUG 01",
+        "status": "AVAILABLE",
+        "tug_power": "73.43",
+        "tug_power_unit": "BOLLARD_PULL_TONNES"
+      },
+      {
+        "id": 2,
+        "name": "SYNTHETIC TUG 02",
+        "status": "AVAILABLE",
+        "tug_power": "57.31",
+        "tug_power_unit": "BOLLARD_PULL_TONNES"
+      },
+      {
+        "id": 3,
+        "name": "SYNTHETIC TUG 03",
+        "status": "AVAILABLE",
+        "tug_power": "70.49",
+        "tug_power_unit": "BOLLARD_PULL_TONNES"
+      }
+    ],
+    "vessel_types": [
+      {
+        "code": "GENERAL_CARGO",
+        "id": 1,
+        "name": "SYNTHETIC general cargo"
+      },
+      {
+        "code": "CONTAINER",
+        "id": 2,
+        "name": "SYNTHETIC container"
+      },
+      {
+        "code": "BULK_CARRIER",
+        "id": 3,
+        "name": "SYNTHETIC bulk carrier"
+      },
+      {
+        "code": "TANKER",
+        "id": 4,
+        "name": "SYNTHETIC tanker"
+      }
+    ],
+    "vessels": [
+      {
+        "beam": "50.04",
+        "id": 1,
+        "imo_number": "4328499",
+        "loa": "329.61",
+        "max_draft": "10.02",
+        "name": "SYNTHETIC VESSEL 00001",
+        "net_tonnage": 24790,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "41.70",
+        "id": 2,
+        "imo_number": "3420815",
+        "loa": "278.14",
+        "max_draft": "11.05",
+        "name": "SYNTHETIC VESSEL 00002",
+        "net_tonnage": 19225,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "56.13",
+        "id": 3,
+        "imo_number": "7599249",
+        "loa": "354.25",
+        "max_draft": "10.00",
+        "name": "SYNTHETIC VESSEL 00003",
+        "net_tonnage": 29826,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "45.74",
+        "id": 4,
+        "imo_number": "8028662",
+        "loa": "287.04",
+        "max_draft": "12.51",
+        "name": "SYNTHETIC VESSEL 00004",
+        "net_tonnage": 24637,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "42.01",
+        "id": 5,
+        "imo_number": "9361387",
+        "loa": "298.62",
+        "max_draft": "11.12",
+        "name": "SYNTHETIC VESSEL 00005",
+        "net_tonnage": 20925,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "40.66",
+        "id": 6,
+        "imo_number": "1455996",
+        "loa": "271.44",
+        "max_draft": "9.09",
+        "name": "SYNTHETIC VESSEL 00006",
+        "net_tonnage": 15049,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "33.97",
+        "id": 7,
+        "imo_number": "6749743",
+        "loa": "242.25",
+        "max_draft": "10.83",
+        "name": "SYNTHETIC VESSEL 00007",
+        "net_tonnage": 13369,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "40.89",
+        "id": 8,
+        "imo_number": "8648316",
+        "loa": "281.22",
+        "max_draft": "12.68",
+        "name": "SYNTHETIC VESSEL 00008",
+        "net_tonnage": 21871,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "39.01",
+        "id": 9,
+        "imo_number": "6976872",
+        "loa": "276.41",
+        "max_draft": "14.23",
+        "name": "SYNTHETIC VESSEL 00009",
+        "net_tonnage": 23016,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "39.79",
+        "id": 10,
+        "imo_number": "7422021",
+        "loa": "263.92",
+        "max_draft": "12.99",
+        "name": "SYNTHETIC VESSEL 00010",
+        "net_tonnage": 20462,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "42.18",
+        "id": 11,
+        "imo_number": "6777959",
+        "loa": "293.71",
+        "max_draft": "9.91",
+        "name": "SYNTHETIC VESSEL 00011",
+        "net_tonnage": 18416,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "46.66",
+        "id": 12,
+        "imo_number": "7551520",
+        "loa": "321.83",
+        "max_draft": "10.09",
+        "name": "SYNTHETIC VESSEL 00012",
+        "net_tonnage": 22727,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "46.98",
+        "id": 13,
+        "imo_number": "5967841",
+        "loa": "315.09",
+        "max_draft": "11.59",
+        "name": "SYNTHETIC VESSEL 00013",
+        "net_tonnage": 25735,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "36.04",
+        "id": 14,
+        "imo_number": "3192473",
+        "loa": "248.44",
+        "max_draft": "13.46",
+        "name": "SYNTHETIC VESSEL 00014",
+        "net_tonnage": 18077,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "29.67",
+        "id": 15,
+        "imo_number": "6309039",
+        "loa": "186.40",
+        "max_draft": "12.22",
+        "name": "SYNTHETIC VESSEL 00015",
+        "net_tonnage": 10138,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "43.48",
+        "id": 16,
+        "imo_number": "1616409",
+        "loa": "296.95",
+        "max_draft": "13.02",
+        "name": "SYNTHETIC VESSEL 00016",
+        "net_tonnage": 25216,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "49.79",
+        "id": 17,
+        "imo_number": "8799741",
+        "loa": "340.53",
+        "max_draft": "14.79",
+        "name": "SYNTHETIC VESSEL 00017",
+        "net_tonnage": 37615,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "51.44",
+        "id": 18,
+        "imo_number": "6979823",
+        "loa": "338.87",
+        "max_draft": "10.95",
+        "name": "SYNTHETIC VESSEL 00018",
+        "net_tonnage": 28631,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "36.50",
+        "id": 19,
+        "imo_number": "3035482",
+        "loa": "237.84",
+        "max_draft": "12.16",
+        "name": "SYNTHETIC VESSEL 00019",
+        "net_tonnage": 15835,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "41.00",
+        "id": 20,
+        "imo_number": "1189715",
+        "loa": "260.46",
+        "max_draft": "14.45",
+        "name": "SYNTHETIC VESSEL 00020",
+        "net_tonnage": 23146,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "32.87",
+        "id": 21,
+        "imo_number": "2010886",
+        "loa": "221.19",
+        "max_draft": "11.27",
+        "name": "SYNTHETIC VESSEL 00021",
+        "net_tonnage": 12291,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "34.53",
+        "id": 22,
+        "imo_number": "4483728",
+        "loa": "229.03",
+        "max_draft": "11.27",
+        "name": "SYNTHETIC VESSEL 00022",
+        "net_tonnage": 13369,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "38.75",
+        "id": 23,
+        "imo_number": "8498457",
+        "loa": "243.91",
+        "max_draft": "13.70",
+        "name": "SYNTHETIC VESSEL 00023",
+        "net_tonnage": 19423,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "43.06",
+        "id": 24,
+        "imo_number": "2310900",
+        "loa": "269.41",
+        "max_draft": "10.43",
+        "name": "SYNTHETIC VESSEL 00024",
+        "net_tonnage": 18149,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "47.03",
+        "id": 25,
+        "imo_number": "4099096",
+        "loa": "295.68",
+        "max_draft": "11.82",
+        "name": "SYNTHETIC VESSEL 00025",
+        "net_tonnage": 24655,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "27.93",
+        "id": 26,
+        "imo_number": "1152541",
+        "loa": "191.42",
+        "max_draft": "12.95",
+        "name": "SYNTHETIC VESSEL 00026",
+        "net_tonnage": 10385,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "42.73",
+        "id": 27,
+        "imo_number": "8139643",
+        "loa": "298.34",
+        "max_draft": "12.25",
+        "name": "SYNTHETIC VESSEL 00027",
+        "net_tonnage": 23425,
+        "vessel_type_id": 2
+      },
+      {
+        "beam": "49.85",
+        "id": 28,
+        "imo_number": "6769366",
+        "loa": "330.45",
+        "max_draft": "13.91",
+        "name": "SYNTHETIC VESSEL 00028",
+        "net_tonnage": 34371,
+        "vessel_type_id": 2
+      }
+    ]
+  }
+}
