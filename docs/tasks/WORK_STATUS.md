@@ -24,7 +24,8 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-054 | Implement tug-requirement computation | DONE (PR #17, merge `25405fc`, accepted as approval by the Leads Council, no separate review; scope exception on AI-005) | `feature/AI-054-tug-requirement-computation` | [AI-054](status/AI-054.md) | 2026-11-03 |
 | AI-011 | Implement shared worker runtime (queue consumer, idempotent claim, retries, logging) | IN REVIEW | `feature/AI-011-shared-worker-runtime` | [AI-011](status/AI-011.md) | 2026-11-03 |
 | DEC-20 | Tug requirement formula | IN REVIEW (decision Closed 2026-11-03, interim tables; PortHub PR to follow) | `feature/DEC-20-tug-requirement-formula` | [DEC-20](status/DEC-20.md) | 2026-11-03 |
-| AI-013 | Implement data-access layer and request worker DB accounts | IN REVIEW | `feature/AI-013-data-access-layer` | [AI-013](status/AI-013.md) | 2026-11-04 |
+| AI-013 | Implement data-access layer and request worker DB accounts | DONE (PR #19, merge `109fb54`) | `feature/AI-013-data-access-layer` | [AI-013](status/AI-013.md) | 2026-11-05 |
 | AI-015 | Build test harness and synthetic reference-port scenario generator | IN REVIEW | `feature/AI-015-test-harness-scenario-generator` | [AI-015](status/AI-015.md) | 2026-11-05 |
 | DEC-21 | Phase 1 delay-risk rule | IN REVIEW (decision Closed 2026-11-05, interim rule; PortHub PR to follow) | `feature/DEC-21-delay-risk-rule` | [DEC-21](status/DEC-21.md) | 2026-11-05 |
 | AI-050 | Implement port-state loader for Part 2 | IN PROGRESS (plan drafted, awaiting approval) | `feature/AI-050-port-state-loader` | [AI-050](status/AI-050.md) | 2026-11-05 |
+| AI-006 | Define joint-solve scope and resource-availability semantics | DONE (DEC-06 and DEC-32 Closed; confirmed by the Leads Council 2026-11-05) | — (decision task) | [AI-006](status/AI-006.md) | 2026-11-05 |
