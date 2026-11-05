@@ -1846,6 +1846,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-011 | Shared worker runtime | AI Team | Proposed |
 | AI-013 | Data-access layer | AI Team | Proposed |
 | AI-015 | Test harness and scenario generator | AI Team | Proposed |
+| AI-050 | Port-state loader: pilot identification, berth availability and holds | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -1990,3 +1991,20 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 - The schema copy is at PortHub `b4d2deb`. A Backend migration adds `port_settings.min_value` and `port_settings.max_value`; the generator writes no `port_settings` rows, so it is not affected, but the copy needs refreshing when PortHub regenerates `schema.sql`.
 - AI-022 supplies real reference-port master data; this generator doesn't replace it.
+
+### AI-050 · Port-state loader: pilot identification, berth availability and holds
+
+| | |
+| --- | --- |
+| Source | AI-050 (backlog: "Pilot occupancy rule F-21 implemented as decided") · AI-006 follow-up "Berth availability rule not written as a separate statement" · DEC-32 · DEC-06 · `schema.sql` `plan_components` (lines 1030–1061), `operational_plans` (918–936), `recommendation_options` (1149–1179), `berths` (240–259) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-051 · AI-055 · AI-060 · P5-M1 · DEC-32 (applies it; does not change it) |
+| Decision | ______ |
+| Proposed change | 2026-11-05 · AI-050 · (1) **Pilot of a confirmed plan.** The pilot of a `PILOT` row of `plan_components` is `assigned_user_id` when it is set; otherwise it is `recommendation_options.pilot_user_id` of the option the plan references (`operational_plans.recommendation_option_id`). `assigned_user_id` wins, because a replacement (P5-M1) may change it. The interval is the `PILOT` row's `planned_start` and `planned_end` (DEC-32 rule 4). A `PILOT` row can identify its pilot only this way, because `chk_pc_resource` leaves its `berth_id`, `tugboat_id` and `terminal_id` NULL. No other component needs the fallback: a `TUG` row is identified by `tugboat_id` (never NULL for a `TUG` row; its master comes from `tug_master_profiles.assigned_tugboat_id`, DEC-32 rule 2(b)), a `BERTH` row by `berth_id`, and a `TERMINAL_OPS` row by `terminal_id`. (2) **Berth available** for `[start, end)` when: (a) `berths.status` is `ACTIVE`, not `MAINTENANCE` or `INACTIVE`; (b) a `berth_terminals` row allows the berth for the request's terminal; (c) it is not busy, meaning it appears, over an overlapping interval, in a `BERTH` row of `plan_components` with `reservation_state = RESERVED` under an `operational_plans` row with `status = CONFIRMED`, or in option 1 of a recommendation whose status is `PENDING_REVIEW` or `MODIFIED_BY_STAFF` (`recommendation_options.berth_id`, `planned_start`, `planned_end`; for `MODIFIED_BY_STAFF` the assignment as modified). `INVALIDATED`, `REPLACED` and `REJECTED` recommendations and options 2 and 3 hold nothing. Intervals are half-open. The option window is the real berth stay, so a berth hold does not over-reserve. A delayed vessel still alongside after its `planned_end` is not detected by the loader; delays arrive as `REPLAN` triggers (CT-10). (3) **Holds carry their request.** Every hold the loader returns (confirmed `plan_components` rows and pending option-1 holds, for berths, pilots and tugs) carries its `berthing_request_id`, and a pending hold also its `recommendation_id` and option rank, so the solver can drop the holds of the requests in the current run and their previous `PENDING_REVIEW` recommendations (DEC-32 rule 5, DEC-06). The loader exposes them and does not drop them itself. Pending holds are not `RESERVED` rows and go beyond the backlog output list; DEC-32 rule 3(b) requires them. (4) **Overlap, not containment:** the loader returns every hold, shift and status row that overlaps `[horizon_start, horizon_end)`; both are required arguments. · Reason: DEC-32 names `assigned_user_id` for the pilot of a confirmed plan, but that column is filled at dispatch (`chk_pc_assigned` allows NULL), so a confirmed plan could show no pilot and the pilot would look free; AI-006 left the berth rule unwritten · Evidence: `schema.sql` lines 922, 1033–1041, 1058–1059, 1155–1157, 248; DEC-32 rules 3 to 5; `part2/state/` and its tests on branch `feature/AI-050-port-state-loader` · Impact: AI-051, AI-055 (the solver drops the holds of its own run), AI-060, P5-M1 (pilot replacement, same rule); Backend · Awaiting: AI Team (owner) |
+| Approval | None yet as the team decision. Mostafa Rashwan (Lead Council) approved the AI-050 plan with these rulings on 2026-11-05. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- Backend: confirm rule (1), or fill `plan_components.assigned_user_id` for the `PILOT` row at confirm time, which makes the fallback unnecessary.
+- If `MODIFIED_BY_STAFF` versions keep the staff-modified assignment somewhere other than option 1 of that recommendation, the loader must read it from there (Backend to confirm).
