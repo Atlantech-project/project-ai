@@ -1876,6 +1876,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-013 | Data-access layer | AI Team | Proposed |
 | AI-015 | Test harness and scenario generator | AI Team | Proposed |
 | AI-050 | Port-state loader: pilot identification, berth availability and holds | AI Team | Proposed |
+| AI-053 | Delay-risk Phase 1: missing inputs, boundaries and flags | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -2037,3 +2038,24 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 - Backend: confirm rule (1), or fill `plan_components.assigned_user_id` for the `PILOT` row at confirm time, which makes the fallback unnecessary.
 - If `MODIFIED_BY_STAFF` versions keep the staff-modified assignment somewhere other than option 1 of that recommendation, the loader must read it from there (Backend to confirm).
+
+### AI-053 · Delay-risk Phase 1: missing inputs, boundaries and flags
+
+| | |
+| --- | --- |
+| Source | AI-053 (backlog: "Write NULL until a rule is approved; never invent a score") · DEC-21 rules 1 to 5 · DEC-30 TR-10 and TR-12 · CT-18 `part1_stored_data_max_age_hours` |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-055 · AI-057 · P-38 (Frontend Team) · DEC-21 (applies it; does not change it) |
+| Decision | ______ |
+| Proposed change | 2026-11-05 · AI-053 · Result = max(W, C), so a missing input can only make the level too low: a HIGH is always reliable, and a LOW or MEDIUM computed with a gap is a lower bound. (1) **NULL stays limited** to DEC-21 rule 5 (forecast missing or older than `part1_stored_data_max_age_hours`, 48 h), plus the degenerate case of no forecast point in the option's window. In every other case the level is computed, and each gap is a flag next to `rules_unvalidated`; the rationale names what was not assessed. (2) **Congestion C unavailable** (median of daily arrivals 0, fewer than 28 days of history, or either input missing): W alone, flag `congestion_unavailable`; never a division by zero, never NULL. (3) **Boundaries:** gust 30 to 35 kn and wave 1.5 to 2.0 m are MEDIUM, both ends inclusive; HIGH is strictly above 35 kn (gust), 20 kn (wind) and 2.0 m (wave); wind has no MEDIUM band. (4) **Safety-limit headroom is not applied**; the result is unchanged even when `safety_constraints` rows exist, until the headroom cut-offs are agreed. (5) **Post-storm backlog:** "1 to 3 days after" is counted in port days (Africa/Cairo, `port_profiles.timezone`), not UTC days. History unknown is kept apart from no HIGH days: unknown gives flag `storm_history_unknown` and rule 3 is not applied. (6) **Partial forecast coverage:** compute, flag `forecast_partial`, and record the coverage (points used vs expected); NULL only when no point falls in the window. · Reason: DEC-21 names one NULL case and gives no behaviour for a missing arrivals source, missing history, partial coverage, the exact edges, or headroom before TR-10 exists · Evidence: DEC-21 "Decision detail" rules 1 to 5 and its evidence table (edges "gust ≤ 30 kn" vs "30–35"); DEC-30 TR-10 (DEFERRED) and TR-12 (proposed); `part2/delay_risk.py` and its tests on branch `feature/AI-053-delay-risk-phase-1` · Impact: AI-055 and AI-056 (the caller supplies the inputs and reads the flags), AI-057 (rationale names what was not assessed), P-38 (level only) · Awaiting: AI Team (owner) |
+| Approval | None yet as the team decision. Mostafa Rashwan (Leads Council) gave these rulings on 2026-11-05 as interpretations of DEC-21. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- AI Team (open question 1): say where "expected arrivals in the 24 h around the ETA" (berthing requests by ETA, and which statuses?) and the "daily arrivals" for the median come from. DEC-21 doesn't say.
+- AI Team (open question 2): the first 28 days after go-live. The system's own counts give no 28-day median until then, so C is unavailable for every recommendation in that period (flag `congestion_unavailable`, result from W alone, a lower bound). Say whether that is acceptable, or whether a backfilled history (for example the Damietta PortWatch series DEC-21 was calibrated on, scaled by the ratio the rule uses) may seed the median.
+- Raise a Proposed change on DEC-21 with the headroom cut-offs when DEC-30 TR-10 is filled.
+- Revisit rule (6) when DEC-30 closes: if TR-12 is approved as written and read as part of "stale", partial coverage becomes NULL.
+- DEC-21 condition (b) is not done by the pure function, which returns `rule_version`. Recording it in `solver_run_model_versions` belongs to AI-058 (recommendation persistence and version records), and needs a Backend-seeded `ml_model_versions` row for the Phase 1 rule.
+- DEC-21 open item 6: the function returns every input (W maxima, C ratio, post-storm flag, coverage). Storing them with each recommendation is AI-058's, and needs a place to store them (the schema has none beyond `rationale_params`); the Backend/AI Team decide where.

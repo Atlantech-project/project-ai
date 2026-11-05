@@ -30,6 +30,16 @@ AI Part 2, consuming `queue:part2`. Solve triggers (`solver_run.trigger_type`, A
 - **Vessels with power only:** the table is MPA's column for vessels with power. A dead ship needs more tugs, and no field says which applies.
 - **Infeasible:** AI-055 reports it. The requirement is never relaxed.
 
+## Delay risk, Phase 1 (AI-053, DEC-21)
+
+`part2/delay_risk.py` gives B4 a level for one option: `assess_delay_risk(...)` returns `code` (0.100 LOW, 0.500 MEDIUM, 0.900 HIGH, or `None` for NULL), `level`, `drivers`, `flags`, `not_assessed`, `coverage` `rule_version` and `inputs` (the W maxima, C ratio and post-storm flag it used, for DEC-21 open item 6). It is a pure function: the caller reads the database and passes plain values, and nothing here imports the solver.
+
+- **Numbers:** all in `part2/delay_risk_rules.json`, each section with its `source` and an `interim` note. The rules file is `PROPOSED` (DEC-21 open item 2): every result carries `rules_unvalidated` until its status is `APPROVED`, as in AI-054. The codes are level codes, not probabilities, and screens show the level only.
+- **Result:** the higher of weather W and congestion C. A missing input can only lower it, so a HIGH is reliable and a LOW or MEDIUM with a gap is a lower bound (`is_lower_bound`).
+- **NULL:** only for a forecast that is missing, older than `part1_stored_data_max_age_hours` (the caller passes it), or with no point in the option's window. Every other gap gives a flag (`congestion_unavailable`, `storm_history_unknown`, `forecast_partial`, `weather_incomplete`) and the result names what was not assessed.
+- **Not applied:** headroom to the safety limits (DEC-30 TR-10 is not filled). The function has no such input.
+- **Open:** where "arrivals" come from for C (the AI Team). The task's Proposed entry in `docs/ref/ATLANTECH_Decisions.md` holds the rulings.
+
 ## Writes
 
 - `solver_run`, `solver_run_model_version`

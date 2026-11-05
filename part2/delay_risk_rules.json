@@ -1,0 +1,36 @@
+{
+  "decision": "DEC-21",
+  "status": "PROPOSED",
+  "rule_version": "DEC-21-phase1",
+  "note": "Interim rule. DEC-21 was Closed by the Leads Council on 2026-11-05, and its open item 2 keeps this data file PROPOSED until the rule is validated; every result carries rules_unvalidated until the status is APPROVED (as in AI-054). A level, not a probability. Calibrated on IMF PortWatch and Open-Meteo history for Damietta (2019-01-01 to 2026-10-30) and applied to forecast values, so it stays unvalidated until our own data allows M4 (data-gated, AI-001). Changing a value here needs a deploy, not a code change. Decimal values are strings so no float rounds them.",
+  "weather": {
+    "gust_medium_min_kn": "30",
+    "gust_high_above_kn": "35",
+    "wind_high_above_kn": "20",
+    "wave_medium_min_m": "1.5",
+    "wave_high_above_m": "2.0",
+    "interim": true,
+    "source": "DEC-21 rule 1. HIGH: max gust > 35 kn, max wind > 20 kn or max wave > 2.0 m. MEDIUM: max gust 30 to 35 kn or max wave 1.5 to 2.0 m, both ends inclusive (Leads Council ruling, 2026-11-05, AI-053). Wind has no MEDIUM band. Forecast-model screening levels, NOT safety limits."
+  },
+  "congestion": {
+    "medium_min_ratio": "1.3",
+    "high_min_ratio": "1.6",
+    "history_days": 28,
+    "arrivals_window_hours": 24,
+    "interim": true,
+    "source": "DEC-21 rule 2: expected arrivals in the 24 h around the ETA divided by the median daily arrivals of the last 28 days. Cut-offs 9/7 and 11/7 from the PortWatch 2023+ percentiles. Fewer than 28 days of history, a median of 0, or a missing input means unavailable (Leads Council ruling, 2026-11-05, AI-053)."
+  },
+  "backlog": {
+    "min_days_after": 1,
+    "max_days_after": 3,
+    "interim": true,
+    "source": "DEC-21 rule 3: a window starting 1 to 3 port days (Africa/Cairo) after a day on which W was HIGH raises C by one level, capped at HIGH."
+  },
+  "level_codes": {
+    "LOW": "0.100",
+    "MEDIUM": "0.500",
+    "HIGH": "0.900",
+    "interim": true,
+    "source": "DEC-21 rule 7: fixed level codes written to recommendation_options.delay_risk. They are NOT probabilities and are never shown as numbers."
+  }
+}
