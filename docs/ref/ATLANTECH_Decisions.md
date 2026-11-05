@@ -49,7 +49,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-29 | Yard recommendation method, objective and confidence | AI Team | Open | Sprint 3 |
 | DEC-30 | Numeric thresholds register | AI Team | Open | Sprint 2 |
 | DEC-31 | Part 3 scheduling host | AI Team | Open | Sprint 6 |
-| DEC-32 | Availability semantics for pilots and tug masters | AI Team | Open | Sprint 3 |
+| DEC-32 | Availability semantics for pilots and tug masters | AI Team | Closed | Sprint 3 |
 | DEC-33 | Manual-planning baseline | AI Team | Open | Sprint 7 |
 | DEC-34 | Building A4 rules on synthetic data | AI Team | Open | Sprint 3 |
 | DEC-35 | Sign-in identifier | Backend Team | Closed | Sprint 1 |
@@ -1127,10 +1127,12 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | OD-19 |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-32 · Sprint 3 |
 | Affects | AI-050 · P5-M1 |
-| Decision | ______ |
+| Decision | Closed (2026-11-05): Option 1, made precise. One definition of "available" for pilots and tugs, applied by both the AI (AI-050) and the Backend (P5-M1). A pilot or tug is busy when it is assigned in a confirmed plan, or proposed in option 1 of a `PENDING_REVIEW` or `MODIFIED_BY_STAFF` recommendation, over an overlapping operation interval. Only option 1 holds resources; confirming option 2 or 3 triggers a Backend re-check that refuses the confirmation on a conflict. Until the schema stores an operation interval per pilot and tug assignment, the option or plan window is used (it over-reserves). Full rule in "Decision detail" below. |
+| Agreed with | Mostafa Mohamed Rashwan, Leads Council, 2026-11-05. Decided by the Leads Council; the AI Team (owner) is informed. |
+| Implementation | `project-ai` AI-050 (not yet implemented). Backend P5-M1 (the re-check and pilot or tug replacement). |
 
 <div dir="rtl">
 
@@ -1145,6 +1147,48 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 1. A pilot is on shift and not proposed or assigned in an overlapping window. A tug is available when its status is available and its master is on shift.
 
 **Recommendation.** This option.
+
+**Decision detail.** Option 1, made precise so the AI and the Backend apply the same test.
+
+**Rule (for an operation interval [start, end) of a pilotage or towage job):**
+
+1. **Pilot available** when all hold:
+   - (a) the user is active (`users.is_active`) and the active role is Pilot (`user_role_assignments.role` = `MARINE_PILOT`, `active_to` NULL; DEC-36);
+   - (b) a shift (`pilot_schedules`, with the times of its `port_shifts` row) covers the whole interval; a job that crosses a shift change is not available;
+   - (c) the pilot is not busy (rule 3).
+2. **Tug available** when all hold:
+   - (a) its status (`tugboats.status`) is not `MAINTENANCE` or `INACTIVE`;
+   - (b) its tug master (`tug_master_profiles.assigned_tugboat_id`) is available by rule 1 for the same interval, using `tug_master_schedules` for the shift and the active role `TUG_MASTER`;
+   - (c) the tug is not busy (rule 3).
+
+   `BUSY` is a current-state flag set by the Tug Master; it is not used here. Busyness comes only from overlap (rule 3).
+3. **Busy.** The pilot or tug appears, with an overlapping operation interval, in:
+   - (a) a confirmed operational plan (`operational_plans.status` = `CONFIRMED`); or
+   - (b) option 1 of a recommendation whose status is `PENDING_REVIEW` or `MODIFIED_BY_STAFF` (for `MODIFIED_BY_STAFF`, the assignment as modified).
+
+   `INVALIDATED`, `REPLACED` and `REJECTED` recommendations, and options 2 and 3, hold nothing.
+4. **Overlap** is measured on the operation interval of the assignment, not on the vessel's berth stay. Intervals are half-open, so back-to-back jobs do not overlap. **Interim source:** the schema does not yet store a separate operation interval per assignment, so the interval used is:
+   - for the pilot and tugs of an option, `recommendation_options.planned_start` and `planned_end`;
+   - for a confirmed plan, `plan_components.planned_start` and `planned_end` of its `PILOT` or `TUG` row (pilot: `assigned_user_id`; tug: `tugboat_id`).
+
+   This interim interval is longer than the real job, so it over-reserves: it never double-books, but fewer pilots and tugs look free.
+5. **Same run.** Requests solved in the same run do not hold resources against each other: they are variables of the same solve (DEC-06). The previous `PENDING_REVIEW` or `MODIFIED_BY_STAFF` recommendation of a request in the run holds nothing either, since it becomes `REPLACED`.
+6. **Confirming option 2 or 3.** The Backend re-checks the option's pilot and tugs with this rule, excluding the same recommendation's option 1, in the same step as the window re-check (DEC-03). On a conflict the confirmation is refused and names the busy resource; the user picks another option or requests regeneration (MANUAL). There is no override: a double-booked pilot or tug cannot be executed.
+7. **Replacing a pilot or tug** (P5-M1) uses the same rule.
+8. **One definition.** AI-050 and P5-M1 implement this text and run the same test vectors.
+
+**Open items (follow-ups; they don't reopen the decision):**
+
+1. Backend: the re-check on confirming option 2 or 3, and a stable error code for the refusal in `contracts/error-codes.md` (DEC-57).
+2. Backend (CT-17): store an operation interval per pilot and tug assignment, on recommendation options and on plans. Rule 4 then uses it, without reopening this decision.
+3. AI Team: until item 2 is done, watch for solves that fail on pilot or tug shortage caused by the over-reservation in rule 4.
+4. AI Team: write the shared test vectors (overlap edges, shift change, same-run requests, option 2/3 conflict); the Backend runs them in P5-M1.
+5. CT-10: add that a pending recommendation holds capacity through its option 1 only (rule 3). Today it says only that "every other pending recommendation is fixed and treated as occupied capacity".
+
+**References:**
+
+- DEC-06 (fixed and variable requests per solve) · DEC-03 (re-check in Laravel) · DEC-36 (one active role) · CT-10 (PortHub `contracts/ATLANTECH_Contracts.md`: line 481, tug master shift change sent as `TUG` (DEC-32); line 497, solve scope and REPLACED).
+- Schema: `contracts/db/schema.sql` in PortHub and `docs/ref/db/schema.sql` in project-ai (same lines). `users.is_active` 1816 · `user_role_assignments.role` 1791, `active_to` 1795 · `pilot_schedules` 1011–1025 · `tug_master_schedules` 1733–1747 · `port_shifts.start_time` and `end_time` 1109–1110 · `tug_master_profiles.assigned_tugboat_id` 1722 · `tugboats.status` 1758 · `recommendations.status` 1265 · `recommendation_options.pilot_user_id` 1157, `planned_start` and `planned_end` 1155–1156 · `recommendation_option_tugs` 1137–1144 (no interval) · `operational_plans.status` 923 · `plan_components.planned_start` and `planned_end` 1040–1041.
 
 ### DEC-33 · Manual-planning baseline
 
