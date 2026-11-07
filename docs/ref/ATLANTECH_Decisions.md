@@ -1,6 +1,6 @@
 # ATLANTECH — Decisions, Conflicts and Open Points
 
-This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-59`.
+This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-60`.
 
 - **Closing task:** has the same ID as the item and belongs to the owner team. It sits in the sprint where the first task that needs the decision starts, and is closed at that sprint's FRR or earlier.
 - **Status:** `Open` needs a decision by its closing sprint. `Closed` is already settled and kept for reference.
@@ -77,6 +77,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-57 | Port API status codes, error catalogue and version token | Backend Team | Closed | — |
 | DEC-58 | Field task details from the CT-07 Mobile review | Backend Team | Closed | — |
 | DEC-59 | `port_settings` min and max, and CHAMPION `deployed_at` | Backend Team | Closed | Sprint 2 |
+| DEC-60 | Mobile sign-in from a revoked device | Backend Team | Closed | P1-C3 |
 
 ## Backend–AI integration decisions
 
@@ -1859,6 +1860,32 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 2. Read min and max from the seed files at runtime.
 
 **Recommendation.** Option 1, chosen by the Backend lead on 2026-10-31, so the app does not depend on contract files in production. It closes when the AI Team approves CT-18 v1.1. A `CHAMPION` row in `seed-spec.json` also carries `deployed_at`.
+
+### DEC-60 · Mobile sign-in from a revoked device
+
+| | |
+| --- | --- |
+| Source | P1-C3 · lead's answer L2 (Marwan, 2026-11-01) |
+| Owner | Backend Team |
+| Status | Closed |
+| Closing task | P1-C3 |
+| Affects | P1-C3 · P2-E3 · MB-P52 · CT-01 (`error-codes.md`) · CT-04 |
+| Decision | Closed (2026-11-01): Option 1. A device the Port Admin revoked (`user_devices.revoked_at` set) is refused at mobile sign-in with 403 `DEVICE_REVOKED` (`errors.device_revoked`), audited, and no token is issued. A token of a revoked device is revoked on its next use and gets 401. CT-04 v1.2 carries the detail; it waits for Mobile Team approval, and P1-C3 does not merge before the contract change. |
+
+<div dir="rtl">
+
+**القصة.** الـ Port Admin بيلغي جهاز (tablet) اتسرق أو ضاع، وبعدين اليوزر يحاول يسجّل دخول من نفس الجهاز. العقد ماكانش بيقول إيه اللي يحصل، والـ error codes مفيهاش كود للحالة دي.
+
+</div>
+
+**Topic.** CT-04 lists no refusal for a sign-in from a revoked device, and `error-codes.md` has no code for it.
+
+**Options:**
+
+1. Refuse the sign-in with a new stable code, `DEVICE_REVOKED` 403.
+2. Let the user sign in again and clear `revoked_at`.
+
+**Recommendation.** Option 1, chosen by the Backend lead on 2026-11-01: revoking a lost or stolen tablet only works if the device cannot sign itself back in. The code name was proposed by the developer on 2026-11-05.
 
 ## AI task decisions
 
