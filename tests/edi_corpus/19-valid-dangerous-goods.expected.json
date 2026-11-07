@@ -1,0 +1,9 @@
+{
+  "file": "19-valid-dangerous-goods.edi",
+  "expected_outcome": "PARSED",
+  "expected_parse_status": "PARSED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [],
+  "is_synthetic": true
+}

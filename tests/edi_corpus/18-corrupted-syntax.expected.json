@@ -1,0 +1,15 @@
+{
+  "file": "18-corrupted-syntax.edi",
+  "expected_outcome": "REJECTED",
+  "expected_parse_status": "FAILED",
+  "vessel_imo": "9811000",
+  "containers": 0,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "CORRUPTED_SYNTAX",
+      "message": "File is truncated: last segment is unterminated and UNT/UNZ are missing"
+    }
+  ],
+  "is_synthetic": true
+}

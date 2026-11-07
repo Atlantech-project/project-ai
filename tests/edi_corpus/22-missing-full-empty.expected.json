@@ -1,0 +1,16 @@
+{
+  "file": "22-missing-full-empty.edi",
+  "expected_outcome": "PARSED",
+  "expected_parse_status": "PARSED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "WARNING",
+      "code": "MISSING_FULL_EMPTY",
+      "segment_ref": "EQD+CN+MSCU1234566",
+      "message": "Full/empty indicator missing for container MSCU1234566; written as NULL"
+    }
+  ],
+  "is_synthetic": true
+}

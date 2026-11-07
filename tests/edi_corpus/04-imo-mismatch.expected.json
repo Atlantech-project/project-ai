@@ -1,0 +1,16 @@
+{
+  "file": "04-imo-mismatch.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9123456",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "IMO_MISMATCH",
+      "segment_ref": "TDT+20+004A+1++MSC:172:20+++9123456::11:MSC ALEXANDRIA",
+      "message": "Vessel IMO in BAPLIE file (9123456) does not match berthing request vessel IMO (9811000)"
+    }
+  ],
+  "is_synthetic": true
+}

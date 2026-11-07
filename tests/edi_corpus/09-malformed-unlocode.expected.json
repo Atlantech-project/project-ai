@@ -1,0 +1,16 @@
+{
+  "file": "09-malformed-unlocode.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "MALFORMED_UNLOCODE",
+      "segment_ref": "LOC+12+E!DAM:139:6",
+      "message": "E!DAM is not a valid UN/LOCODE"
+    }
+  ],
+  "is_synthetic": true
+}

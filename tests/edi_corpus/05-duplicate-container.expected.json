@@ -1,0 +1,16 @@
+{
+  "file": "05-duplicate-container.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 2,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "DUPLICATE_CONTAINER_NUMBER",
+      "segment_ref": "EQD+CN+MSCU1234566",
+      "message": "Container MSCU1234566 appears more than once in the file"
+    }
+  ],
+  "is_synthetic": true
+}

@@ -1,0 +1,16 @@
+{
+  "file": "12-invalid-stowage-coordinate.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "INVALID_STOWAGE_COORDINATE",
+      "segment_ref": "LOC+147+9999999",
+      "message": "Stowage bay/row/tier 99/99/99 out of bounds"
+    }
+  ],
+  "is_synthetic": true
+}

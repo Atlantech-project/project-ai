@@ -1,0 +1,28 @@
+{
+  "file": "14-multiple-errors-composite.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9123456",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "IMO_MISMATCH",
+      "segment_ref": "TDT+20+014A+1++MSC:172:20+++9123456::11:MSC ALEXANDRIA",
+      "message": "Vessel IMO in BAPLIE file (9123456) does not match berthing request vessel IMO (9811000)"
+    },
+    {
+      "severity": "ERROR",
+      "code": "UNKNOWN_SIZE_TYPE",
+      "segment_ref": "EQD+CN+MSCU1234566",
+      "message": "Size type 45X9 not found"
+    },
+    {
+      "severity": "ERROR",
+      "code": "MALFORMED_WEIGHT",
+      "segment_ref": "MEA+WT++KGM:-5",
+      "message": "Weight -5 is not a positive number"
+    }
+  ],
+  "is_synthetic": true
+}

@@ -1,0 +1,16 @@
+{
+  "file": "11-reefer-missing-temp.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "REEFER_MISSING_TEMPERATURE",
+      "segment_ref": "EQD+CN+MAEU4567896",
+      "message": "Reefer container MAEU4567896 has no set temperature"
+    }
+  ],
+  "is_synthetic": true
+}

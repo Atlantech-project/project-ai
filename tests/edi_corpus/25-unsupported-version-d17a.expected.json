@@ -1,0 +1,16 @@
+{
+  "file": "25-unsupported-version-d17a.edi",
+  "expected_outcome": "REJECTED",
+  "expected_parse_status": "FAILED",
+  "vessel_imo": "9811000",
+  "containers": 0,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "UNSUPPORTED_BAPLIE_VERSION",
+      "segment_ref": "UNH",
+      "message": "Unsupported BAPLIE version: BAPLIE:D:17A:UN:SMDG20. Supported: SMDG 2.2.1 (D.95B), SMDG 3.1.1 (D.13B)"
+    }
+  ],
+  "is_synthetic": true
+}

@@ -1,0 +1,9 @@
+{
+  "file": "02-valid-311.edi",
+  "expected_outcome": "PARSED",
+  "expected_parse_status": "PARSED",
+  "vessel_imo": "9811000",
+  "containers": 2,
+  "issues": [],
+  "is_synthetic": true
+}

@@ -1,0 +1,16 @@
+{
+  "file": "13-missing-mandatory-segment.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "MISSING_MANDATORY_SEGMENT",
+      "segment_ref": "EQD+CN+MSCU1234566",
+      "message": "Mandatory segment MEA (weight) missing for container MSCU1234566"
+    }
+  ],
+  "is_synthetic": true
+}
