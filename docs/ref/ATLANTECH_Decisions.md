@@ -1,6 +1,6 @@
 # ATLANTECH — Decisions, Conflicts and Open Points
 
-This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-59`.
+This file lists every decision that must be closed before implementation, every conflict between the source documents, and every open point. Each item has a fixed ID from `DEC-01` to `DEC-60`.
 
 - **Closing task:** has the same ID as the item and belongs to the owner team. It sits in the sprint where the first task that needs the decision starts, and is closed at that sprint's FRR or earlier.
 - **Status:** `Open` needs a decision by its closing sprint. `Closed` is already settled and kept for reference.
@@ -46,7 +46,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-26 | Weather and marine providers | AI Team | Open | Sprint 4 |
 | DEC-27 | Tidal constants source, datum and reference | AI Team | Open | Sprint 4 |
 | DEC-28 | Definition of moves | AI Team | Closed | Sprint 3 |
-| DEC-29 | Yard recommendation method, objective and confidence | AI Team | Open | Sprint 3 |
+| DEC-29 | Yard recommendation method, objective and confidence | AI Team | Closed | Sprint 3 |
 | DEC-30 | Numeric thresholds register | AI Team | Open | Sprint 2 |
 | DEC-31 | Part 3 scheduling host | AI Team | Open | Sprint 6 |
 | DEC-32 | Availability semantics for pilots and tug masters | AI Team | Closed | Sprint 3 |
@@ -77,6 +77,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-57 | Port API status codes, error catalogue and version token | Backend Team | Closed | — |
 | DEC-58 | Field task details from the CT-07 Mobile review | Backend Team | Closed | — |
 | DEC-59 | `port_settings` min and max, and CHAMPION `deployed_at` | Backend Team | Closed | Sprint 2 |
+| DEC-60 | Mobile sign-in from a revoked device | Backend Team | Closed | P1-C3 |
 
 ## Backend–AI integration decisions
 
@@ -517,7 +518,7 @@ This file lists every decision that must be closed before implementation, every 
 | Status | Closed |
 | Closing task | DEC-16 · Sprint 1 |
 | Affects | P6-P1 · AI-066 · CT-11 |
-| Decision | Approved (2026-10-27), full text in CT-11 v1.0. Payload-only schema with `terminal_recommendation_id` and `operational_plan_id` (both required). Runs on a new `queue:yard` with its own worker. Run tracking in a new `yard_runs` table (Backend adds it through CT-17; `run_id = yard_runs.id`). Regeneration reuses the same `terminal_recommendations` row and marks older active runs REPLACED. Partial placement → `YARD_REC_GENERATED` with unplaced containers and reason codes in `yard_runs.result_detail`; none placed → `GENERATION_FAILED` / `INFEASIBLE`. `yard_slot_id` always NULL in v1; nothing is a reservation. `confidence` = preferred-zone share (DEC-29 Option A). |
+| Decision | Approved (2026-10-27), full text in CT-11 v1.0. Payload-only schema with `terminal_recommendation_id` and `operational_plan_id` (both required). Runs on a new `queue:yard` with its own worker. Run tracking in a new `yard_runs` table (Backend adds it through CT-17; `run_id = yard_runs.id`). Regeneration reuses the same `terminal_recommendations` row and marks older active runs REPLACED. Partial placement → `YARD_REC_GENERATED` with unplaced containers and reason codes in `yard_runs.result_detail`; none placed → `GENERATION_FAILED` / `INFEASIBLE`. `yard_slot_id` is filled for every placed container, as a recommendation, not a reservation: the Backend reserves nothing and only checks the slot at accept and at export; `confidence` per DEC-29 (edited 2026-11-07 by the Leads Council, DEC-29; previously "always NULL in v1" and "preferred-zone share (DEC-29 Option A)"). CT-11 v1.2 follows. |
 
 <div dir="rtl">
 
@@ -987,7 +988,7 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | Status | Closed |
 | Closing task | DEC-28 · Sprint 3 |
 | Affects | AI-052 |
-| Decision | Closed (2026-11-05): Option 1, made precise. Moves = discharge + loading, one move per container. Discharge = containers in the request's ACTIVE BAPLIE whose port of discharge is this port's UN/LOCODE. Loading = an optional request field; when empty it is set equal to discharge, with flag `loading_estimated`. A container vessel is solved only once its BAPLIE is ACTIVE; if a request still reaches the solver without one, it is left out with reason `MISSING_MOVES` as a safety net, and moves are never guessed. Full rule in "Decision detail" below. |
+| Decision | Closed (2026-11-05): Option 1, made precise. Moves = discharge + loading, one move per container. Discharge = containers in the request's ACTIVE BAPLIE whose port of discharge is this port's UN/LOCODE. Loading = `berthing_requests.loading_container_count` (G-09, planned) when set; when empty, the larger of discharge and the number of containers known to be loaded onto this vessel, with flag `loading_estimated` (until onward-vessel data exists that number is 0, so loading = discharge) (amended 2026-11-06). A container vessel is solved only once its BAPLIE is ACTIVE; if a request still reaches the solver without one, it is left out with reason `MISSING_MOVES` as a safety net, and moves are never guessed. Full rule in "Decision detail" below. |
 | Agreed with | Mostafa Mohamed Rashwan, Leads Council, 2026-11-05. Decided by the Leads Council; the AI Team (owner) is informed. |
 | Implementation | `project-ai` AI-052 (not yet implemented). |
 
@@ -1010,7 +1011,7 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 **Rule (per berthing request of a container vessel, `vessel_types.code` = `CONTAINER`):**
 
 1. **Discharge** = the number of `container_manifest_entries` rows of the request's ACTIVE BAPLIE (`baplie_files.status` = `ACTIVE`) whose `port_of_discharge` equals the port's UN/LOCODE (`port_profiles.port_code`). The code is read from the port's data, never hard-coded. Transshipment containers discharged here count; containers staying on board do not. If the port's UN/LOCODE (`port_profiles.port_code`) is not set, the job fails with `CONFIGURATION_ERROR` (CT-08 §7); discharge is never counted as zero.
-2. **Loading** = the request's optional loading count when set. When empty, loading = discharge, with flag `loading_estimated`.
+2. **Loading** = `berthing_requests.loading_container_count` (G-09, planned) when set. When empty, loading = the larger of discharge and the number of containers known to be loaded onto this vessel (containers in the yard or on other vessels' ACTIVE BAPLIEs whose onward vessel is this vessel, DEC-29 open item 1), with flag `loading_estimated`. Until onward-vessel data exists that number is 0, so loading = discharge (amended 2026-11-06).
 3. **Moves** = discharge + loading. One container is one move. Twin and tandem lifts are not credited, so service time errs long (conservative, as in DEC-20).
 4. **Out of the MVP:** restows, hatch-cover moves, and twin or tandem lift credit.
 5. **Precondition and safety net.** A container vessel's request is solved only once its BAPLIE is ACTIVE; the Backend does not enqueue the solve before that (planning flow agreed by the Leads Council; CT-10 does not yet state it, see open item 2). If a request still reaches the solver without an ACTIVE BAPLIE (for example, the BAPLIE was withdrawn or quarantined after the solve was enqueued), moves are NULL and the request is left out with reason `MISSING_MOVES`. Moves are never guessed.
@@ -1019,18 +1020,18 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 
 **Open items (follow-ups; they don't reopen the decision):**
 
-1. Backend (CT-17): add the optional loading-count field to the berthing request (`berthing_requests` has none today).
-2. Backend (CT-10): today `NEW_REQUEST` is enqueued when Part 1 finishes with `WINDOWS_FOUND`, without checking the BAPLIE. For a container vessel it must wait for the later of `WINDOWS_FOUND` and the BAPLIE becoming ACTIVE. Until this is done, such requests reach the solver early, are left out with `MISSING_MOVES`, and nothing re-triggers them.
-3. CT-10: add `MISSING_MOVES` as a new value. CT-10 has no per-request reason list for a request that is left out (per-request `outcome` is `SOLVED`, `FIFO_FALLBACK` or `NO_FEASIBLE_PLAN`), so Backend and AI Team choose where it goes.
+1. Backend (G-09): `loading_container_count int NULL`, CHECK ≥ 0, container vessels only, on the request form (P3-G1, Sprint 3); agreed 2026-11-06 (amended 2026-11-06).
+2. Backend (G-11, CT-10 v1.2, P4-J3, Sprint 5): for a container vessel the solve is enqueued when the request is `ENTRY_WINDOW_CONFIRMED` and has an ACTIVE BAPLIE, whichever comes last; it starts by itself when the BAPLIE becomes ACTIVE. Agreed 2026-11-06. Until then such requests can reach the solver early, are left out with `MISSING_MOVES`, and nothing re-triggers them (amended 2026-11-06).
+3. Backend (G-12, CT-10 v1.2, P4-K1, Sprint 5): a new per-request outcome (name to agree, e.g. `NOT_SOLVED`) with `reason_code` `MISSING_MOVES`; no schema change. Agreed 2026-11-06 (amended 2026-11-06).
 4. AI Team: the B3 basis for vessels other than container vessels.
 5. Terminal operations: confirm that loading ≈ discharge is a fair default for Damietta.
-6. Backend / seed (CT-18): set `port_profiles.port_code` for Damietta (`EGDAM`); it is nullable and empty in the reference seed.
-7. AI-030: confirm the port-of-discharge qualifier against the SMDG BAPLIE message implementation guides (2.2.1 and 3.1.1), not the samples. The corpus file `01-valid-221.edi` and the CT-12 example put the discharge port on `LOC+12` and `CNSHA` on `LOC+11`, which may not match the guide; if they are wrong, correct them (CT-12).
+6. Backend (G-10): the dev seed sets `EGDAM`; a UN/LOCODE CHECK is added to `port_profiles.port_code`; production provisioning must set it. Agreed 2026-11-06 (amended 2026-11-06).
+7. AI-030: confirm the port-of-discharge qualifier against the SMDG BAPLIE message implementation guides (2.2.1 and 3.1.1), not the samples. The `LOC+11` / `LOC+12` sample is the corpus file `01-valid-221.edi` (CT-24, synthetic); the CT-12 example has no `LOC+11` / `LOC+12`. It puts the discharge port on `LOC+12` and the load port on `LOC+11`, which may not match the guide. If AI-030 finds the corpus file wrong, the AI Team corrects it (AI-023) (amended 2026-11-06).
 
 **References:**
 
 - DEC-17 and CT-12 (BAPLIE parse, ACTIVE / QUARANTINED / REJECTED) · DEC-50 (correction and withdraw) · CT-10 (PortHub `contracts/ATLANTECH_Contracts.md` lines 489–497 solve rules, 499–537 `result_detail` and per-request `outcome`) · DEC-20 (conservative rounding).
-- Schema (PortHub `contracts/db/schema.sql`): `baplie_files` (lines 65–96: `berthing_request_id` line 68, `status` line 74); `container_manifest_entries` (lines 367–398: `port_of_discharge` line 384); `port_profiles` (lines 1066–1083: `port_code` line 1069, nullable, filled from SaaS); `berthing_requests` (lines 195–235, no loading-count field); `vessel_types` (lines 1828–1834; seed `contracts/db/reference-seed.json` line 180, code `CONTAINER`). Parser: no BAPLIE parser code exists yet (`edi/` holds only a README; AI-030 is not implemented); the CT-12 example (`contracts/ATLANTECH_Contracts.md` lines 807–808) and the corpus file `contracts/ai/baplie-corpus/01-valid-221.edi` (lines 10–11) show the load port as `LOC+11` and the discharge port as `LOC+12`, to be confirmed in AI-030. Planning gate: not documented; CT-10 sends `NEW_REQUEST` when Part 1 finishes with `WINDOWS_FOUND` and does not mention the BAPLIE, while the BAPLIE gate in CT-11 (lines 572 and 630) applies to the yard job only.
+- Schema (PortHub `contracts/db/schema.sql`): `baplie_files` (lines 65–96: `berthing_request_id` line 68, `status` line 74); `container_manifest_entries` (lines 367–398: `port_of_discharge` line 384); `port_profiles` (lines 1066–1083: `port_code` line 1069, nullable, filled from SaaS); `berthing_requests` (lines 195–235, no loading-count field); `vessel_types` (lines 1828–1834; seed `contracts/db/reference-seed.json` line 180, code `CONTAINER`). Parser: no BAPLIE parser code exists yet (`edi/` holds only a README; AI-030 is not implemented); the corpus file `contracts/ai/baplie-corpus/01-valid-221.edi` (lines 10–11, CT-24, synthetic) shows the load port as `LOC+11` and the discharge port as `LOC+12`, to be confirmed in AI-030; the CT-12 example has no `LOC+11` / `LOC+12` (amended 2026-11-06). Planning gate: not documented; CT-10 sends `NEW_REQUEST` when Part 1 finishes with `WINDOWS_FOUND` and does not mention the BAPLIE, while the BAPLIE gate in CT-11 (lines 572 and 630) applies to the yard job only.
 
 ### DEC-29 · Yard recommendation method, objective and confidence
 
@@ -1038,10 +1039,12 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | OD-15 · RSK-09 |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-29 · Sprint 3 |
 | Affects | AI-065 · AI-066 |
-| Decision | ______ |
+| Decision | Closed (2026-11-07): Option B, CP-SAT, at slot level. Every container in scope gets a yard slot (block, bay, row, tier) as a recommendation, not a reservation: the Backend reserves nothing and only checks the slot at accept and at export. The objective is the fewest expected re-handles: a container is not placed above one that leaves earlier. The solve reads other vessels of the same terminal only. The Leads Council also approved recording container placement and removal from the tablet as an MVP feature (Backend data gap G-02), because the solver needs the yard's current state. DEC-16 is edited to match. Full rule in "Decision detail" below. |
+| Agreed with | Mostafa Mohamed Rashwan, Leads Council, 2026-11-07. Decided by the Leads Council; the AI Team (owner) is informed. Backend positions on the data gaps: Marwan (Backend lead), proposal of 2026-11-06; the Leads Council's amendments accepted by the Backend on 2026-11-07. |
+| Implementation | `project-ai` AI-065 and AI-066 (not yet implemented). |
 
 <div dir="rtl">
 
@@ -1057,6 +1060,56 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 2. Option B: CP-SAT assignment (needs an objective that is not documented).
 
 **Recommendation.** Option A; confidence = share of containers placed in a zone of their preferred type.
+
+**Decision detail.** Option B. Option B lacked an objective; the Leads Council set it: place each container where it will not have to be moved to reach another one. Travel distance and fuel are not terms of the objective.
+
+**Rule (per yard recommendation, for the containers in scope per CT-11):**
+
+1. **Output.** Every placed container gets `yard_block_id` and `yard_slot_id` in `yard_placement_items`, as a recommendation, not a reservation (DEC-16 as edited). The Backend reserves nothing: it only checks the slot at accept and at export (open item 6). A 40 ft or 45 ft container takes two adjacent slots: bays b and b+1, same block, row and tier (representation: open item 4).
+2. **Departure time per container**, first that applies:
+   - (a) onward vessel known (open item 1): that vessel's confirmed plan start, else its berthing request's `requested_eta`, else the onward ETA from the BAPLIE. ETA changes therefore flow through;
+   - (b) import with no onward vessel: the discharging vessel's planned berth start + the default import dwell time (`port_settings`, open item 5);
+   - (c) otherwise unknown. Containers with an unknown departure go in stacks of their own per arrival vessel and are never mixed with dated containers.
+
+   Containers already in the yard and slots held by other recommendations get departure times the same way.
+3. **Objective.** Minimise expected re-handles: each container placed above one that leaves earlier counts as one.
+4. **Hard constraints:**
+   - one container per slot; only `ACTIVE` slots;
+   - no tier above the highest tier row of that stack, and no floating container: tier t > 1 needs tier t − 1 filled (in the yard, held, or placed in this run);
+   - one length per stack (20 ft, or 40 / 45 ft);
+   - a reefer only in a REEFER zone, with reefers in the zone ≤ `reefer_zone_details.total_power_plugs`;
+   - a DG container only in a DG zone that allows its IMDG class;
+   - an OOG container only in an OOG zone within its limits.
+5. **Look-ahead (the solve reads other vessels of the same terminal only):**
+   - (a) a slot held by another yard recommendation in `YARD_REC_GENERATED`, `YARD_REC_ACCEPTED` or `EXPORTED_TO_TOS` counts as taken until its container is recorded in the yard (open item 2), or its plan is `CANCELLED` or `COMPLETED` (`operational_plans.status`). Holding a slot is a solver-side rule, not a Backend reservation;
+   - (b) berthing requests with an ACTIVE BAPLIE and an ETA but no confirmed plan get no slots; their expected discharge TEU is kept free in compatible zones, in ETA order;
+   - (c) a slot occupied now counts as taken, even if its container is expected to leave before this vessel discharges (conservative).
+6. **Parallel runs.** Two yard runs can read the same free slots. The Backend checks each slot at accept and at export and refuses a clash with `YARD_SLOT_CONFLICT` (open item 6).
+7. **Time limit and fallback.** The solve has its own time limit (`port_settings`, open item 8) and returns the best solution found. With none, a greedy fallback applies the same hard rules. No container is ever placed against a hard rule; an unplaced container gets a reason code (CT-11).
+8. **Confidence** = containers placed with zero expected re-handles ÷ all containers in scope. NULL when there are no containers in scope; 0 when there are containers but none is placed (the run is then `GENERATION_FAILED`, CT-11).
+9. **Re-generation.** When a vessel's ETA or plan changes the departure order, the affected yard recommendations are regenerated (open item 9).
+10. Each placement records its departure time, the source of that time ((a), (b) or (c)) and its expected re-handles, for evaluation.
+11. **Yard baseline.** Existing stock is not imported. The terminal officer sets every slot of a stack (all tiers of a bay and row) that holds existing stock to `BLOCKED`, and unblocks it once that stock has left. The solver treats every unrecorded `ACTIVE` slot as free. If it proposes a slot that is physically taken, the CT Supervisor records the actual slot.
+
+**Open items (follow-ups; they don't reopen the decision):**
+
+1. **G-01, Backend:** onward vessel and its ETA per container (nullable columns on `container_manifest_entries`, CT-12 optional fields), after a real BAPLIE confirms the data; AI-030 parses them. Until then rule 2(a) has no data. The Leads Council provides a real BAPLIE.
+2. **G-02, Backend + Mobile:** the CT Supervisor records container placement and removal (slot and time) from the tablet; FR-YD-04 and FR-YD-05 are updated. Approved as an MVP feature by the Leads Council, 2026-11-06. Backend plan (2026-11-07): Sprint 6, in order: CT-07 event type, `yard_slot_events` migration and tablet page design; Backend handler (new CT Supervisor ability, idempotent apply, audit, refusal reasons), slot check at accept and export, occupancy read in AI-066; Mobile tablet screen; QA. The tablet identifies the container by its number (ISO 6346) and the slot by block, bay, row and tier. The placement screen is a field-role page and is not covered by DEC-42 (Leads Council, 2026-11-07). Until Sprint 6 the solver is tested on the G-03 demo yard only, and its results are not fit for production.
+3. **G-03, Backend:** creating all slots of a block, and a Damietta demo yard (P2-F4, Sprint 3).
+4. **G-04, Backend:** two-slot representation for 40 / 45 ft containers (tentative: `yard_slots.container_part` 1 or 2, UNIQUE (`container_id`, `container_part`), second slot = bay + 1). Terminal operations: Damietta's yard bay numbering.
+5. **G-05, AI Team:** a default import dwell time key in `seed-spec.json`; the value comes from Terminal operations.
+6. **G-06, Backend:** slot check at accept and export in one locking transaction, `YARD_SLOT_CONFLICT` (409), without naming the other vessel.
+7. **G-07, AI Team + Backend:** CT-11 v1.2 (slot output, look-ahead within the terminal, this confidence, when a hold ends, slot-level reason codes) and CT-13 `YARD_ADJUSTMENT` slot validation, through contract-change.
+8. **AI Team:** the yard solver time-limit key (DEC-30, CT-18).
+9. **Backend + AI Team:** the trigger that regenerates yard recommendations on an ETA or plan change (CT-11 v1.2).
+10. **G-08:** reefer plugs stay per zone; a per-slot flag is added only if a terminal provides plug positions.
+11. **Risk:** this is larger than the original AI-065 / AI-066 plan and may not fit Sprint 3. Large vessels may need the solve split: blocks first, then stacks.
+
+**References:**
+
+- DEC-16 · DEC-42 · DEC-48 · CT-11 · CT-13 · DEC-08 (`w_yard` INSERT on `yard_placement_items`).
+- Backend proposal on the 16 data gaps, Marwan (Backend lead), 2026-11-06, and his reply of 2026-11-07 (not in this repository).
+- Schema (PortHub `contracts/db/schema.sql`, main 3f21022): `yard_slots` (lines 1970–1987: `bay` 1973, `row_no` 1974, `tier` 1975, `status` 1976, `container_id` 1977, `uq_ys_position` 1981, `chk_ys_blocked_empty` 1985) · `yard_placement_items` (1918–1936: `yard_block_id` 1923, `yard_slot_id` 1924) · `container_manifest_entries` (367–398: `full_empty` 371, `imdg_class` 373, `reefer_set_temperature` 379, `port_of_discharge` 384) · `container_size_types` (403–: `length_ft` 406) · `reefer_zone_details` (1312–1322: `total_power_plugs` 1315) · `dg_zone_allowed_classes` (474–484: `imdg_class` 477) · `oog_zone_details` (901–913: `max_length` 904 to `max_weight` 907) · `terminal_recommendations.lifecycle_status` (line 1638, in 1626–1665) · `operational_plans.status` (line 923).
 
 ### DEC-30 · Numeric thresholds register
 
@@ -1161,7 +1214,7 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | Affects | AI-050 · P5-M1 |
 | Decision | Closed (2026-11-05): Option 1, made precise. One definition of "available" for pilots and tugs, applied by both the AI (AI-050) and the Backend (P5-M1). A pilot or tug is busy when it is assigned in a confirmed plan, or proposed in option 1 of a `PENDING_REVIEW` or `MODIFIED_BY_STAFF` recommendation, over an overlapping operation interval. Only option 1 holds resources; confirming option 2 or 3 triggers a Backend re-check that refuses the confirmation on a conflict. Until the schema stores an operation interval per pilot and tug assignment, the option or plan window is used (it over-reserves). Full rule in "Decision detail" below. |
 | Agreed with | Mostafa Mohamed Rashwan, Leads Council, 2026-11-05. Decided by the Leads Council; the AI Team (owner) is informed. |
-| Implementation | `project-ai` AI-050 (not yet implemented). Backend P5-M1 (the re-check and pilot or tug replacement). |
+| Implementation | `project-ai` AI-050 (port-state loader, done). Backend P4-L1 builds the re-check (Sprint 5) and P5-M1 uses it for the pilot or tug replacement (amended 2026-11-06). |
 
 <div dir="rtl">
 
@@ -1201,6 +1254,8 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
    - for a confirmed plan, `plan_components.planned_start` and `planned_end` of its `PILOT` or `TUG` row (pilot: `assigned_user_id`; tug: `tugboat_id`).
 
    This interim interval is longer than the real job, so it over-reserves: it never double-books, but fewer pilots and tugs look free.
+
+   For a confirmed plan's PILOT row, the pilot is `assigned_user_id` when set; before dispatch it is the selected option's pilot (`operational_plans.recommendation_option_id` -> `recommendation_options.pilot_user_id`). Confirmed by the Backend, 2026-11-06 (G-16; amended 2026-11-06).
 5. **Same run.** Requests solved in the same run do not hold resources against each other: they are variables of the same solve (DEC-06). The previous `PENDING_REVIEW` or `MODIFIED_BY_STAFF` recommendation of a request in the run holds nothing either, since it becomes `REPLACED`.
 6. **Confirming option 2 or 3.** The Backend re-checks the option's pilot and tugs with this rule, excluding the same recommendation's option 1, in the same step as the window re-check (DEC-03). On a conflict the confirmation is refused and names the busy resource; the user picks another option or requests regeneration (MANUAL). There is no override: a double-booked pilot or tug cannot be executed.
 7. **Replacing a pilot or tug** (P5-M1) uses the same rule.
@@ -1208,8 +1263,8 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 
 **Open items (follow-ups; they don't reopen the decision):**
 
-1. Backend: the re-check on confirming option 2 or 3, and a stable error code for the refusal in `contracts/error-codes.md` (DEC-57).
-2. Backend (CT-17): store an operation interval per pilot and tug assignment, on recommendation options and on plans. Rule 4 then uses it, without reopening this decision.
+1. Backend (G-15): one availability service implementing rules 1 to 4, built in P4-L1 (Sprint 5) and reused by P5-M1 and P5-M2; refusal code `RESOURCE_UNAVAILABLE`, HTTP 409, naming the resource type and id, not the other vessel (`error-codes.md` v1.4). Agreed 2026-11-06 (amended 2026-11-06).
+2. Backend (G-14): nullable `pilot_start` / `pilot_end` on `recommendation_options` and `planned_start` / `planned_end` on `recommendation_option_tugs`; when NULL the option window applies, so rule 4 stays valid. P4-L1 copies the job interval into the PILOT and TUG `plan_components` rows. Agreed 2026-11-06 (amended 2026-11-06).
 3. AI Team: until item 2 is done, watch for solves that fail on pilot or tug shortage caused by the over-reservation in rule 4.
 4. AI Team: write the shared test vectors (overlap edges, shift change, same-run requests, option 2/3 conflict); the Backend runs them in P5-M1.
 5. CT-10: add that a pending recommendation holds capacity through its option 1 only (rule 3). Today it says only that "every other pending recommendation is fixed and treated as occupied capacity".
@@ -1860,6 +1915,32 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 
 **Recommendation.** Option 1, chosen by the Backend lead on 2026-10-31, so the app does not depend on contract files in production. It closes when the AI Team approves CT-18 v1.1. A `CHAMPION` row in `seed-spec.json` also carries `deployed_at`.
 
+### DEC-60 · Mobile sign-in from a revoked device
+
+| | |
+| --- | --- |
+| Source | P1-C3 · lead's answer L2 (Marwan, 2026-11-01) |
+| Owner | Backend Team |
+| Status | Closed |
+| Closing task | P1-C3 |
+| Affects | P1-C3 · P2-E3 · MB-P52 · CT-01 (`error-codes.md`) · CT-04 |
+| Decision | Closed (2026-11-01): Option 1. A device the Port Admin revoked (`user_devices.revoked_at` set) is refused at mobile sign-in with 403 `DEVICE_REVOKED` (`errors.device_revoked`), audited, and no token is issued. A token of a revoked device is revoked on its next use and gets 401. CT-04 v1.2 carries the detail; it waits for Mobile Team approval, and P1-C3 does not merge before the contract change. |
+
+<div dir="rtl">
+
+**القصة.** الـ Port Admin بيلغي جهاز (tablet) اتسرق أو ضاع، وبعدين اليوزر يحاول يسجّل دخول من نفس الجهاز. العقد ماكانش بيقول إيه اللي يحصل، والـ error codes مفيهاش كود للحالة دي.
+
+</div>
+
+**Topic.** CT-04 lists no refusal for a sign-in from a revoked device, and `error-codes.md` has no code for it.
+
+**Options:**
+
+1. Refuse the sign-in with a new stable code, `DEVICE_REVOKED` 403.
+2. Let the user sign in again and clear `revoked_at`.
+
+**Recommendation.** Option 1, chosen by the Backend lead on 2026-11-01: revoking a lost or stolen tablet only works if the device cannot sign itself back in. The code name was proposed by the developer on 2026-11-05.
+
 ## AI task decisions
 
 Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keyed by its task ID; no `DEC-` ID is assigned here. Their text was first drafted on 2026-10-27 as entries DL-001 and DL-002 of the retired decision log and moved here by SETUP-002 unchanged in substance. The one exception: DL-002's per-module queue assignments are left to the AI-010 follow-up on the worker-to-module mapping.
@@ -1893,7 +1974,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 **Follow-ups (they don't reopen the decision):**
 
 - The supplied record's decision date is blank; add it if the AI Lead or Team Lead provides it.
-- DEC-21 (B4 rule) and DEC-25 (A6 and confidence) are Closed (2026-11-05). Still open: DEC-29 (B8 method), DEC-31 (Part 3 host).
+- DEC-21 (B4 rule), DEC-25 (A6 and confidence) and DEC-29 (B8 method) are Closed (DEC-21 and DEC-25 on 2026-11-05, DEC-29 on 2026-11-07). Still open: DEC-31 (Part 3 host).
 - `Master_Context.md` §6.4 calls C3/C4 "future work", while this decision and Architecture §9.5 call them data-gated. The owner of `Master_Context.md` should align its wording.
 
 ### AI-010 · AI code repository location and module structure
@@ -2037,7 +2118,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 **Follow-ups (they don't reopen the decision):**
 
-- Backend: confirm rule (1), or fill `plan_components.assigned_user_id` for the `PILOT` row at confirm time, which makes the fallback unnecessary.
+- Backend: confirm rule (1), or fill `plan_components.assigned_user_id` for the `PILOT` row at confirm time, which makes the fallback unnecessary. The Backend confirmed rule (1) on 2026-11-06 (G-16); DEC-32 rule 4 is amended to match.
 - If `MODIFIED_BY_STAFF` versions keep the staff-modified assignment somewhere other than option 1 of that recommendation, the loader must read it from there (Backend to confirm).
 
 ### AI-053 · Delay-risk Phase 1: missing inputs, boundaries and flags
