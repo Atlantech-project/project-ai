@@ -1877,6 +1877,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | AI-015 | Test harness and scenario generator | AI Team | Proposed |
 | AI-050 | Port-state loader: pilot identification, berth availability and holds | AI Team | Proposed |
 | AI-053 | Delay-risk Phase 1: missing inputs, boundaries and flags | AI Team | Proposed |
+| AI-052 | Service time Phase 1: profile choice, rounding and non-container vessels | AI Team | Proposed |
 
 ### AI-001 · AI scope and component inventory
 
@@ -2059,3 +2060,23 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - Revisit rule (6) when DEC-30 closes: if TR-12 is approved as written and read as part of "stale", partial coverage becomes NULL.
 - DEC-21 condition (b) is not done by the pure function, which returns `rule_version`. Recording it in `solver_run_model_versions` belongs to AI-058 (recommendation persistence and version records), and needs a Backend-seeded `ml_model_versions` row for the Phase 1 rule.
 - DEC-21 open item 6: the function returns every input (W maxima, C ratio, post-storm flag, coverage). Storing them with each recommendation is AI-058's, and needs a place to store them (the schema has none beyond `rationale_params`); the Backend/AI Team decide where.
+
+### AI-052 · Service time Phase 1: profile choice, rounding and non-container vessels
+
+| | |
+| --- | --- |
+| Source | AI-052 (backlog: "Resolve profile by date and vessel type with terminal default fallback"; "No valid profile → candidate excluded with reason"; "P90 NULL for FORMULA") · DEC-28 rules 1 to 7 · Architecture §8.6 · `schema.sql` `terminal_productivity_profiles` (1576–1595), `chk_ro_p90` and `chk_ro_values` (1177–1178) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-055 · AI-056 · AI-058 · DEC-28 (applies it; does not change it) |
+| Decision | ______ |
+| Proposed change | 2026-11-07 · AI-052 · (1) **Reference date.** The profile is resolved on one date per request and terminal: the port-local date (Africa/Cairo, `port_profiles.timezone`) of the start of the request's earliest confirmed window, passed in by the caller. B3 runs before the solver, so there is no planned start; a stay that crosses a profile change is not split. (2) **Rounding.** `hours = moves / productivity_rate + fixed_overhead_minutes / 60`, rounded up to 0.01 h (`ROUND_CEILING`) once, at the end, so service time errs long as in DEC-28 and DEC-20. (3) **Profile choice.** A row is valid for the candidate terminal when `valid_from` ≤ date and (`valid_to` is NULL or date ≤ `valid_to`), both ends inclusive. A row for the vessel's type beats the terminal default (`vessel_type_id` NULL). Two valid rows at the same level are bad data (the Backend rejects overlaps) and the candidate is excluded with `AMBIGUOUS_PROFILE`; no row is picked. No valid row: `NO_VALID_PROFILE`. (4) **Non-container vessels.** Excluded with `BASIS_UNDEFINED` for Phase 1: DEC-28 open item 4 sets no basis for them and `berthing_requests` has no cargo-quantity field, so no quantity is guessed. This is the vessel-type check, made before the moves check, so the reason names the real cause. (5) **Safety nets.** A container vessel whose profile unit is not `MOVES_PER_HOUR` is excluded with `PROFILE_UNIT_MISMATCH` (`chk_tpp_unit` makes it impossible for a container terminal); a result of 0 h or less is excluded with `NON_POSITIVE_SERVICE_TIME` (`chk_ro_values` needs P50 > 0). Moves unknown (no ACTIVE BAPLIE) is `MISSING_MOVES`, as DEC-28 rule 5 says. Every result records discharge, loading, `loading_estimated`, moves, the profile id, rate, unit, overhead and date (DEC-28 rule 7). · Reason: DEC-28 and the backlog give the formula and the exclusion but not the date, rounding, tie-break or the non-container behaviour · Evidence: DEC-28 "Decision detail"; `part2/service_time.py` and `tests/unit/part2/test_service_time.py` on branch `feature/AI-052-b3-service-time-phase-1` · Impact: AI-055 and AI-056 (the caller reads the profiles, the BAPLIE rows, the loading count and `port_code`, and passes the date; non-container vessels get `NO_FEASIBLE_PLAN` with `BASIS_UNDEFINED`), AI-058 (stores the inputs) · Awaiting: AI Team (owner) |
+| Approval | None yet as the team decision. Mostafa Rashwan (Leads Council) approved the AI-052 plan with rulings 1 to 5 as proposed on 2026-11-07. |
+| Known limitation | **Phase 1 gives no service time to vessels other than container vessels.** Until DEC-28 open item 4 is settled, such a request is left out with `BASIS_UNDEFINED`, so it cannot get a recommendation. Accepted by the Leads Council (Mostafa Rashwan) on 2026-11-07 for Phase 1. |
+
+**Follow-ups (they don't reopen the decision):**
+
+- **DEC-28 open item 4 stays open:** the AI Team sets the B3 basis for vessels other than container vessels (a cargo quantity in tonnes, cubic metres or units needs a request field and a matching `rate_unit`). Then `BASIS_UNDEFINED` is replaced by a computation.
+- AI-055/AI-056: add the reads this function does not do: `terminal_productivity_profiles` (not in `common/db/tables.py` yet), `port_of_discharge` of the ACTIVE BAPLE (the AI-050 loader's `ManifestEntry` has no such field), `port_profiles.port_code` and the loading count; pass the port-local date.
+- DEC-28 open items 1 to 3, 5 to 7 are unchanged (Backend CT-17, CT-10, CT-18; Terminal operations; AI-030).
+- A P50 of 10000 h or more would not fit `decimal(6,2)`; not expected from real profiles. The caller or AI-058 should reject it rather than let the insert fail.
