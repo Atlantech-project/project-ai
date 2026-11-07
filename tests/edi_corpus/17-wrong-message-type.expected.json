@@ -1,0 +1,16 @@
+{
+  "file": "17-wrong-message-type.edi",
+  "expected_outcome": "REJECTED",
+  "expected_parse_status": "FAILED",
+  "vessel_imo": null,
+  "containers": 0,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "WRONG_MESSAGE_TYPE",
+      "segment_ref": "UNH",
+      "message": "Message type COPRAR is not BAPLIE"
+    }
+  ],
+  "is_synthetic": true
+}

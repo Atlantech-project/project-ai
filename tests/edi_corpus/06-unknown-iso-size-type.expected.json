@@ -1,0 +1,16 @@
+{
+  "file": "06-unknown-iso-size-type.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "UNKNOWN_SIZE_TYPE",
+      "segment_ref": "EQD+CN+MSCU1234566",
+      "message": "Size type 45X9 not found"
+    }
+  ],
+  "is_synthetic": true
+}

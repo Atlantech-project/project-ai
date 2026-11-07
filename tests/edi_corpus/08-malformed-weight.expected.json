@@ -1,0 +1,16 @@
+{
+  "file": "08-malformed-weight.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "MALFORMED_WEIGHT",
+      "segment_ref": "MEA+WT++KGM:-100",
+      "message": "Weight -100 is not a positive number"
+    }
+  ],
+  "is_synthetic": true
+}

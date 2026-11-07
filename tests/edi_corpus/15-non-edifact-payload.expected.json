@@ -1,0 +1,15 @@
+{
+  "file": "15-non-edifact-payload.edi",
+  "expected_outcome": "REJECTED",
+  "expected_parse_status": "FAILED",
+  "vessel_imo": null,
+  "containers": 0,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "NOT_EDIFACT",
+      "message": "File is not UN/EDIFACT"
+    }
+  ],
+  "is_synthetic": true
+}

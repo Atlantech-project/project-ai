@@ -1,0 +1,16 @@
+{
+  "file": "07-unknown-imdg-class.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "UNKNOWN_IMDG_CLASS",
+      "segment_ref": "DGS+IMD+99+1993",
+      "message": "IMDG class 99 not found"
+    }
+  ],
+  "is_synthetic": true
+}

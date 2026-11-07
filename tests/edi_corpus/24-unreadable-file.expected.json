@@ -1,0 +1,15 @@
+{
+  "file": "24-unreadable-file.edi",
+  "expected_outcome": "REJECTED",
+  "expected_parse_status": "FAILED",
+  "vessel_imo": null,
+  "containers": 0,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "UNREADABLE_FILE",
+      "message": "File is empty or cannot be read"
+    }
+  ],
+  "is_synthetic": true
+}

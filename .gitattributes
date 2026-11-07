@@ -2,3 +2,5 @@
 docs/ref/db/schema.sql -text
 # Sample scenarios are compared byte for byte with a fresh run of the generator (AI-015).
 tests/fixtures/*.json -text
+# EDI files stay byte-exact on every machine: a CRLF checkout changes their SHA-256 (AI-023).
+*.edi -text

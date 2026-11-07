@@ -1,0 +1,16 @@
+{
+  "file": "10-temperature-out-of-range.edi",
+  "expected_outcome": "QUARANTINED",
+  "expected_parse_status": "QUARANTINED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "ERROR",
+      "code": "TEMPERATURE_OUT_OF_RANGE",
+      "segment_ref": "TMP+2+55:CEL",
+      "message": "Set temperature 55 C is outside -40 to 40"
+    }
+  ],
+  "is_synthetic": true
+}

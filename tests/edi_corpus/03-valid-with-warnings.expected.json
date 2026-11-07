@@ -1,0 +1,16 @@
+{
+  "file": "03-valid-with-warnings.edi",
+  "expected_outcome": "PARSED",
+  "expected_parse_status": "PARSED",
+  "vessel_imo": "9811000",
+  "containers": 1,
+  "issues": [
+    {
+      "severity": "WARNING",
+      "code": "CHECK_DIGIT_MISMATCH",
+      "segment_ref": "EQD+CN+MSCU1234567",
+      "message": "Container check digit does not match ISO 6346 for MSCU1234567"
+    }
+  ],
+  "is_synthetic": true
+}
