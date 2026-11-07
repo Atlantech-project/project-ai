@@ -32,3 +32,4 @@ Status values follow the backlog (§1.3): `NOT STARTED`, `IN PROGRESS`, `IN REVI
 | AI-006 | Define joint-solve scope and resource-availability semantics | DONE (DEC-06 and DEC-32 Closed; confirmed by the Leads Council 2026-11-05) | — (decision task) | [AI-006](status/AI-006.md) | 2026-11-05 |
 | AI-053 | Implement B4 delay-risk Phase 1 (rule or NULL) | IN REVIEW (plan approved 2026-11-05; implemented; local review done) | `feature/AI-053-delay-risk-phase-1` | [AI-053](status/AI-053.md) | 2026-11-05 |
 | AI-023 | Build BAPLIE D.17A test corpus | IN REVIEW (plan approved 2026-11-06; implemented; local review done; criterion 2 by approved scope exception) | `feature/AI-023-baplie-d17a-test-corpus` | [AI-023](status/AI-023.md) | 2026-11-06 |
+| AI-052 | Implement B3 service time Phase 1 formula | IN REVIEW (plan approved 2026-11-07; implemented; local review done) | `feature/AI-052-b3-service-time-phase-1` | [AI-052](status/AI-052.md) | 2026-11-07 |

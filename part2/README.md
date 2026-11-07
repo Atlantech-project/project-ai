@@ -40,6 +40,16 @@ AI Part 2, consuming `queue:part2`. Solve triggers (`solver_run.trigger_type`, A
 - **Not applied:** headroom to the safety limits (DEC-30 TR-10 is not filled). The function has no such input.
 - **Open:** where "arrivals" come from for C (the AI Team). The task's Proposed entry in `docs/ref/ATLANTECH_Decisions.md` holds the rulings.
 
+## Service time, Phase 1 (AI-052, DEC-28)
+
+`part2/service_time.py` gives B3 a time for one request at one candidate terminal: `compute_service_time(...)` returns `p50_hours`, `p90_hours` (always `None`), `method` (`FORMULA`), `excluded_reason`, `flags` and `inputs`. `hours = moves / productivity_rate + fixed_overhead_minutes / 60`, rounded up to 0.01 h. It is a pure function: the caller reads the database and passes plain values, and nothing here imports the solver.
+
+- **Moves:** `count_moves(...)` applies DEC-28. Discharge is the ACTIVE BAPLE rows whose `port_of_discharge` is `port_profiles.port_code`; loading is the request's optional count, else equal to discharge with the flag `loading_estimated`. No ACTIVE BAPLE gives `None` (the result is `MISSING_MOVES`); an unset `port_code` raises `ConfigurationError`. Moves are never guessed.
+- **Profile:** `resolve_profile(...)` takes the row valid on the date (both ends inclusive) for the terminal, the vessel's type before the terminal default. None is `NO_VALID_PROFILE`; two at the same level is `AMBIGUOUS_PROFILE`.
+- **Caller supplies:** the profiles, the discharge ports, `port_code`, the loading count, `vessel_type_id` and the port-local date of the start of the request's earliest confirmed window.
+- **Exclusions:** `BASIS_UNDEFINED` (not a container vessel), `MISSING_MOVES`, `NO_VALID_PROFILE`, `AMBIGUOUS_PROFILE`, `PROFILE_UNIT_MISMATCH`, `NON_POSITIVE_SERVICE_TIME`.
+- **Known limitation:** vessels other than container vessels get no service time in Phase 1 (DEC-28 open item 4 stays open). The task's Proposed entry in `docs/ref/ATLANTECH_Decisions.md` holds the rulings.
+
 ## Writes
 
 - `solver_run`, `solver_run_model_version`
