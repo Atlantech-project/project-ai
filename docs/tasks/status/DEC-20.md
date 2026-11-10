@@ -1,11 +1,11 @@
 # DEC-20 · Tug requirement formula
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (DEC-20 itself is Closed; this task becomes `DONE` when this branch is reviewed and merged) |
+| Status | DONE (branch merged into `develop`; closed by Leads rule: merged branch = Closed, 2026-11-10) [was: IN REVIEW (DEC-20 itself is Closed; this task becomes `DONE` when this branch is reviewed and merged)] |
 | Owner | AI Team |
 | Branch | `feature/DEC-20-tug-requirement-formula` (from `develop` at `25405fc`) |
 | Plan | documented exception: decision task, no separate plan file. The user's own numbered instructions of 2026-11-03, given in the conversation, are the plan · approval: the user wrote them and directed the work, 2026-11-03 |
-| Updated | 2026-11-03 |
+| Updated | 2026-11-10 |
 
 Decision task. No code, config or tests changed.
 

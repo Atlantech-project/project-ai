@@ -1,11 +1,11 @@
 # DEC-21 · Phase 1 delay-risk rule
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (DEC-21 itself is Closed; this task becomes `DONE` when this branch is reviewed and merged) |
+| Status | DONE (branch merged into `develop`; closed by Leads rule: merged branch = Closed, 2026-11-10) [was: IN REVIEW (DEC-21 itself is Closed; this task becomes `DONE` when this branch is reviewed and merged)] |
 | Owner | AI Team |
 | Branch | `feature/DEC-21-delay-risk-rule` (from `develop` at `109fb54`) |
 | Plan | documented exception: decision task, no separate plan file. The user's numbered instructions of 2026-11-05, given in the conversation, are the plan · approval: the user wrote them and directed the work, 2026-11-05 |
-| Updated | 2026-11-05 |
+| Updated | 2026-11-10 |
 
 Decision task. No code, config or tests changed.
 
