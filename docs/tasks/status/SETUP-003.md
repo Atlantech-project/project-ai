@@ -1,11 +1,11 @@
 # SETUP-003 · PortHub contracts and decisions synchronization
 | Field | Value |
 |---|---|
-| Status | IN REVIEW |
+| Status | DONE (branch merged into `develop`; closed by Leads rule: merged branch = Closed, 2026-11-10) [was: IN REVIEW] |
 | Owner | AI Team |
 | Branch | feature/SETUP-003-porthub-contracts-decisions-sync |
 | Plan | docs/superpowers/plans/2026-10-31-setup-003-porthub-sync.md · approval: explicit user approval in this conversation after Revision 2 was presented ("I approve SETUP-003 Revision 2 with the following final decisions", 2026-10-31); the plan file is a transcription written after that approval |
-| Updated | 2026-10-31 |
+| Updated | 2026-11-10 |
 
 Setup task, not in the official AI backlog. Documentation, schemas and eval tooling only; no production AI code. The permanent synchronization policy (`CLAUDE.md`, skills, workflow text) is **SETUP-004** and is not part of this task.
 
