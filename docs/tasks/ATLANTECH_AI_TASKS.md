@@ -73,7 +73,7 @@ Complexity is an effort-size class for planning, not a deadline.
 | AI-023 | Build BAPLIE D.17A test corpus | P2 | P0 | M | — | D |
 | AI-024 | Assess historical operational data for ML and define data-sufficiency criteria | P2 | P2 | S | AI-008 | D,X |
 | AI-025 | Implement data-quality checks library | P2 | P1 | S | AI-014 | — |
-| AI-030 | Implement BAPLIE D.17A segment parser and SMDG mapping | P3 | P0 | L | AI-011, AI-023 | — |
+| AI-030 | Implement BAPLIE segment parser and SMDG mapping | P3 | P0 | L | AI-011, AI-023 | — |
 | AI-031 | Implement shared BAPLIE validation rule set and diagnostics | P3 | P0 | M | AI-030, AI-004 | A |
 | AI-032 | Implement all-or-nothing BAPLIE commit, quarantine and failure handling | P3 | P0 | M | AI-031, AI-013 | B |
 | AI-033 | Verify parser performance against NFR-PERF-2 | P3 | P1 | S | AI-032, AI-008 | — |
@@ -709,7 +709,7 @@ Any delay on these tasks delays readiness for system-level testing. `AI-005` (do
 
 ### P3 — EDI parser (B1)
 
-#### AI-030 — Implement BAPLIE D.17A segment parser and SMDG mapping
+#### AI-030 — Implement BAPLIE segment parser and SMDG mapping
 
 - **Description:** Deterministic EDIFACT parsing.
 - **Category:** Algorithm · **Priority:** P0 · **Status:** NOT STARTED · **Phase:** P3 — EDI parser (B1) · **Complexity:** L
