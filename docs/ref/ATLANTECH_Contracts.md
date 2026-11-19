@@ -162,25 +162,64 @@ The sign-in identifier is `username` (DEC-35, closed); users have no email.
 | Between | Backend → Mobile |
 | Owner | Backend Team |
 | Reviewers | Mobile Team |
-| Output | Mobile auth section of `port-api.yaml` |
+| Status | Approved v1.2 · 2026-11-06 (DEC-60), approved by the Mobile Team in its reply to the Backend · Approved v1.1 · 2026-10-31 by Marwan (Backend lead); v1.1 agreed with the Mobile Team (DEC-58) |
+| Output | This section. The paths go into `port-api.yaml` when P1-C3 and P1-C5 build them (CT-02) |
+
+**System info.** `GET /api/v1/system/info` needs no sign-in and is never refused with 426, because the app reads `min_app_version` from it. The app also uses it as the connectivity check at the start of a sync cycle (FR-MB-03), so there is no `GET /system/ping` (DEC-58).
 
 ```json
-// GET /api/v1/system/info
-{ "port_id": "EGDAM", "port_name": "Damietta Port", "min_app_version": "1.0.0" }
+// 200
+{
+  "port_id": "0d9f6a52-7c1b-4b7e-9a3e-5a2f1c8d7e10",
+  "port_code": "EGDAM",
+  "port_name": "Damietta Port",
+  "license_mode": "FULL",
+  "token_warning_days_left": null,
+  "min_app_version": "1.0.0"
+}
+```
 
-// POST /api/v1/auth/mobile/login
-{ "username": "pilot.k", "password": "••••••••", "device_id": "a1b2c3", "platform": "android", "app_version": "1.0.0" }
+- `port_id` is `port_profiles.public_id`. `port_code` may be null.
+- Until the licence work (DEC-54), `license_mode` is always `FULL` and `token_warning_days_left` is always `null`.
+
+**Sign-in.** `POST /api/v1/auth/mobile/login` sends the CT-01 headers `X-App-Version` and `X-Device-Id`. It takes no `Idempotency-Key`, so a token is never replayed (CT-01 section 4).
+
+```json
+// Request
+{ "username": "pilot.k", "password": "••••••••", "platform": "ANDROID" }
 
 // 200
 {
   "token": "<opaque>",
-  "expires_at": "2026-12-02T10:00:00Z",
-  "user": { "id": 77, "name": "Marine Pilot", "role": "MARINE_PILOT", "must_change_password": true }
+  "expires_at": "2026-12-02T10:00:00.000000Z",
+  "user": { "id": 77, "name": "Marine Pilot", "role": "MARINE_PILOT", "terminal_ids": [], "must_change_password": true }
 }
 
 // 426
-{ "status": 426, "code": "APP_UPDATE_REQUIRED", "min_app_version": "1.1.0" }
+{
+  "type": "https://atlantech.io/errors/app-update-required",
+  "title": "App update required",
+  "status": 426,
+  "code": "APP_UPDATE_REQUIRED",
+  "message_key": "errors.app_update_required",
+  "detail": "This version of the app is no longer supported. Update the app to continue.",
+  "min_app_version": "1.1.0"
+}
 ```
+
+- `platform` is `ANDROID` or `IOS`.
+- Refusals: 401 `UNAUTHENTICATED` · 403 `ACCOUNT_DISABLED` · 403 `DEVICE_REVOKED` (a device the Port Admin revoked, audited, no token; DEC-60) · 422 `VALIDATION_FAILED`, also for a missing device header · 426 · 429 `TOO_MANY_ATTEMPTS`. 426 is checked before the password, and gives no token (FR-AC-05).
+- **Token:** opaque, stored by Sanctum in `personal_access_tokens` and tied to one `user_devices` row. Each use extends it to 30 days from that use (FR-AC-06), and `expires_at` is the value at sign-in. P1-C3 adds the table to CT-17.
+- **Forced password change:** the CT-03 rules and `POST /api/v1/auth/change-password` apply, with the Bearer token. A password change also revokes the user's other mobile tokens (they get 401 and sign in again); the token of the request that made the change stays (CT-03, v1.2).
+- **Logout:** `POST /api/v1/auth/logout` with the Bearer token returns 204 and sets `revoked_at` (FR-AC-08). A revoked token gets 401.
+- **Bearer requests.** Every request with the token sends `X-App-Version` and `X-Device-Id` (CT-01 section 3): a missing or malformed one is 422, another device is 401, a version below the minimum is 426. A token whose device was revoked is revoked on its next use and gets 401 `UNAUTHENTICATED`.
+
+**Change log.**
+
+| Version | Date | Change |
+| --- | --- | --- |
+| v1.2 | 2026-11-06 | Approved by the Mobile Team (no objection to the three changes, 2026-11-06): sign-in from a revoked device is refused with 403 `DEVICE_REVOKED` (DEC-60); Bearer requests must send `X-App-Version` (422); a password change revokes the other mobile tokens (P1-C3 review) |
+| v1.1 | 2026-10-31 | System info is the connectivity check, no `GET /system/ping` (DEC-58) |
 
 ---
 
@@ -191,22 +230,12 @@ The sign-in identifier is `username` (DEC-35, closed); users have no email.
 | Between | Backend → Frontend |
 | Owner | Backend Team |
 | Reviewers | Frontend Team |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
 | Output | `contracts/realtime-sse.md`: the event list and the shape of each event |
 
-`GET /api/v1/events` (`text/event-stream`):
+**Full text:** PortHub `contracts/realtime-sse.md`, which wins over this summary.
 
-- Events are filtered by role and terminal.
-- After a dropped connection, `Last-Event-ID` replays the missed events.
-- An event only says that something changed; the Frontend fetches the details over REST.
-
-**Events:**
-`REQUEST_STATUS_CHANGED` · `BAPLIE_PARSED` · `ENTRY_WINDOW_READY` · `RECOMMENDATION_READY` · `PLAN_CONFIRMED` · `PLAN_CANCELLED` · `ASSIGNMENT_CHANGED` · `NOTIFICATION_CREATED` · `NOTIFICATION_ACKNOWLEDGED` · `DEVIATION_DETECTED` · `REPLAN_PROPOSED` · `YARD_RECOMMENDATION_READY` · `YARD_RECOMMENDATION_FAILED` · `DRIFT_ALERT` · `RUN_FAILED`
-
-```
-id: 9f2c-0001
-event: RECOMMENDATION_READY
-data: {"entity":"berthing_request","id":1550,"recommendation_id":880,"status":"RECOMMENDATION_GENERATED","at":"2026-11-02T10:02:14Z"}
-```
+`GET /api/v1/events` (`text/event-stream`) is filtered by role and terminal. `Last-Event-ID` replays events up to 1 hour old; anything older gets `RESYNC`. An event only says that something changed.
 
 ---
 
@@ -217,16 +246,12 @@ data: {"entity":"berthing_request","id":1550,"recommendation_id":880,"status":"R
 | Between | Backend → Mobile |
 | Owner | Backend Team |
 | Reviewers | Mobile Team |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
 | Output | `contracts/realtime-mobile.md` |
 
-- **Channel:** `private-user.{user_id}`.
-- **Event:** carries only the `event_id` and its type; the app fetches the details over REST.
-- **Duplicates:** the app ignores any `event_id` it has already seen.
-- **After every reconnect:** the app calls `GET /sync/changes`.
+**Full text:** PortHub `contracts/realtime-mobile.md`, which wins over this summary.
 
-```json
-{ "event_id": "e-77-000231", "type": "TASK_UPDATED", "entity": "plan_component", "entity_id": 5012 }
-```
+One private channel per user, `private-user.{user_id}`, with two types: `TASK_UPDATED` and `NOTIFICATION_CREATED`. The app fetches content with `GET /api/v1/sync/changes`, ignores repeated `event_id` values and fetches after every reconnect.
 
 ---
 
@@ -237,43 +262,12 @@ data: {"entity":"berthing_request","id":1550,"recommendation_id":880,"status":"R
 | Between | Mobile ↔ Backend |
 | Owner | Backend Team (endpoints) · Mobile Team (event shape) |
 | Reviewers | Mobile Team · Backend Team |
-| Output | Sync section of `port-api.yaml` + `contracts/sync-events.md` |
+| Status | Approved v1.1 · 2026-10-31 by Marwan (Backend lead) and Farouk (Mobile Team), on PortHub PR #27 |
+| Output | `contracts/sync-events.md`. The paths go into `port-api.yaml` when P5-O1 and P5-O2 build them (CT-02) |
 
-**Event types:**
+**Full text:** PortHub `contracts/sync-events.md`, which wins over this summary.
 
-| Type | Payload | Note |
-| --- | --- | --- |
-| `STATUS_UPDATE` | `{ plan_component_id, new_status }` | In progress / Executed only (DEC-39) |
-| `ACKNOWLEDGE` | `{ notification_id }` | DEC-40 |
-
-```json
-// POST /api/v1/sync/events
-{
-  "events": [
-    {
-      "client_event_id": "2c1f6a7e-1d0b-4c11-9a51-7f1e2b3c4d5e",
-      "type": "STATUS_UPDATE",
-      "payload": { "plan_component_id": 5012, "new_status": "STARTED" },
-      "recorded_at": "2026-11-02T11:40:00Z",
-      "client_sent_at": "2026-11-02T11:52:10Z",
-      "sync_source": "TABLET"
-    }
-  ]
-}
-
-// 200: one result per event, in the same order
-{
-  "results": [
-    { "client_event_id": "2c1f6a7e-…", "result": "APPLIED" },
-    { "client_event_id": "8d9e…", "result": "REJECTED", "reason_code": "PLAN_CANCELLED" }
-  ]
-}
-
-// GET /api/v1/sync/changes?since=tok_118
-{ "tasks": [ ], "notifications": [ ], "removed": [ { "entity": "plan_component", "id": 5003 } ], "sync_token": "tok_131" }
-```
-
-`result` values: `APPLIED` · `DUPLICATE` · `REJECTED`.
+`POST /api/v1/sync/events` takes up to 100 events: `STATUS_UPDATE` (`STARTED` · `DONE`, DEC-39) and `ACKNOWLEDGE` (DEC-40). Each gets `APPLIED`, `DUPLICATE` or `REJECTED` with a `reason_code`. `GET /api/v1/sync/changes` returns `tasks`, `notifications`, `removed` and `sync_token`.
 
 ---
 
@@ -458,7 +452,7 @@ All seven fields are required; no other field is allowed (`additionalProperties:
 | Owner | Backend Team (sending) on the AI Team schema |
 | Reviewers | AI Team |
 | Output | `contracts/ai/c02-part2-solve.schema.json` (payload only) |
-| Status | Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-26 (DEC-15) |
+| Status | **Proposed v1.2 (DEC-28 follow-ups G-11 and G-12; draft 2026-11-08, not approved)** · Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-26 (DEC-15) |
 
 The schema describes the **payload only**. `envelope.schema.json` (CT-08) references it with `if job_type = PART2_SOLVE then payload: { $ref: c02-part2-solve.schema.json }`. C-01, C-03 and C-04 follow the same pattern.
 
@@ -495,7 +489,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 
 | `trigger_type` | Sent by the Backend when | `berthing_request_ids` | Extra fields |
 | --- | --- | --- | --- |
-| `NEW_REQUEST` | Part 1 finishes with `WINDOWS_FOUND` | Requests in `ENTRY_WINDOW_CONFIRMED` or `RECOMMENDATION_GENERATED` | — |
+| `NEW_REQUEST` | Staff confirm an entry window, so the request becomes `ENTRY_WINDOW_CONFIRMED` (Part 1 finishing with `WINDOWS_FOUND` does not enqueue anything). For a container vessel the request must also have an ACTIVE BAPLIE: the solve is enqueued when both hold, whichever comes last | Requests in `ENTRY_WINDOW_CONFIRMED` or `RECOMMENDATION_GENERATED` | — |
 | `MANUAL` | A user presses "Regenerate" | Same as `NEW_REQUEST` | `requested_by_user_id` (required) |
 | `RESOURCE_CHANGE` | A berth, tug or pilot becomes unavailable or available again | Pending requests whose current recommendation uses a changed resource, or whose window overlaps the change. The Backend computes this from `recommendation_options` and `recommendation_option_tugs` | `changed_resources` (required, `minItems: 1`) |
 | `REPLAN` | A deviation is recorded on a confirmed plan | Exactly one: the request that owns the plan | `operational_plan_id` (required) |
@@ -511,6 +505,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 - **One solve at a time:** the Backend never enqueues a `PART2_SOLVE` while another is QUEUED or RUNNING. Triggers that arrive meanwhile are held and merged into one message sent when the current solve finishes.
 - **`payload.trigger_type`** is the highest-precedence type in `triggers`: `REPLAN > RESOURCE_CHANGE > MANUAL > NEW_REQUEST`. The Backend writes it to `solver_runs.trigger_type`.
 - **One entry per request:** a request id appears in at most one entry. If two triggers hit the same request, the higher-precedence entry wins; two `RESOURCE_CHANGE` entries merge their `changed_resources`.
+- **Container vessel waits for its BAPLIE (v1.2, DEC-28):** a request of a container vessel (`vessel_types.code = CONTAINER`) is not put in a `NEW_REQUEST` entry before it has an ACTIVE BAPLIE. It waits without a new status (`ENTRY_WINDOW_CONFIRMED`, no QUEUED `solver_runs` row) and the Backend enqueues it when the BAPLIE becomes ACTIVE. Vessels that are not container vessels are not affected.
 - **No empty solves:** a resource change that affects no pending request is not enqueued.
 - **Confirmed plans change only through `REPLAN`:** a resource change that hits a confirmed plan is sent as a `REPLAN` entry for that plan.
 - **Envelope `triggered_by_user_id`:** the `requested_by_user_id` of the MANUAL entry if there is one, otherwise `null`. With several MANUAL entries, it is the user of the MANUAL trigger the Backend received last.
@@ -546,7 +541,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 | `FIFO_FALLBACK` | `ERROR` | FIFO plans (`source = FIFO`) for the requests that pass the hard filter. C-06 carries `status = DONE` (plans were written) with the technical reason in `error_category`, while `solver_runs.status` stays `ERROR` (CT-14) |
 | `GENERATION_FAILED` | `ERROR` | None |
 
-- **Per-request `outcome`:** `SOLVED` · `FIFO_FALLBACK` · `NO_FEASIBLE_PLAN`.
+- **Per-request `outcome`:** `SOLVED` · `FIFO_FALLBACK` · `NO_FEASIBLE_PLAN` · `NOT_SOLVED` (v1.2). `NOT_SOLVED` marks a request that was left out of the solve and carries `reason_code`; `recommendation_id` is `null`, `options_count` is 0 and `binding_constraints` is empty. The only value of `reason_code` for now is `MISSING_MOVES`: the request has no ACTIVE BAPLIE (for example it was withdrawn after the solve was enqueued), so its moves are NULL and are never guessed (DEC-28). The request stays `ENTRY_WINDOW_CONFIRMED`, and the Backend enqueues it again when a BAPLIE becomes ACTIVE. `reason_code` is present only with `NOT_SOLVED`. Adding a reason code is a minor version change. The names `NOT_SOLVED` and `reason_code` are to be confirmed with the AI Team.
 - **`options_count`:** 1 to 3 when a recommendation is written, otherwise 0 (DEC-23). Options 2 and 3 are returned only within `solver_option_equivalence_pct` of option 1 (CT-18).
 - **`binding_constraints`:** non-empty only when the per-request outcome is `NO_FEASIBLE_PLAN`. `detail` is an English diagnostic string, at most 255 characters.
   - `kind = "SAFETY"`: `constraint_type_code` is any `constraint_types.code` from the CT-18 seed (for example `MAX_WIND_KN`).
@@ -570,7 +565,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 | Owner | Backend Team (sending) on the AI Team schema |
 | Reviewers | AI Team |
 | Output | `contracts/ai/c03-yard.schema.json` (payload only) |
-| Status | Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-27 (DEC-16) |
+| Status | **Proposed v1.2 (DEC-29 at slot level, DEC-16 edited in place; draft 2026-11-06, not approved)** · Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-27 (DEC-16) |
 
 The schema describes the **payload only**. `envelope.schema.json` (CT-08) references it with `if job_type = YARD_PLACEMENT`. The job runs on its own queue, **`queue:yard`**, served by a separate worker process (own DB account and grants per DEC-08, own heartbeat).
 
@@ -595,7 +590,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 - **One transaction before RPUSH:** set `terminal_recommendations` (`rec_type = YARD_PLACEMENT`, `lifecycle_status = YARD_REC_REQUESTED`) and insert `yard_runs` (QUEUED).
 - **`triggered_by_user_id`:** `null` for the automatic trigger; the user who pressed "Regenerate" otherwise.
 - **Regenerate:** offered when `lifecycle_status` is `GENERATION_FAILED` or `YARD_REC_REJECTED`. Because of `uq_tr_rec_type`, the same row is reused: reset to `YARD_REC_REQUESTED`, delete the old `yard_placement_items` rows, mark any QUEUED or RUNNING `yard_runs` of that row as `REPLACED`, then insert a new `yard_runs`.
-- **Stale recommendation:** after a confirmed REPLAN or a BAPLIE revision becoming ACTIVE, the Backend regenerates automatically if the recommendation is not yet `YARD_REC_ACCEPTED`. If it is accepted, the Backend raises a notification only.
+- **Stale recommendation:** after a confirmed REPLAN or a BAPLIE revision becoming ACTIVE, the Backend regenerates automatically if the recommendation is not yet `YARD_REC_ACCEPTED`. If it is accepted, the Backend raises a notification only. From v1.2 the same applies when a plan of another vessel of the same terminal is confirmed or cancelled (DEC-29 open item 9): every yard recommendation of that terminal that is not yet `YARD_REC_ACCEPTED` is regenerated, one run at a time per recommendation (`uq_yr_active`). A change of `requested_eta` on a request that has no plan yet does not regenerate anything: such a request gets no slots (DEC-29 rule 5).
 - **Incomplete lines:** the Backend blocks yard recommendations while any line of the ACTIVE file has a NULL `full_empty` **or** a NULL `port_of_discharge`.
 - **No one-at-a-time rule:** different terminal recommendations may run in parallel; `uq_yr_active` allows one active run per terminal recommendation.
 - The Backend validates every message against the schema before RPUSH.
@@ -659,9 +654,10 @@ CREATE TABLE `yard_runs` (
 **Result:**
 
 - **Partial placement:** if at least one container is placed, the outcome is `YARD_REC_GENERATED` and unplaced containers get no `yard_placement_items` row. If none can be placed, the outcome is `GENERATION_FAILED` with `INFEASIBLE`.
-- **`yard_slot_id`:** always `NULL` in v1 (block level, FR-2.2.3). Nothing the worker writes is a reservation; any capacity check at accept or export time belongs to the Backend.
-- **Capacity counting:** active slots with `container_id IS NULL`, minus capacity already given to other recommendations of the same terminal in `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED` (not yet exported). Counted in TEU via `container_size_types.teu_factor`, 1 slot = 1 TEU.
-- **`confidence`** = `preferred_zone_count / in_scope_count`, rounded to 3 decimals (DEC-29 Option A). Never null with `YARD_REC_GENERATED`, always null with `GENERATION_FAILED`. Reefer, DG and OOG containers can only go to their zone; general containers may overflow to a special zone and then count as not preferred.
+- **`yard_slot_id`:** filled for every placed container, as a recommendation and not a reservation (v1.2, DEC-29). Nothing the worker writes is a reservation; the Backend checks each slot at accept and at export (`YARD_SLOT_CONFLICT`).
+- **Capacity counting:** slots of the same terminal that are `ACTIVE` (not `BLOCKED`) with `container_id IS NULL`, minus the slots held by other recommendations of the same terminal in `YARD_REC_GENERATED`, `YARD_REC_ACCEPTED` or `EXPORTED_TO_TOS`, until the container is recorded in the yard or the plan is `CANCELLED` or `COMPLETED` (read from `operational_plans.status`). Holding a slot is a rule of the solver, not a Backend reservation. Counted in TEU via `container_size_types.teu_factor`, 1 slot = 1 TEU; a 40 ft or 45 ft container takes two adjacent slots: bays b and b+1, same block, row and tier (representation: G-04, pending). Requests of the same terminal that have an ACTIVE BAPLE and an ETA but no confirmed plan get no slots; their expected discharge TEU is kept free in compatible zones, in ETA order (DEC-29 rule 5). Other terminals are never read.
+- **Yard baseline (DEC-29 rule 11):** the current contents of the yard are not imported. The terminal officer sets every slot of a stack that holds existing stock (all tiers of a bay and row) to `BLOCKED` and unblocks it once that stock has left. Every other unrecorded `ACTIVE` slot counts as free. The CT Supervisor records the actual slot when it differs from the recommendation.
+- **`confidence`** = containers placed with zero expected re-handles ÷ `in_scope_count`, rounded to 3 decimals (DEC-29 rule 8). Never null with `YARD_REC_GENERATED`. Always null with `GENERATION_FAILED`, including a run that places nothing: a failed run has no recommendation to be confident about, and 0 would read as a poor plan (DEC-29 rule 8, corrected). Reefer, DG and OOG containers can only go to their zone.
 
 **`yard_runs.result_detail`:**
 
@@ -669,7 +665,10 @@ CREATE TABLE `yard_runs` (
 {
   "in_scope_count": 212,
   "placed_count": 208,
-  "preferred_zone_count": 200,
+  "no_rehandle_count": 200,
+  "placements": [
+    { "manifest_entry_id": 99701, "departure_at": "2026-11-12T06:00:00Z", "departure_source": "ONWARD_PLAN", "expected_rehandles": 0 }
+  ],
   "unplaced": [
     { "manifest_entry_id": 99812, "reason_code": "NO_REEFER_CAPACITY" },
     { "manifest_entry_id": 99840, "reason_code": "NO_DG_ZONE" }
@@ -678,7 +677,8 @@ CREATE TABLE `yard_runs` (
 }
 ```
 
-- **`unplaced[].reason_code`** (closed list for v1): `NO_REEFER_CAPACITY` · `NO_DG_ZONE` · `NO_OOG_ZONE` · `NO_CAPACITY`.
+- **`unplaced[].reason_code`** (closed list for v1): `NO_REEFER_CAPACITY` · `NO_DG_ZONE` · `NO_OOG_ZONE` · `NO_CAPACITY` · `NO_SLOT_OF_LENGTH` · `STACK_HEIGHT_REACHED` (the last two are v1.2; names to confirm with the AI Team). `no_rehandle_count` replaces `preferred_zone_count` (v1.2; name to confirm with the AI Team).
+- **`placements[]`** (optional, v1.2, DEC-29 rule 10): one entry per placed container for evaluation: `manifest_entry_id`, `departure_at` (UTC, null when unknown), `departure_source` (`ONWARD_PLAN` · `ONWARD_REQUEST_ETA` · `ONWARD_BAPLIE_ETA` · `IMPORT_DWELL` · `UNKNOWN`, matching DEC-29 rule 2; names to confirm with the AI Team) and `expected_rehandles`. It stays in `yard_runs.result_detail`, which the Backend never edits, so the history of every run is kept even when `yard_placement_items` is deleted on regeneration. The Backend does not read it and does not return it in list calls.
 - **`failure_reason`:** `{ "error_category": "...", "message": "..." }`, same shape as C-02, non-null only when the run is FAILED. `terminal_recommendations.failure_reason` holds `"<ERROR_CATEGORY>: <message>"` truncated to 500 characters.
 - **`error_category`** for yard: `INVALID_ENVELOPE` · `PRECONDITION_FAILED` · `CONFIGURATION_ERROR` (no container yard, no active slots or no active rationale template) · `DATA_UNAVAILABLE` · `INFEASIBLE` · `TIMEOUT` · `INTERNAL_ERROR`. `SOLVER_ERROR` is not used.
 
@@ -926,7 +926,7 @@ FastAPI is cancelled (DEC-10), so validation is an async job. A result with viol
 | `validation_type` | Check |
 | --- | --- |
 | `OVERRIDE` | `recommendation_options` exists and its recommendation is `PENDING_REVIEW` or `MODIFIED_BY_STAFF` |
-| `YARD_ADJUSTMENT` | `terminal_recommendations` exists, `rec_type = YARD_PLACEMENT`, `lifecycle_status` is `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED`; every `manifest_entry_id` belongs to the ACTIVE BAPLIE of that request; every block belongs to the terminal's yard |
+| `YARD_ADJUSTMENT` | `terminal_recommendations` exists, `rec_type = YARD_PLACEMENT`, `lifecycle_status` is `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED`; every `manifest_entry_id` belongs to the ACTIVE BAPLIE of that request; every block belongs to the terminal's yard; a proposed `yard_slot_id` belongs to that block, is `ACTIVE`, is empty and is not held by another recommendation (v1.2, CT-11); for a 40 ft or 45 ft container its second slot is free too |
 
 **Result** (`validation_result` in C-06, defined in `c06-completion.schema.json`):
 
@@ -1183,7 +1183,7 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | Owner | AI Team (`seed-spec.json`) · Backend Team (`reference-seed.json`, seeders) |
 | Reviewers | Backend Team · AI Team (codes it depends on) |
 | Output | `contracts/ai/seed-spec.json` · `contracts/db/reference-seed.json` |
-| Status | Approved v1.0 · 2026-10-27 (DEC-12 · DEC-23). Values marked ⟨AI⟩ arrive with the `seed-spec.json` PR |
+| Status | Approved v1.1 · 2026-11-04 (DEC-59; AI Team approval reported by Marwan) · Approved v1.0 · 2026-10-27 (DEC-12 · DEC-23). Values marked ⟨AI⟩ arrive with the `seed-spec.json` PR |
 
 **1. Scope.**
 
@@ -1214,7 +1214,7 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
     { "model_key": "M2_SERVICE_TIME", "algorithm_family": "GRADIENT_BOOSTING", "description": "Berth service time (P50 / P90)" }
   ],
   "ml_model_versions": [
-    { "model_key": "M2_SERVICE_TIME", "version_no": 1, "status": "CHAMPION", "artifact_path": "models/m2_service_time/v1.joblib", "trained_at": "2026-11-01T00:00:00Z", "hyperparameters": {} }
+    { "model_key": "M2_SERVICE_TIME", "version_no": 1, "status": "CHAMPION", "artifact_path": "models/m2_service_time/v1.joblib", "trained_at": "2026-11-01T00:00:00Z", "deployed_at": "2026-11-01T00:00:00Z", "hyperparameters": {} }
   ],
   "port_settings": [
     { "setting_key": "solver_time_limit_seconds", "value_type": "INT", "value": "10", "min": 1, "max": 120, "description": "CP-SAT time limit per solve" }
@@ -1222,7 +1222,9 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 }
 ```
 
-- `min` / `max` are optional and omitted for `STRING`, `JSON` and `BOOL`.
+- `min` / `max` are optional and omitted for `STRING`, `JSON` and `BOOL`. They are stored in `port_settings.min_value` and `max_value` (added by P1-B6).
+- A `CHAMPION` row must carry `deployed_at` (schema check).
+- `reference-seed.json` uses the same format, with its rows in PortHub `contracts/db/reference-seed.json`. Its Backend keys are `reminder_lead_minutes` and `min_app_version`. The delay threshold keys are added when DEC-30 gives the numbers (DEC-09).
 - `ml_model_versions` is seeded because `solver_run_model_versions` needs an existing version and `w_part3` cannot insert versions in the MVP (DEC-08). A model with no CHAMPION at go-live has no row; the worker uses the CT-10 fallback.
 
 **3. Seeding rules (Backend).**
@@ -1273,18 +1275,13 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | --- | --- |
 | Between | Backend → Frontend · Mobile · QA |
 | Owner | Backend Team |
-| Reviewers | Frontend Team · QA Team |
+| Reviewers | Frontend Team · Mobile Team, critical changes only. QA tests and does not review |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
 | Output | `contracts/mock-workers.md`: for each queue, the results it returns and how to choose a scenario |
 
-- Mocks write contract-shaped rows and send C-06, so the Frontend cannot tell them apart from the real workers.
-- The scenario is selected with the `mock_scenario` key in `port_settings`, or with a tag in the vessel name.
+**Full text:** PortHub `contracts/mock-workers.md`, which wins over this summary.
 
-| Queue | Scenarios |
-| --- | --- |
-| `queue:part1` | `WINDOWS_FOUND` · `NO_FEASIBLE_WINDOW` · `ENV_DATA_UNAVAILABLE` · `FAILED` |
-| `queue:part2` | `SOLVED` · `FIFO_FALLBACK` · `NO_FEASIBLE_PLAN` · `GENERATION_FAILED` |
-| `queue:edi` | `PARSED` · `QUARANTINED` · `FAILED` |
-| yard | `YARD_REC_GENERATED` · `GENERATION_FAILED` |
+Mocks write contract-shaped rows and send C-06. A vessel-name tag wins over the `mock_scenario` key in `port_settings`, which wins over the default. They run outside `production` only.
 
 ---
 
@@ -1295,34 +1292,93 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | Between | Backend → Frontend |
 | Owner | Backend Team |
 | Reviewers | Frontend Team |
-| Output | AI results section of `port-api.yaml` |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
+| Output | This section. The paths go into `port-api.yaml` as each endpoint is built (CT-02) |
 
 | Endpoint | Returns | Role |
 | --- | --- | --- |
-| `GET /api/v1/berthing-requests/{id}/part1-result` | Outcome, windows, blocked periods, data sources and their age | Port Authority Staff |
-| `GET /api/v1/berthing-requests/{id}/recommendation` | Current version, options, tugs, rationale and binding constraints | Port Authority Staff |
-| `GET /api/v1/terminal-recommendations/{id}` | Yard placements, rationale and confidence | CT Operation Planner (own terminal) |
-| `GET /api/v1/environment/conditions` | Weather, tide, surge, source and data age | All office users |
-| `GET /api/v1/ai/evaluation` · `GET /api/v1/ai/drift` | Metrics and drift | Port Admin |
+| `GET /api/v1/berthing-requests/{id}/part1-result` | Outcome, windows, blocked periods, data sources and their age | `PORT_STAFF` |
+| `GET /api/v1/berthing-requests/{id}/recommendation` | Current version, options, tugs, rationale and binding constraints | `PORT_STAFF` |
+| `GET /api/v1/terminal-recommendations/{id}` | Yard placements, rationale and confidence | `TERMINAL_OFFICER`, own terminal |
+| `GET /api/v1/environment/conditions` | Weather, tide, source and data age | Every role except `MARINE_PILOT`, `TUG_MASTER` and `TERMINAL_SUPERVISOR` |
+| `GET /api/v1/ai/evaluation` · `GET /api/v1/ai/drift` | Metrics and drift | `PORT_GM` |
+
+**Common rules:**
+
+- 404 `NOT_FOUND` when no run exists yet for the request. A run in progress returns 200 with its status and empty results.
+- `version` is the CT-01 version token. `version_no` is the recommendation's number within its request (1, 2, 3 …), computed by the Backend. Do not send it back.
+- `rationale` is the text rendered from `rationale_templates`.
+- Open AI decisions do not change these shapes. `delay_risk` may be null (DEC-21). `proposal` may be null on `NO_FEASIBLE_WINDOW` (DEC-07). `source` is free text (DEC-26). Options have no `confidence` field, which is the Backend position on DEC-43. Adding a field later is a minor version.
+- Surge is not stored: the schema keeps raw provider values, and derived values stay on the AI side. `sea_level` is the raw value.
 
 ```json
+// GET /api/v1/berthing-requests/1550/part1-result
+{
+  "run": { "id": 301, "status": "DONE", "outcome": "WINDOWS_FOUND", "finished_at": "2026-11-02T10:02:14.000000Z" },
+  "proposal": { "id": 455, "version": "2026-11-02T10:02:14.123456Z", "status": "PROPOSED", "peak_congestion_score": 0.410 },
+  "windows": [ { "id": 77, "window_start": "2026-11-03T04:00:00.000000Z", "window_end": "2026-11-03T09:00:00.000000Z", "confidence": 0.870 } ],
+  "blocked_periods": [ { "period_start": "2026-11-03T09:00:00.000000Z", "period_end": "2026-11-03T13:00:00.000000Z", "limiting_constraint": { "id": 6, "code": "MAX_WIND" } } ],
+  "data_sources": [ { "kind": "FORECAST", "source": "Open-Meteo", "provider_rank": "PRIMARY", "pulled_at": "2026-11-02T10:00:00.000000Z", "data_stale": false } ]
+}
+
 // GET /api/v1/berthing-requests/1550/recommendation
 {
+  "run": { "id": 612, "status": "OPTIMAL", "outcome": "SOLVED" },
   "recommendation_id": 880,
-  "version": 2,
+  "version": "2026-11-02T10:02:14.123456Z",
+  "version_no": 2,
   "status": "PENDING_REVIEW",
   "source": "AI",
   "purpose": "INITIAL",
+  "binding_constraints": [],
   "options": [
     {
       "id": 9031, "rank": 1, "berth": { "id": 12, "code": "B12" },
-      "start": "2026-11-03T06:00:00Z", "end": "2026-11-03T18:30:00Z",
+      "planned_start": "2026-11-03T06:00:00.000000Z", "planned_end": "2026-11-03T18:30:00.000000Z",
       "pilot": { "id": 4 }, "tugs": [ { "id": 7 }, { "id": 9 } ],
-      "service_time_hours": 12.5, "delay_risk": null,
-      "objective_score": 0.82, "rationale": "Lowest waiting time for MSC Aurora at berth B12."
+      "service_time_method": "FORMULA", "service_time_p50_hours": 12.50, "service_time_p90_hours": null, "delay_risk": null,
+      "objective_score": 0.8200, "rationale": "Lowest waiting time for MSC Aurora at berth B12."
     }
   ]
 }
+```
+
+With `NO_FEASIBLE_PLAN`, `recommendation_id`, `version`, `version_no`, `status`, `source` and `purpose` are null, `options` is empty and `binding_constraints` holds the CT-10 reasons.
+
+```json
+// GET /api/v1/terminal-recommendations/640
+{
+  "id": 640,
+  "version": "2026-11-02T12:00:00.123456Z",
+  "berthing_request_id": 1550,
+  "terminal_id": 3,
+  "lifecycle_status": "YARD_REC_GENERATED",
+  "decision": "PENDING",
+  "confidence": 0.920,
+  "rationale": "Most containers are in their preferred zones.",
+  "failure_reason": null,
+  "placements": [ { "id": 1, "manifest_entry_id": 8123, "yard_block": { "id": 21, "code": "A1" }, "yard_slot_id": null } ]
+}
+
+// GET /api/v1/environment/conditions
+{
+  "forecast": {
+    "source": "Open-Meteo", "provider_rank": "PRIMARY", "pulled_at": "2026-11-02T10:00:00.000000Z", "data_stale": false,
+    "units": { "wind_speed": "KNOTS", "current_speed": "KNOTS", "visibility": "NAUTICAL_MILES" },
+    "points": [ { "valid_at": "2026-11-02T11:00:00.000000Z", "wind_speed": 12.40, "wind_gust": 18.00, "wind_direction_deg": 310.0, "visibility": 6.00, "wave_height": 1.10, "wave_period": 6.5, "wave_direction_deg": 300.0, "current_speed": 0.80, "sea_level": 0.420 } ]
+  },
+  "tide": { "computed_at": "2026-11-02T00:00:00.000000Z", "points": [ { "valid_at": "2026-11-02T11:00:00.000000Z", "height": 0.380 } ] }
+}
+```
+
+`GET /api/v1/ai/evaluation` and `GET /api/v1/ai/drift` are CT-01 lists, newest first:
+
+```json
+// GET /api/v1/ai/evaluation
+{ "data": [ { "id": 5, "model_version_id": 2, "metric_name": "MAE", "dataset_type": "ROLLING", "metric_value": 1.24500, "period_start": "2026-10-01T00:00:00.000000Z", "period_end": "2026-10-31T00:00:00.000000Z", "computed_at": "2026-11-01T02:00:00.000000Z" } ], "meta": { "page": 1, "per_page": 25, "total": 1 } }
+
+// GET /api/v1/ai/drift
+{ "data": [ { "id": 41, "model_version_id": 2, "metric_type": "PSI", "feature_name": "wind_speed", "metric_value": 0.31000, "threshold": 0.25000, "is_drifted": true, "measured_at": "2026-11-01T02:00:00.000000Z" } ], "meta": { "page": 1, "per_page": 25, "total": 1 } }
 ```
 
 ---
@@ -1334,17 +1390,30 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | Between | Backend → Frontend · Mobile · AI · QA |
 | Owner | Backend Team (from the PHP enums) |
 | Reviewers | All teams |
-| Output | `contracts/status-vocabulary.json`, generated automatically from the enums |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
+| Output | `contracts/status-vocabulary.json`, generated automatically from the enums with `composer contracts:status-vocabulary` |
+
+**Full list:** PortHub `contracts/status-vocabulary.json`, which wins over this example. Nobody edits it by hand.
 
 ```json
 {
-  "berthing_requests.status": ["SUBMITTED","NEEDS_REVISION","PRELIMINARY_APPROVED","CUSTOMS_APPROVED","ENTRY_WINDOW_CONFIRMED","RECOMMENDATION_GENERATED","PLAN_CONFIRMED","PLAN_CANCELLED","COMPLETED","REJECTED","CANCELLED"],
-  "plan_components.status": ["UNASSIGNED","ASSIGNED","STARTED","DONE"],
-  "recommendations.status": ["PENDING_REVIEW","MODIFIED_BY_STAFF","CONFIRMED","REPLACED"],
-  "notification.status": ["SENT","FAILED","ESCALATED"],
-  "terminal_recommendations.lifecycle_status": ["YARD_REC_REQUESTED","YARD_REC_GENERATED","GENERATION_FAILED","ACCEPTED","REJECTED","EXPORTED_TO_TOS"]
+  "version": "1.0",
+  "columns": {
+    "berthing_requests.status": ["SUBMITTED","NEEDS_REVISION","PRELIMINARY_APPROVED","CUSTOMS_APPROVED","ENTRY_WINDOW_CONFIRMED","RECOMMENDATION_GENERATED","PLAN_CONFIRMED","PLAN_CANCELLED","COMPLETED","REJECTED","CANCELLED"],
+    "notification_logs.status": ["SENT","FAILED","ACKNOWLEDGED"],
+    "recommendations.status": ["PENDING_REVIEW","CONFIRMED","REJECTED","INVALIDATED","REPLACED","MODIFIED_BY_STAFF"],
+    "terminal_recommendations.lifecycle_status": ["YARD_REC_REQUESTED","YARD_REC_GENERATED","GENERATION_FAILED","YARD_REC_ACCEPTED","YARD_REC_REJECTED","EXPORTED_TO_TOS"]
+  },
+  "derived": {
+    "plan_components.derived_status": ["UNASSIGNED","ASSIGNED","STARTED","DONE"]
+  }
 }
 ```
+
+- `columns` lists every enum column in the database. `derived` lists values that have no column.
+- `plan_components` has no `status` column. The value is derived from the assignment and the latest `actual_status_updates` row (CT-07). CT-07 returns `ASSIGNED`, `STARTED` or `DONE`, because a field task always has an assignee. The name `derived_status` exists only in this file; the CT-07 field is `status`.
+- `ESCALATED` is not a status: an escalation is a `notification_logs` row of type `ACK_ESCALATION` (DEC-58).
+- `actual_status_updates.status` is not listed: it is a `VARCHAR` checked against the `status_types` rows.
 
 ---
 
@@ -1383,7 +1452,10 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | Between | Backend → Frontend · Mobile · QA |
 | Owner | Backend Team |
 | Reviewers | Frontend Team · Mobile Team · QA Team at the FRR |
-| Output | `contracts/readiness/FT-xx.md` for each feature |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review. The teams still review each pack at its FRR |
+| Output | `contracts/readiness/FT-xx.md` for each feature, built from PortHub `contracts/readiness/TEMPLATE.md` |
+
+**Full template:** PortHub `contracts/readiness/TEMPLATE.md`, which wins over this summary.
 
 ```markdown
 # FT-06 Berthing requests and BAPLIE — API readiness pack
