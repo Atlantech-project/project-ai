@@ -51,7 +51,7 @@ This file lists every decision that must be closed before implementation, every 
 | DEC-31 | Part 3 scheduling host | AI Team | Open | Sprint 6 |
 | DEC-32 | Availability semantics for pilots and tug masters | AI Team | Closed | Sprint 3 |
 | DEC-33 | Manual-planning baseline | AI Team | Open | Sprint 7 |
-| DEC-34 | Building A4 rules on synthetic data | AI Team | Open | Sprint 3 |
+| DEC-34 | Building A4 rules on synthetic data | AI Team | Closed | Sprint 3 |
 | DEC-35 | Sign-in identifier | Backend Team | Closed | Sprint 1 |
 | DEC-36 | One role per user vs role history | Backend Team | Closed | Sprint 2 |
 | DEC-37 | "Reject with reason" on P-44 and P-47 | Backend Team | Open | Sprint 6 |
@@ -1306,10 +1306,10 @@ Weekday and month are not inputs: the weekday effect is small (Sunday ≈ 7 % lo
 | --- | --- |
 | Source | Plan decision |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-34 · Sprint 3 |
 | Affects | AI-044 · AI-051 |
-| Decision | ______ |
+| Decision | Closed (2026-11-20): Option 1. AI-044 (A4) is built and tested on labelled synthetic forecast, tide and surge series behind the same input interface the real pipeline will use (same fields, units, datum and gap handling as `environment_forecast_points`), so AI-044 no longer waits for AI-043; its prerequisites become AI-009 and AI-014, with synthetic fixtures from AI-015 (extended to environmental series if needed). AI-051 consumes AI-044 in Sprint 3 so Part 2 starts CP-SAT (AI-055) in Sprint 4. The real feed (AI-040 → AI-041 → AI-043) connects later through that interface with no change to the rules. Gate: AI-048 is not marked Done until the AI-044 table-driven tests pass on real recorded provider payloads (AI-020) and the real tide (AI-042). Hard limits (wind, wave, visibility, UKC) are never loosened by any data. Every synthetic dataset is labelled synthetic in file names and metadata, and no result on synthetic data is reported as operational performance. Affected teams informed: AI Team (task order), QA Team (labelling and real-data re-test), Backend Team (for information, no contract change). |
 
 <div dir="rtl">
 
