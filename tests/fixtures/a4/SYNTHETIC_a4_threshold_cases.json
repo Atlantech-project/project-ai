@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "label": "SYNTHETIC - hand-written test data for AI-044 (A4), not operational data",
+    "task": "AI-044",
+    "decision": "DEC-34",
+    "notes": [
+      "Every limit and reading is made up. None is a real operating limit or a proposal for the thresholds register (DEC-30).",
+      "Steps follow environment_forecast_points (raw provider values) with the forecast_runs unit columns; wave_height is in metres.",
+      "Results on this data are not operational performance (DEC-34). AI-048 is not Done until these rules also pass on real provider payloads (AI-020) and the real tide (AI-042)."
+    ]
+  },
+  "constraint_types": [
+    {"id": 1, "code": "MAX_WIND_KN", "category": "ENVIRONMENTAL", "unit": "KNOTS", "comparator": "MAX_ALLOWED", "is_hard_safety_limit": true},
+    {"id": 2, "code": "MAX_WAVE_HEIGHT_M", "category": "ENVIRONMENTAL", "unit": "METRES", "comparator": "MAX_ALLOWED", "is_hard_safety_limit": true},
+    {"id": 3, "code": "MIN_UKC_M", "category": "UKC", "unit": "METRES", "comparator": "MIN_REQUIRED", "is_hard_safety_limit": true}
+  ],
+  "cases": [
+    {
+      "name": "wind_in_metres_per_second_ramps_through_a_knots_limit",
+      "scope": {"terminal_id": 1, "vessel_type_id": 21, "berth_id": null, "imdg_classes": []},
+      "units": {"wind_speed_unit": "METRES_PER_SECOND", "visibility_unit": "NAUTICAL_MILES", "current_speed_unit": "KNOTS"},
+      "step_minutes": 30,
+      "constraints": [
+        {"id": 101, "constraint_type_id": 1, "value": "25.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null}
+      ],
+      "steps": [
+        {"valid_at": "2026-01-05T00:00:00Z", "wind_speed": "10.00"},
+        {"valid_at": "2026-01-05T00:30:00Z", "wind_speed": "12.90"},
+        {"valid_at": "2026-01-05T01:00:00Z", "wind_speed": "13.50"},
+        {"valid_at": "2026-01-05T01:30:00Z", "wind_speed": "12.00"}
+      ],
+      "expected": {
+        "failures": [
+          [],
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "25.000"]],
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "25.000"]],
+          []
+        ],
+        "blocked_periods": [
+          {"start": "2026-01-05T00:30:00Z", "end": "2026-01-05T01:30:00Z", "reason": "LIMIT_EXCEEDED", "code": "MAX_WIND_KN"}
+        ]
+      }
+    },
+    {
+      "name": "no_berth_so_the_strictest_berth_limit_of_the_terminal_applies",
+      "scope": {"terminal_id": 1, "vessel_type_id": 21, "berth_id": null, "imdg_classes": []},
+      "units": {"wind_speed_unit": "KNOTS", "visibility_unit": "NAUTICAL_MILES", "current_speed_unit": "KNOTS"},
+      "step_minutes": 30,
+      "constraints": [
+        {"id": 201, "constraint_type_id": 1, "value": "30.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null},
+        {"id": 202, "constraint_type_id": 1, "value": "22.000", "terminal_id": 1, "berth_id": 11, "active_from": "2026-01-01T00:00:00Z", "active_to": null},
+        {"id": 203, "constraint_type_id": 1, "value": "10.000", "terminal_id": 2, "active_from": "2026-01-01T00:00:00Z", "active_to": null},
+        {"id": 204, "constraint_type_id": 3, "value": "100.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null}
+      ],
+      "steps": [
+        {"valid_at": "2026-01-05T00:00:00Z", "wind_speed": "21.00"},
+        {"valid_at": "2026-01-05T00:30:00Z", "wind_speed": "23.00"},
+        {"valid_at": "2026-01-05T01:00:00Z", "wind_speed": "29.00"}
+      ],
+      "expected": {
+        "failures": [
+          [],
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "22.000"]],
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "22.000"]]
+        ],
+        "blocked_periods": [
+          {"start": "2026-01-05T00:30:00Z", "end": "2026-01-05T01:30:00Z", "reason": "LIMIT_EXCEEDED", "code": "MAX_WIND_KN"}
+        ]
+      }
+    },
+    {
+      "name": "missing_wave_reading_overlaps_a_wind_period",
+      "scope": {"terminal_id": 1, "vessel_type_id": 21, "berth_id": null, "imdg_classes": []},
+      "units": {"wind_speed_unit": "KNOTS", "visibility_unit": "NAUTICAL_MILES", "current_speed_unit": "KNOTS"},
+      "step_minutes": 30,
+      "constraints": [
+        {"id": 301, "constraint_type_id": 1, "value": "25.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null},
+        {"id": 302, "constraint_type_id": 2, "value": "2.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null}
+      ],
+      "steps": [
+        {"valid_at": "2026-01-05T00:00:00Z", "wind_speed": "30.00", "wave_height": "1.50"},
+        {"valid_at": "2026-01-05T00:30:00Z", "wind_speed": "30.00", "wave_height": null},
+        {"valid_at": "2026-01-05T01:00:00Z", "wind_speed": "20.00", "wave_height": null},
+        {"valid_at": "2026-01-05T01:30:00Z", "wind_speed": "20.00", "wave_height": "2.50"}
+      ],
+      "expected": {
+        "failures": [
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "25.000"]],
+          [["MISSING_VALUE", "MAX_WAVE_HEIGHT_M", "2.000"], ["LIMIT_EXCEEDED", "MAX_WIND_KN", "25.000"]],
+          [["MISSING_VALUE", "MAX_WAVE_HEIGHT_M", "2.000"]],
+          [["LIMIT_EXCEEDED", "MAX_WAVE_HEIGHT_M", "2.000"]]
+        ],
+        "blocked_periods": [
+          {"start": "2026-01-05T00:00:00Z", "end": "2026-01-05T01:00:00Z", "reason": "LIMIT_EXCEEDED", "code": "MAX_WIND_KN"},
+          {"start": "2026-01-05T00:30:00Z", "end": "2026-01-05T01:30:00Z", "reason": "MISSING_VALUE", "code": "MAX_WAVE_HEIGHT_M"},
+          {"start": "2026-01-05T01:30:00Z", "end": "2026-01-05T02:00:00Z", "reason": "LIMIT_EXCEEDED", "code": "MAX_WAVE_HEIGHT_M"}
+        ]
+      }
+    },
+    {
+      "name": "a_tighter_terminal_limit_expires_mid_horizon",
+      "scope": {"terminal_id": 1, "vessel_type_id": 21, "berth_id": null, "imdg_classes": []},
+      "units": {"wind_speed_unit": "KNOTS", "visibility_unit": "NAUTICAL_MILES", "current_speed_unit": "KNOTS"},
+      "step_minutes": 30,
+      "constraints": [
+        {"id": 401, "constraint_type_id": 1, "value": "25.000", "active_from": "2026-01-01T00:00:00Z", "active_to": null},
+        {"id": 402, "constraint_type_id": 1, "value": "15.000", "terminal_id": 1, "active_from": "2026-01-01T00:00:00Z", "active_to": "2026-01-05T01:00:00Z"}
+      ],
+      "steps": [
+        {"valid_at": "2026-01-05T00:00:00Z", "wind_speed": "20.00"},
+        {"valid_at": "2026-01-05T00:30:00Z", "wind_speed": "20.00"},
+        {"valid_at": "2026-01-05T01:00:00Z", "wind_speed": "20.00"},
+        {"valid_at": "2026-01-05T01:30:00Z", "wind_speed": "20.00"}
+      ],
+      "expected": {
+        "failures": [
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "15.000"]],
+          [["LIMIT_EXCEEDED", "MAX_WIND_KN", "15.000"]],
+          [],
+          []
+        ],
+        "blocked_periods": [
+          {"start": "2026-01-05T00:00:00Z", "end": "2026-01-05T01:00:00Z", "reason": "LIMIT_EXCEEDED", "code": "MAX_WIND_KN"}
+        ]
+      }
+    }
+  ]
+}
