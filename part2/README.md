@@ -50,6 +50,16 @@ AI Part 2, consuming `queue:part2`. Solve triggers (`solver_run.trigger_type`, A
 - **Exclusions:** `BASIS_UNDEFINED` (not a container vessel), `MISSING_MOVES`, `NO_VALID_PROFILE`, `AMBIGUOUS_PROFILE`, `PROFILE_UNIT_MISMATCH`, `NON_POSITIVE_SERVICE_TIME`.
 - **Known limitation:** vessels other than container vessels get no service time in Phase 1 (DEC-28 open item 4 stays open). The task's Proposed entry in `docs/ref/ATLANTECH_Decisions.md` holds the rulings.
 
+## Constraint filter, B2 (AI-051)
+
+`part2/filter/` applies the hard rules before the solve and on every emitted option, AI or FIFO. It is pure: the caller passes the AI-050 `PortState`, the constraint types, a `vessel_type_code` → id map and AI-054's tug requirements (`FilterContext`). The rules are in the AI-051 task decision (Proposed).
+
+- **Before the solve:** `filter_candidates(state, request_id, context)` keeps or removes every berth with all its reasons: `TERMINAL_COMPATIBILITY`, `BERTH_UNAVAILABLE`, `MAX_LOA`, `MAX_DRAFT` (static), Marine Safety Officer codes (A4's `resolve_limit` per berth, over the window), and per request `ENTRY_WINDOW`, `PILOT_UNAVAILABLE`, `PILOT_RANK_LIMIT`, `TUG_COUNT`.
+- **NO_FEASIBLE_PLAN:** `binding_constraints(candidates)` gives CT-10 items, one per distinct reason, `detail` at most 255 characters.
+- **Options:** `check_option` and `check_plan` add the window (`[start, end)`, UTC) and DEC-32 availability (`BERTH_OCCUPIED`, `PILOT_UNAVAILABLE`, `TUG_UNAVAILABLE`); a plan's other options count as holds, so a FIFO plan that double-books fails.
+- **Not enforced yet:** UKC (AI-045; a skipped test waits for it) and equipment-specific limits (no berth–equipment link). The B2 code list is empty until Marine Safety Officer codes are seeded (AI-009).
+- **Proposed codes:** `PILOT_RANK_LIMIT` and `TUG_COUNT` are a Proposed CT-10 change; its approval is a merge gate for AI-058.
+
 ## Writes
 
 - `solver_run`, `solver_run_model_version`
