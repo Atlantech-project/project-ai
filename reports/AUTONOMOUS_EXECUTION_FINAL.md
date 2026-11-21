@@ -229,3 +229,58 @@ To open the PRs, use these compare links, each against `develop`:
 - **AI-032 criterion 3** asks that the previous ACTIVE file become REPLACED in the same transaction.
 - CT-12 step 5 and DEC-08 give that write to the Backend: the worker never writes `baplie_files.status`.
 - I follow the contract and recorded this as R6.
+
+---
+
+# Round 3 — delivery queue and continued work (2026-11-21)
+
+## R3.1 Verified state
+
+- `origin/develop` = `8b955ed`, unchanged since round 2.
+- No PRs are open and `gh` is not installed, so the PRs below must be opened in the browser.
+- `ci-ok` is green on every head listed (AI-060 handler: pushed last; check its CI).
+
+## R3.2 PRs to open (task branches in any order; SETUP last)
+
+| Task | Head | Compare link | Description | Evidence |
+|---|---|---|---|---|
+| AI-065 | `62f3af0` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-065-yard-placement-design | B8 constraint-to-table mapping (Proposed AI task decision) | Document checks; CI green |
+| AI-056 | `ac3f51a` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-056-solver-outcome-handling | CT-10 outcomes, FIFO fallback, reasons for unplaced requests | 19 unit; CI green |
+| AI-074 | `57b3817` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-074-trusted-data-selection | Trusted-only reads of field events for Part 3 | 8 unit + 1 MySQL; CI green |
+| AI-032 | `6ae3ce7` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-032-baplie-commit-quarantine | All-or-nothing BAPLIE commit and quarantine; worker never writes file status (R6) | 35 unit + 2 MySQL incl. fault injection; CI green |
+| AI-072 | `f3483fb` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-072-drift-monitor | PSI, rolling MAE, drift rows; thresholds only from CT-18 keys | 15 unit + 1 MySQL; CI green |
+| AI-060 handler | `4add5e0` | https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-060-validate-queue-handler | `queue:validate` handler and the shared B2 `FilterContext` loader | 12 unit + 2 MySQL; full suite with services: 2105 passed |
+| SETUP | this branch | https://github.com/Atlantech-project/project-ai/compare/develop...feature/SETUP-post-merge-records | Records. **Merge last**; refreshed by merging `develop` into it after the others | Docs only |
+
+`git merge-tree` check: the six task branches merge cleanly with each other; only SETUP conflicts (tracker rows).
+
+## R3.3 Work this round
+
+- **Shared B2 context loader** (`part2/context.py`):
+  - built from `constraint_types` (new table definition), `vessel_types` and the AI-054 tug requirements;
+  - no schema change needed; the missing DEC-20 inputs are requested as INT-B9.
+- **AI-060 handler** (`part2/validation/job.py`): built on the loader.
+- **AI-057 investigated:**
+  - `seed-spec.json` has `rationale_templates: []`;
+  - AI-009 was closed by a Leads ruling with criterion 3 (domain-reviewed templates) open;
+  - no template text exists, so per-template rendering tests can't be met (INT-Q4). Not started.
+- **AI-033:** waits for AI-032 to merge.
+- **AI-066:** waits for AI-032, AI-058 and the Backend's DEC-29 gaps (INT-B3). Nothing safe to build beyond the AI-065 mapping.
+- **AI-073:** waits for DEC-31 (R2). Planned approach, per the R2 recommendation:
+  - a scheduler inside the Part 3 worker;
+  - cadence from `port_settings`;
+  - a one-run lock.
+
+  Not started, by rule.
+- **AI-045:** needs R3 (synthetic path) plus a sourced squat coefficient (flag X). Not started.
+- **AI-072, three states:**
+  - code complete and tested;
+  - not production-ready (no thresholds, R8; no model version, OD-17);
+  - task criteria met in code; the "stored" criterion is proven in MySQL.
+
+## R3.4 Exact next action
+
+1. Open and merge the six task PRs.
+2. Merge `develop` into the SETUP branch, keeping every task's own row; push; check CI; merge.
+3. Move the PortHub pointer.
+4. Start AI-033 (after AI-032 merges). AI-058 then needs AI-056, AI-057 and INT-B1.

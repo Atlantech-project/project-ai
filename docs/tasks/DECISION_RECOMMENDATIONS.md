@@ -49,3 +49,45 @@ Setup record (not in the backlog), written for the user as AI Team owner. Each i
 - **DEC-07:** close it with Option 1, "a proposal with no windows, linked from the run". The entry already marks that option "(agreed)"; only its Status was never set. Backend coordination: a schema note change only.
 - **DEC-24:** Part 1 horizon, time step, minimum window and slot. Its values come from the thresholds register (DEC-30). I have no source for them, so I have no value to recommend.
 - **Owner:** AI Team, with the Backend Team for the schema note.
+
+## R6 · AI-032 criterion 3 versus CT-12 (resolution text)
+
+- **Contradictory text:** backlog §5 AI-032, criterion "Previous ACTIVE file becomes REPLACED in the same transaction", and expected output "earlier ACTIVE → REPLACED … ACTIVE/PARSED".
+- **Authoritative contract:**
+  - CT-12 v1.1 run flow step 5: "Backend · On `PARSED`, in one transaction: new file → `ACTIVE`, previous ACTIVE → `REPLACED`".
+  - CT-12: "The worker never writes `baplie_files.status` (DEC-08)".
+  - The DEC-08 / CT-15 grants give `w_edi` UPDATE on `parse_status` and `staged_payload` only.
+- **Recommendation:** treat criterion 3 as the Backend's deliverable. AI-032 is done when its other two criteria are met; reword the backlog line at its next revision (backlog owner: AI Team).
+- **Backend deliverable:** already in CT-12 step 5, so nothing new is needed. One transaction on a `PARSED` C-06: the new file `STAGED` → `ACTIVE`, and the earlier ACTIVE file of the same request → `REPLACED` (respecting `active_request_key`). On any other outcome, nothing changes. Acceptance: a Backend test of that transition (INT-B10).
+- **AI worker boundary:**
+  - The worker writes `parse_status`, `staged_payload`, issues, containers, manifest entries and `vessels.call_sign` (only when NULL).
+  - The worker never writes `baplie_files.status` or creates vessels.
+  - Tested: `tests/integration/test_edi_job.py` asserts the file stays `STAGED`.
+- **Owner of the decision:** AI Team; CT-12 is unchanged. Status: RECOMMENDED.
+
+## R7 · Round-2 task decisions (all `Proposed`; owner AI Team; none approved)
+
+| Entry | Current text, in short (full text in `ATLANTECH_Decisions.md`) | Why | Components | Contract impact | Tests | Risk | Recommended |
+|---|---|---|---|---|---|---|---|
+| AI-056 | FIFO only on B5 `TIMEOUT` or `SolverInvariantError`. A finished solve placing nothing → `NO_FEASIBLE_PLAN` / `INFEASIBLE`. FIFO by `requested_eta`, earliest fit, strongest tugs first, NULL score, B2 `check_plan`. Unplaced reasons: `BERTH_OCCUPIED` / `PILOT_UNAVAILABLE` / `TUG_UNAVAILABLE`, or all three ("never together"). `NOT_SOLVED` not built | Architecture §8.9: FIFO never on infeasibility | `part2/outcomes.py` | None (CT-10 v1.1 shapes) | 19 unit | Reasons are diagnostic, not minimal proofs | Accept |
+| AI-074 | `part3/trusted.py` is the only Part 3 read of `actual_status_updates`, always `clock_skew_suspect = 0`, no override; a test fails on any other Part 3 reference | I-13, UML rule 8 | `part3/trusted.py`, `pyproject.toml` scopes | None | 8 unit + 1 MySQL | Future Part 3 code must use it (the test enforces it) | Accept |
+| AI-032 | Worker never writes file status or creates vessels. Plan / handler split. `message` = `CODE: text`. CT-12 `staged_payload` exactly. `result_detail` fields. Precondition categories | CT-12 steps 3 and 5, DEC-08 | `edi/commit.py`, `edi/job.py` | None (follows CT-12) | 35 unit + 2 MySQL (fault injection) | OD-02 (audit entry) open | Accept, with R6 |
+| AI-072 | PSI on reference deciles, empty-bin share 1e-4, 5 decimals. MAE over the caller's window. Drifted = `metric_value > threshold`. Thresholds only from CT-18 keys | Backlog: "threshold from the register" | `part3/drift.py` | None | 15 unit + 1 MySQL | Deciles and 1e-4 are engineering choices | Accept; values per R8 |
+
+## R8 · DEC-30 TR-01 / TR-02 drift thresholds (owner: AI Team)
+
+- **Context:** the register lists both as DEFERRED, with the AI Team as owner and AI-072 as the task that needs them.
+- **Recommendation:** none. No source in this repository gives values, so I propose none.
+- **Effect:** AI-072 code is complete and tested, but it is not production-ready until the values are seeded through CT-18.
+
+## Consolidated review of open recommendations (2026-11-21)
+
+| ID | State | Blocks |
+|---|---|---|
+| R1 | Open (round-1 task decisions; AI-055 `RESOURCE_COST` = tugs ÷ `N_cap`) | Nothing in code; confirmation only |
+| R2 | Open (DEC-31; Option 1 recommended) | AI-073 |
+| R3 | Open (AI-045 on synthetic data) | AI-045 → closing AI-055 |
+| R4 | Open (DEC-07 Option 1) | AI-007 → AI-047, AI-048 |
+| R6 | Open | Closing AI-032 cleanly |
+| R7 | Open | Confirmation only |
+| R8 | Open | AI-072 production use |
