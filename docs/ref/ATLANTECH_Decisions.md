@@ -2207,6 +2207,22 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 - **AI-009:** Marine Safety Officer limit codes must be seeded (and added to the B2 list) before the Marine Safety Officer rules are active in production.
 - **Source to add:** a Damietta Port Authority reference for compulsory pilotage (Confirmed rule row).
 
+### AI-031 · BAPLIE content rules: codes, references, stowage bounds and the correction path
+
+| | |
+| --- | --- |
+| Source | AI-031 (backlog: "Each rule has positive and negative tests"; "Correction validation path uses the same code (test proves it)"; "IMO mismatch is a blocking issue"; guidance "Package the rule set so the OD-03 decision can call it") · CT-12 v1.1 (ERROR and WARNING issue lists; quarantine and correction) · CT-24 and the AI-023 corpus oracles (`tests/edi_corpus/`) · DEC-03 (correction on `queue:edi` with `source = STAGED_PAYLOAD`) · `schema.sql` `chk_cme_*` checks |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-032 (calls the rules, writes `staged_payload` and the issues) · AI-033 · CT-24 (QA Team: six new codes, case 12 bounds) · Backend Team (quarantine screen shows the codes) |
+| Decision | ______ |
+| Proposed change | 2026-11-21 · AI-031 · (1) **Package:** `edi.rules` (`validate`, `outcome`, `Reference`, `Finding`, `validate_staged_payload`, `read_staged_payload`), pure, with the reference data passed in by the caller. (2) **Codes with a corpus case** are used exactly as the oracles give them (code, severity, `segment_ref`, message): `IMO_MISMATCH`, `DUPLICATE_CONTAINER_NUMBER`, `UNKNOWN_SIZE_TYPE`, `UNKNOWN_IMDG_CLASS`, `MALFORMED_WEIGHT`, `MALFORMED_UNLOCODE`, `TEMPERATURE_OUT_OF_RANGE`, `REEFER_MISSING_TEMPERATURE`, `INVALID_STOWAGE_COORDINATE`, `MISSING_MANDATORY_SEGMENT`, `CHECK_DIGIT_MISMATCH`, `MISSING_FULL_EMPTY` (the last already Proposed for CT-24 by AI-023). (3) **New codes** for CT-12 rules no case covers: ERROR `MALFORMED_CONTAINER_NUMBER` (missing, or not four letters and seven digits after uppercasing and removing spaces; `containers.container_number` is `char(11)`), ERROR `MALFORMED_TEMPERATURE` (not a number), ERROR `MALFORMED_OOG` (overhang not a positive number, `chk_cme_oog`), WARNING `MISSING_PORT_OF_DISCHARGE`, WARNING `VESSEL_NAME_MISMATCH` (compared after collapsing spaces and case-folding), WARNING `SIZE_TYPE_CHANGED`. (4) **Missing IMO** in the file counts as `IMO_MISMATCH` (blocking); a request vessel with no IMO is a caller error, not an issue. (5) **Duplicates:** one ERROR per repeated number, at its second line. (6) **An unrecognised full/empty code** is `MISSING_FULL_EMPTY` (written NULL), with the code in the message. (7) **Stowage:** only the schema bounds are enforced (`chk_cme_stowage`: bay > 0, row ≥ 0, tier > 0) plus a position that is not seven digits; upper bounds are not defined anywhere, so corpus case 12 (bay 999, row 99, tier 99) is skipped, not guessed. (8) **Correction path:** a corrected payload is read into the parser's records and checked by the same `validate`; a value of the wrong JSON type is kept as unconverted text so the same malformed-value rules apply; with no segment texts in the payload, issues point at the line's `segment_ref`. · Reason: CT-12 names the rules but not their codes, references or the correction mechanics, and the corpus covers only twelve of them · Evidence: `edi/rules/checks.py`, `edi/rules/staged.py`; `tests/unit/edi/test_rules.py` (70 tests, 1 skipped) on branch `feature/AI-031-baplie-validation-rules` · Impact: AI-032, CT-24 (QA Team), Backend quarantine screen · Awaiting: AI Team (owner); the new codes also need the QA Team (CT-24 owner) |
+
+**Follow-ups (they don't change the rules above):**
+
+- **Case 12 oracle:** its message says "99/99/99" while the position `9999999` reads as bay 999, row 99, tier 99. The QA Team (CT-24) or the Leads Council to give the upper bounds of bay, row and tier, or to drop the case.
+- **CT-24:** the six new codes of item (3) need a CT-24 Proposed change by the QA Team, like AI-023's three codes (`docs/followups/contracts-followup.md` item 3).
+- `baplie_parse_issues` has no `code` column: codes reach staff only through `staged_payload`. Whether the table gets one is the Backend Team's call (CT-17).
 ### AI-092 · Observability: job log context, metrics as log lines and redaction
 
 | | |
