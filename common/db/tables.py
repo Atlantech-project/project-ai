@@ -314,6 +314,40 @@ FORECAST_RUNS: Final = sa.Table(
     ),
 )
 
+ML_MODELS: Final = sa.Table(
+    "ml_models",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column(
+        "model_key",
+        KnownEnum(
+            "M2_SERVICE_TIME", "M3_DEMAND_FORECAST", "M4_DELAY_RISK", "FORECAST_BIAS_CORRECTION"
+        ),
+        nullable=False,
+    ),
+    sa.Column("algorithm_family", mysql.VARCHAR(40), nullable=False),
+    sa.Column("description", mysql.VARCHAR(255)),
+)
+
+ML_MODEL_VERSIONS: Final = sa.Table(
+    "ml_model_versions",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("ml_model_id", _ID, nullable=False),
+    sa.Column("version_no", mysql.INTEGER, nullable=False),
+    sa.Column(
+        "status", KnownEnum("CHALLENGER", "CHAMPION", "ARCHIVED", "REJECTED"), nullable=False
+    ),
+    sa.Column("hyperparameters", mysql.JSON),
+    sa.Column("training_window_start", UtcDateTime()),
+    sa.Column("training_window_end", UtcDateTime()),
+    sa.Column("training_row_count", mysql.INTEGER),
+    sa.Column("artifact_path", mysql.VARCHAR(255), nullable=False),
+    sa.Column("trained_at", UtcDateTime(), nullable=False),
+    sa.Column("deployed_at", UtcDateTime()),
+    sa.Column("retired_at", UtcDateTime()),
+)
+
 PART1_RUNS: Final = sa.Table(
     "part1_runs",
     metadata,
