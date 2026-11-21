@@ -188,6 +188,22 @@ CONTAINER_MANIFEST_ENTRIES: Final = sa.Table(
     sa.Column("port_of_discharge", mysql.CHAR(5)),
 )
 
+CONTAINER_SIZE_TYPES: Final = sa.Table(
+    "container_size_types",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.CHAR(4), nullable=False),
+    sa.Column("length_ft", mysql.INTEGER(), nullable=False),
+    sa.Column("is_high_cube", mysql.TINYINT(1), nullable=False),
+    sa.Column(
+        "type_group",
+        KnownEnum("GENERAL", "REEFER", "TANK", "OPEN_TOP", "FLAT_RACK", "VENTILATED", "BULK"),
+        nullable=False,
+    ),
+    sa.Column("teu_factor", mysql.DECIMAL(3, 2), nullable=False),
+    sa.Column("is_reefer", mysql.TINYINT(1), info=GENERATED_INFO),
+)
+
 CONTAINERS: Final = sa.Table(
     "containers",
     metadata,
@@ -312,6 +328,13 @@ FORECAST_RUNS: Final = sa.Table(
     sa.Column(
         "visibility_unit", KnownEnum("NAUTICAL_MILES", "KILOMETRES", "METRES"), nullable=False
     ),
+)
+
+IMDG_CLASSES: Final = sa.Table(
+    "imdg_classes",
+    metadata,
+    sa.Column("code", mysql.VARCHAR(3), primary_key=True),
+    sa.Column("name", mysql.VARCHAR(80), nullable=False),
 )
 
 ML_MODELS: Final = sa.Table(
