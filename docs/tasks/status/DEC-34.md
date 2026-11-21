@@ -1,11 +1,11 @@
 # DEC-34 · Building A4 rules on synthetic data
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (DEC-34 itself is Closed; this task becomes `DONE` when this branch is reviewed and merged) |
+| Status | DONE (PR #38 merged into `develop`, merge `64cca37`; PortHub `main` synced in `38dd6b5` on 2026-11-21). DEC-34 itself is Closed |
 | Owner | AI Team |
 | Branch | `feature/DEC-34-a4-synthetic-data` (from `develop` at `0347d01`) |
 | Plan | documented exception: decision task, no separate plan file. The user's numbered instructions of 2026-11-20, given in the conversation, are the plan · approval: the user wrote them and directed the work, 2026-11-20 |
-| Updated | 2026-11-20 |
+| Updated | 2026-11-21 |
 
 Decision task. No code, config or tests changed.
 

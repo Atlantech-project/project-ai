@@ -34,6 +34,7 @@ from common.config import (
     load_env_settings,
     read_port_settings,
 )
+from common.observability import METRICS, queue_wait_ms
 from common.runtime.envelope import (
     QUEUES,
     Envelope,
@@ -46,7 +47,7 @@ from common.runtime.envelope import (
     resolve_schema_dir,
 )
 from common.runtime.errors import ErrorCategory, JobError
-from common.runtime.logs import configure_logging, log_event
+from common.runtime.logs import configure_logging, job_log_context, log_event
 from common.runtime.runs import (
     RUN_TABLES,
     Connection,
@@ -227,6 +228,8 @@ class Worker:
         self._schemas = schemas
         # A plain flag: `threading.Event` takes a lock, which a signal handler could deadlock on.
         self._stopping = False
+        # The C-06 message sent for the message being handled, for its metrics (AI-092).
+        self._last_completion: Mapping[str, object] | None = None
 
     def stop(self) -> None:
         """Finish the current job and take no new one. Safe to call from a signal handler."""
@@ -258,20 +261,43 @@ class Worker:
         """Handle one message, on `connection` if given, which is closed afterwards."""
         connect = self._connect if connection is None else (lambda: connection)
         fields: dict[str, object] = {"queue": self._queue}
+        started = datetime.now(UTC)
+        began = time.monotonic()
+        enqueued_at: str | None = None
+        self._last_completion = None
         try:
             parsed = parse_message(raw, self._job_type, self._schemas)
             fields = self._fields(parsed.run_id, parsed.job_id, parsed.contract_version)
-            if isinstance(parsed, Rejection):
-                self._reject(parsed, raw, connect, fields)
-            elif parsed.job_type is JobType.VALIDATION:
-                self._run_validation(parsed, connect, fields)
-            else:
-                self._run_job(parsed, connect, fields)
+            if not isinstance(parsed, Rejection):
+                enqueued_at = parsed.enqueued_at
+            with job_log_context(fields):
+                if isinstance(parsed, Rejection):
+                    self._reject(parsed, raw, connect, fields)
+                elif parsed.job_type is JobType.VALIDATION:
+                    self._run_validation(parsed, connect, fields)
+                else:
+                    self._run_job(parsed, connect, fields)
         except Exception:
             log_event(logging.ERROR, "job_handling_failed", fields, exc_info=True)
         finally:
             if connection is not None:
                 _close_quietly(connection)
+            self._observe(fields, started, began, enqueued_at)
+
+    def _observe(
+        self, fields: dict[str, object], started: datetime, began: float, enqueued_at: str | None
+    ) -> None:
+        """One `job_metrics` line per message (AI-092); a metrics failure never stops the loop."""
+        try:
+            METRICS.observe(
+                job_type=self._job_type.value,
+                completion=self._last_completion,
+                duration_ms=round((time.monotonic() - began) * 1000),
+                queue_wait_ms=queue_wait_ms(enqueued_at, started),
+                fields=fields,
+            )
+        except Exception:
+            log_event(logging.ERROR, "metrics_failed", fields, exc_info=True)
 
     def _fields(
         self, run_id: int | None, job_id: str | None, contract_version: str | None
@@ -578,6 +604,7 @@ class Worker:
         return message
 
     def _send(self, message: Mapping[str, object], fields: dict[str, object]) -> None:
+        self._last_completion = message
         try:
             self._redis.rpush(AI_RESULTS_QUEUE, json.dumps(message))
         except Exception:
