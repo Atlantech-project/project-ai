@@ -166,6 +166,31 @@ BLOCKED_PERIODS: Final = sa.Table(
     sa.Column("limiting_constraint_type_id", _ID, nullable=False),
 )
 
+CONSTRAINT_TYPES: Final = sa.Table(
+    "constraint_types",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(60), nullable=False),
+    sa.Column("category", KnownEnum("ENVIRONMENTAL", "UKC", "VESSEL_SAFETY"), nullable=False),
+    sa.Column(
+        "unit",
+        KnownEnum(
+            "KNOTS",
+            "METRES_PER_SECOND",
+            "METRES",
+            "NAUTICAL_MILES",
+            "PERCENT",
+            "DEGREES",
+            "MINUTES",
+            "TONNES",
+        ),
+        nullable=False,
+    ),
+    sa.Column("comparator", KnownEnum("MAX_ALLOWED", "MIN_REQUIRED"), nullable=False),
+    sa.Column("is_hard_safety_limit", mysql.TINYINT(1), nullable=False),
+    sa.Column("description", mysql.VARCHAR(255)),
+)
+
 CONTAINER_MANIFEST_ENTRIES: Final = sa.Table(
     "container_manifest_entries",
     metadata,
