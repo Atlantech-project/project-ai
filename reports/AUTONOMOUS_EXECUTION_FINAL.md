@@ -182,3 +182,49 @@ To open the PRs, use these compare links, each against `develop`:
   2. Move the PortHub pointer after each merge.
   3. Answer R1–R4.
   4. Then AI-056 and AI-057 (after AI-055), AI-032 (after AI-031) and AI-074 (after AI-025) become ready.
+
+---
+
+# Round 2 — post-merge verification and continued execution (2026-11-21)
+
+## R2.1 Merge verification
+
+| PR | Task | Merge commit | Merged (UTC) | CI on merge commit |
+|---|---|---|---|---|
+| #41 | SETUP-autonomous-execution-records | `6ed8c91` | 2026-11-21 19:16 | green |
+| #42 | AI-070 | `78c1590` | 2026-11-21 19:20 | green |
+| #43 | AI-025 | `1a996e0` | 2026-11-21 19:26 | green |
+| #44 | AI-092 | `fec76df` | 2026-11-21 19:30 | green |
+| #45 | AI-031 | `4408065` | 2026-11-21 19:34 | green |
+| #46 | AI-055 | `c7e60f1` | 2026-11-21 19:38 | green |
+| #47 | AI-060 | `8b955ed` | 2026-11-21 19:41 | green |
+| — | AI-065 | **not merged: no PR opened** | — | branch CI green |
+
+- `develop` = `8b955ed`; locally 1634 unit tests pass (1433 + 201), ruff and mypy clean.
+- Found in the merge round: a duplicate, stale AI-051 row in `WORK_STATUS.md`. No duplicate decision entries or status files.
+- Status after verification:
+  - DONE: AI-025, AI-031, AI-092, the first SETUP branch.
+  - BLOCKED: AI-055 (AI-045 gate) and AI-070 (registration needs grants).
+  - IN PROGRESS: AI-060 (queue handler).
+
+## R2.2 PortHub
+
+- Commits `38dd6b5` and `a3a1eb3` were verified on `main`.
+- Pointer commit `e06e102` moves `project-ai` to `8b955ed`.
+- No shared Decisions or Contracts changed in this round, so nothing else was synced.
+
+## R2.3 Round-2 branches
+
+| Task | Head | Tests | State |
+|---|---|---|---|
+| AI-065 | `62f3af0` | document task | `develop` merged in, conflicts resolved; awaiting PR |
+| AI-056 | `ac3f51a` | 19 unit | awaiting PR; CI green |
+| AI-074 | `57b3817` | 8 unit + 1 integration | awaiting PR |
+| SETUP-post-merge-records | see branch | — | merge last |
+| AI-032 | see `WORK_STATUS.md` | — | in this session |
+
+## R2.4 Contract finding
+
+- **AI-032 criterion 3** asks that the previous ACTIVE file become REPLACED in the same transaction.
+- CT-12 step 5 and DEC-08 give that write to the Backend: the worker never writes `baplie_files.status`.
+- I follow the contract and recorded this as R6.

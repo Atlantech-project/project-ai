@@ -9,6 +9,8 @@ Setup record (not in the backlog), written for the user as AI Team owner. Each i
 | R3 | How does AI-045 (A5 UKC with squat) get built before AI-043 exists? | Build it on labelled synthetic series, as DEC-34 did for A4 | RECOMMENDED · needs a new decision text |
 | R4 | Close DEC-07 (and DEC-24) so AI-007 can close? | DEC-07: Option 1, the recommendation the entry already marks "agreed" | RECOMMENDED |
 | R5 | DEC-22: financial impact in ranking | Keep it Open; AI-055 ranks by DEC-23 only | No action |
+| R6 | AI-032 criterion 3 ("previous ACTIVE file becomes REPLACED in the same transaction") conflicts with CT-12 step 5 and DEC-08, which give that write to the Backend | Follow the contract: the worker never writes `baplie_files.status`; close criterion 3 as the Backend's, or reword it in the backlog | RECOMMENDED |
+| R7 | Accept the second-round task decisions (AI-056, AI-074, AI-032)? | Yes, as written | RECOMMENDED · REQUIRES OWNER CONFIRMATION |
 
 ## R1 · The AI task decisions of 2026-11-21
 
