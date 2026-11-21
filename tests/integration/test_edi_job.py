@@ -2,6 +2,7 @@
 
 import shutil
 from collections.abc import Iterator
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -71,8 +72,20 @@ def _seed(root: Any, volume: Path, case: str) -> int:
     vessel = seed_row(
         root, "vessels", imo_number="9811000", name="MSC ALEXANDRIA", call_sign="KEEP"
     )
-    for code, group in (("22G1", "GENERAL"), ("45G1", "GENERAL"), ("45R1", "REEFER")):
-        seed_row(root, "container_size_types", code=code, type_group=group)
+    for code, length, group in (
+        ("22G1", 20, "GENERAL"),
+        ("45G1", 40, "GENERAL"),
+        ("45R1", 40, "REEFER"),
+    ):
+        teu = Decimal(1) if length == 20 else Decimal(2)
+        seed_row(
+            root,
+            "container_size_types",
+            code=code,
+            length_ft=length,
+            type_group=group,
+            teu_factor=teu,
+        )
     seed_row(root, "imdg_classes", code="3", name="Flammable liquids")
     seed_row(root, "port_profiles", port_code="EGDAM")
     return seed_row(
