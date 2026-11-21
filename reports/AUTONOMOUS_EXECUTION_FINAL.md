@@ -221,7 +221,8 @@ To open the PRs, use these compare links, each against `develop`:
 | AI-056 | `ac3f51a` | 19 unit | awaiting PR; CI green |
 | AI-074 | `57b3817` | 8 unit + 1 integration | awaiting PR |
 | SETUP-post-merge-records | see branch | — | merge last |
-| AI-032 | see `WORK_STATUS.md` | — | in this session |
+| AI-032 | `6ae3ce7` | 35 unit + 2 integration | awaiting PR; first CI run failed on a test seed (fixed; full suite with MySQL passes locally) |
+| AI-072 | `f3483fb` | 15 unit + 1 integration | awaiting PR; full suite with MySQL passes locally |
 
 ## R2.4 Contract finding
 
