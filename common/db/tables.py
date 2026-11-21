@@ -338,7 +338,8 @@ ML_MODEL_VERSIONS: Final = sa.Table(
     sa.Column(
         "status", KnownEnum("CHALLENGER", "CHAMPION", "ARCHIVED", "REJECTED"), nullable=False
     ),
-    sa.Column("hyperparameters", mysql.JSON),
+    sa.Column("champion_key", _ID, info=GENERATED_INFO),
+    sa.Column("hyperparameters", mysql.JSON(none_as_null=True)),
     sa.Column("training_window_start", UtcDateTime()),
     sa.Column("training_window_end", UtcDateTime()),
     sa.Column("training_row_count", mysql.INTEGER),
