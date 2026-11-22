@@ -34,6 +34,7 @@ Where the parser stops:
 - Codes, references and messages follow the AI-023 corpus oracles where a case exists; the others are Proposed in the AI-031 task decision.
 - **Correction path (DEC-03, `source = STAGED_PAYLOAD`):** `edi.rules.validate_staged_payload(payload, reference)` reads a staff-corrected `staged_payload` back into the same records and calls the same `validate`. Issues then point at each line's `segment_ref`, because the payload carries no segment texts.
 - **Stowage:** only the schema's bounds are enforced (bay > 0, row ≥ 0, tier > 0); no document gives upper bounds, so corpus case 12 is skipped until they are defined.
+- **Storable range:** a weight, overhang or stowage value above 2,147,483,647 (the schema's `int` columns) is an ERROR under the rule's code, so the file is quarantined instead of failing the write. This is a storage limit, not an operational bound.
 
 **Unverified mapping (DEC-28 item 7).** The qualifiers and positions in `edi/mapping.py` follow the AI-023 corpus, CT-12 and DEC-28, not the SMDG implementation guides 2.2.1 and 3.1.1, which are not available. `mapping.py` is the one place to correct them.
 

@@ -332,6 +332,42 @@ def test_oog_overhangs_must_be_positive() -> None:
     assert codes(line(oog=Oog(front_cm=20, height_cm=30))) == []
 
 
+# The schema stores weight, overhangs and stowage in signed 32-bit `int` columns; a larger value
+# cannot be written, so it is a quarantine finding, not a database error in AI-032.
+INT_MAX = 2_147_483_647
+
+
+def test_values_the_int_columns_cannot_store_are_errors() -> None:
+    assert codes(line(weight_kg=INT_MAX)) == []
+    assert codes(line(weight_kg=INT_MAX + 1)) == ["MALFORMED_WEIGHT"]
+    assert codes(line(oog=Oog(front_cm=INT_MAX))) == []
+    assert codes(line(oog=Oog(left_cm=INT_MAX + 1))) == ["MALFORMED_OOG"]
+    assert codes(line(stowage=Stowage(INT_MAX, 0, 1))) == []
+    assert codes(line(stowage=Stowage(1, INT_MAX + 1, 82))) == ["INVALID_STOWAGE_COORDINATE"]
+
+
+def test_oversized_weight_from_a_file_is_quarantined() -> None:
+    raw = READ_CASES[0].edi_path.read_bytes()
+    assert b"MEA+WT++KGM:" in raw
+    edited = raw.replace(b"MEA+WT++KGM:24500'", b"MEA+WT++KGM:3000000000'", 1)
+    assert edited != raw
+    parsed = parse_baplie(edited)
+    findings = validate(parsed.vessel, parsed.lines, REFERENCE)
+
+    assert [f.issue.code for f in findings] == ["MALFORMED_WEIGHT"]
+    assert outcome(findings) == "QUARANTINED"
+
+
+def test_oversized_corrected_values_are_quarantined() -> None:
+    parsed = parse_baplie(READ_CASES[0].edi_path.read_bytes())
+    payload = _payload(parsed.vessel, parsed.lines)
+    payload["lines"][0]["weight_kg"] = INT_MAX + 1
+    payload["lines"][0]["stowage"] = {"bay": 1, "row": 2, "tier": INT_MAX + 1}
+
+    codes = {f.issue.code for f in validate_staged_payload(payload, REFERENCE)}
+    assert codes == {"MALFORMED_WEIGHT", "INVALID_STOWAGE_COORDINATE"}
+
+
 def test_full_empty_missing_or_unknown_is_a_warning() -> None:
     assert codes(line(full_empty=None)) == ["MISSING_FULL_EMPTY"]
     unknown = validate(VESSEL, [line(full_empty=None, unconverted={"full_empty": "7"})], REFERENCE)
