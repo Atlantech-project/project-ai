@@ -2,6 +2,26 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0e. Checkpoint 7 (2026-11-22, five-task batch post-merge verification)
+
+**Verified with the GitHub pulls API and check runs:**
+
+| PR | Branch | Head | Merge | Merged at (UTC) | CI on merge |
+|---|---|---|---|---|---|
+| #57 | `feature/AI-031-storable-range-checks` | `3c563b9` | `792cd30` | 2026-11-22 11:54:24 | all success |
+| #58 | `feature/SETUP-five-task-batch-records` | `99c882c` | `0040139` | 2026-11-22 11:57:48 | all success |
+
+- PR #45 is the original AI-031 branch (merge `4408065`, 2026-11-21), not the overflow fix.
+- **Gap found:** `36b2a8e` (the AI-031 independent-review follow-up: boundary test for every field, stricter MySQL assertion, decision evidence, record) was pushed at 11:54:39, 15 s after PR #57 merged, so it is not in `develop`. Checkpoint 6's "head `36b2a8e`" therefore never reached `develop`. Re-applied by cherry-pick on `feature/AI-031-review-followups` (`c5f99ac`, plus the record correction `cd5e001`). The merged fix code is unaffected.
+- No open PRs after the merges.
+- Local `develop` fast-forwarded `a604946` → `0040139`; three untracked `reports/` files left byte-identical. On `0040139` (local MySQL 8.4, Redis 7.4): 2196 passed, 50 skipped, 1 xfailed; ruff, format and mypy clean.
+- PortHub: `project-ai` pointer `a604946` → `0040139`, commit `2d381d0` on `main` (only the gitlink changed).
+- Records: no duplicate tracker rows, decision headings or R entries.
+
+**Statuses:** AI-031 DONE (PR #45; overflow fix PR #57; review follow-up IN REVIEW). AI-032 BLOCKED (R6, INT-B10). AI-051 DONE. AI-055 BLOCKED (AI-045; needs a squat-coefficient source, R3). AI-025 DONE. SETUP-five-task-batch-records DONE (PR #58).
+
+**Next (exact):** merge `feature/AI-031-review-followups`, then this branch; then move the PortHub pointer again to the final `develop` head. Then the user reviews before any new batch.
+
 ## 0d. Checkpoint 6 (2026-11-22, five-task batch: AI-031, AI-032, AI-051, AI-055, AI-025)
 
 **Base:** `develop` `a604946` (= `origin/develop`; PRs #55 and #56 merged, so Checkpoint 5's "next 1" is done). No PR open before the batch. Verified with the GitHub pulls API.

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only) |
+| Status | DONE (PR #58, merge `0040139`, 2026-11-22; verified with the GitHub pulls API) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-five-task-batch-records` (from `develop` at `a604946`) |
 | Plan | the user's five-task batch instruction of 2026-11-22 (AI-031 → AI-032 → AI-051 → AI-055 → AI-025; checkpoint after each task; Arabic report `reports/AI_FIVE_TASKS_EXECUTION_REPORT.md`) · approval: that instruction, which also authorises commit and push without a separate `APPLY CHANGES` |
@@ -29,3 +29,7 @@ Has not occurred: `gh` is not installed on this machine, so no PR was opened fro
 ## Blockers and follow-ups
 - Merge order: the AI-031 follow-up first, then this branch. After the AI-031 merge, record its PR number and merge SHA here before this branch is merged.
 - PortHub pointer: only after this branch is merged.
+
+## Merge verification (2026-11-22, recorded by SETUP-five-task-post-merge-records)
+- PR #58, head `99c882c`, merged at 2026-11-22T11:57:48Z as `0040139`; `4fa9f24`, `951f436` and `99c882c` are in `develop`. CI on `0040139`: all success.
+- The "no PR yet" lines above describe the state before the merges; the merged state is in Checkpoint 7.
