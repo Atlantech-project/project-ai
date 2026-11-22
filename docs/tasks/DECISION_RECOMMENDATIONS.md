@@ -125,3 +125,47 @@ Setup record (not in the backlog), written for the user as AI Team owner. Each i
 | R8 | Open | AI-072 production use |
 | R9 | Open (new) | AI-071 |
 | R10 | Recorded (existing DEC-17) | Nothing |
+
+## R11 · AI-057 partial build (owner: AI Team; added 2026-11-22)
+
+- **What's executable now:**
+  - CT-18 §6 makes the Backend render the text. The worker writes only `rationale_template_id` plus `rationale_params`, from the fixed CT-18 placeholder list.
+  - `recommendation_rationale_factors` takes `OBJECTIVE_TERM` rows (`WAITING_TIME`, `RESOURCE_COST`, already seeded) and `CONSTRAINT` rows.
+  - AI options carry both term values (AI-055), so factor rows and parameters can be built and tested for them.
+- **What isn't defined:**
+  - (a) FIFO-fallback options have no terms and no binding constraints, so "every option has ≥ 1 factor" has no rule for them.
+  - (b) Which template code goes with which option: no templates exist (INT-Q4).
+  - (c) "Rendering tests per template" need the template texts.
+- **Recommendation:**
+  - Approve building the slice that is already determined: objective-term factors and CT-18 parameters for AI options, plus the isolation test.
+  - Decide (a), for example: no factor row for FIFO options, recorded as a scope exception; or the two terms computed after the fact.
+  - Leave (b) and (c) to INT-Q4.
+- **Effect:** AI-057 stays open until INT-Q4 arrives. AI-058 still needs AI-057.
+
+## Handoff: every open decision and external request (2026-11-22)
+
+| ID | Question for you | Recommended | Unblocks | Owner |
+|---|---|---|---|---|
+| R1 | Confirm the round-1 AI task decisions (incl. AI-055 `RESOURCE_COST` = tugs ÷ `N_cap`) | Accept | Confirmation only | AI Team |
+| R2 | DEC-31 Part 3 scheduling host | Option 1 (scheduler in the Part 3 worker) | AI-073 | AI Team |
+| R3 | Build AI-045 (A5 UKC) on labelled synthetic data, like DEC-34 | Yes, once a squat coefficient source exists | AI-045 → closing AI-055 | AI Team |
+| R4 | DEC-07 (and DEC-24) | Option 1 | AI-007 → AI-046 to AI-048 | AI Team, Backend |
+| R6 | AI-032 criterion 3 is the Backend's (CT-12 step 5) | Accept | Closing AI-032 | AI Team |
+| R7 | Accept the AI-056, AI-074, AI-032, AI-072 and AI-065 entries | Accept | Closing AI-065 | AI Team |
+| R8 | DEC-30 TR-01 / TR-02 drift thresholds | No value proposed (no source) | AI-072 in production | AI Team |
+| R9 | C1 metric definitions (`OVERRIDE_RATE`, `WAIT_TIME`; TR-11 `WINDOW_ACCURACY`) | No value proposed (business definitions) | AI-071 | AI Team |
+| R10 | AI-033 recorded as `DEFERRED (DEC-17)` | Recorded; reopen only by a Leads ruling | Nothing | Leads Council |
+| R11 | AI-057 partial slice and the FIFO factor rule | Approve the slice; decide the FIFO rule | AI-057 start | AI Team |
+
+| Request | Team | Deliverable | Unblocks |
+|---|---|---|---|
+| INT-Q4 | QA / domain reviewer | Reviewed `rationale_templates` rows and the rationale language | AI-057 → AI-058 → AI-059, AI-066 |
+| INT-B1 | Backend | Approve the CT-10 Proposed change | AI-058 merge |
+| INT-B10 | Backend | Test of CT-12 step 5 | Closing AI-032 |
+| INT-B6 | Backend | DEC-08 grants for `ml_model_versions` | Closing AI-070 |
+| INT-B3 | Backend | DEC-29 G-01, G-02, G-04, G-06 | AI-066 |
+| INT-B9 | Backend | `pilot_requested` and the tug override columns | Accuracy of B2 tug counts |
+| INT-Q1 / INT-Q2 | QA | Stowage bounds; CT-24 codes | AI-031 case 12 |
+| INT-L1 / INT-L2 | Leads, Terminal operations | Yard dwell and time-limit values | AI-066 |
+| Data (flag D) | Leads Council, domain experts | Providers, tidal constants, master data, history | AI-020 to AI-024, AI-042 → Part 1 chain |
+| INT-B4 | Backend | Delivered in the schema (PortHub `d55a263`); P4-L1 copying into `plan_components` remains | Already done on the AI side (R5.3) |

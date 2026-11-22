@@ -316,3 +316,65 @@ CI on `develop` `ddfb551`: all checks success.
 1. Merge `feature/SETUP-round3-merge-records`.
 2. Decide R2, R3, R4, R6, R7, R8 and R9.
 3. Deliver INT-Q4, INT-B1 and INT-B10.
+
+---
+
+# Round 5 — full backlog audit and handoff (2026-11-22)
+
+## R5.1 Verified state
+
+- **`develop`:** `ddfb551`, CI green.
+- **`feature/SETUP-round3-merge-records`:** at `dafda7b` with CI green, but **not merged**. No PR exists for it (GitHub pulls API, filtered by head branch).
+- **PortHub:** `project-ai` points at `ddfb551` = `develop` HEAD (PortHub `e24424e`).
+- **Shared documents:**
+  - The Decisions shared part is identical in both repositories (sha256 `07472a76…`).
+  - `ATLANTECH_Contracts.md` differs only in project-ai's local header (canonical-file rules) and in rewritten PortHub links.
+  - Every `contracts/ai/` file matches `docs/ref/ai-payloads/`.
+- **Gap found and fixed:** the pinned `docs/ref/db/schema.sql` was PortHub `b4d2deb`, but PortHub is at `d55a263`. It is re-pinned on `feature/AI-050-dec28-dec32-schema-followups` (see R5.3).
+- **Tracker:** at `dafda7b`, `WORK_STATUS.md` has exactly one row per task (script check: no duplicate IDs).
+
+## R5.2 Every backlog task (76), classified
+
+| Class | Tasks |
+|---|---|
+| DONE (30) | AI-001 to AI-006, AI-008 to AI-016, AI-023, AI-025, AI-030, AI-031, AI-044, AI-050 to AI-054, AI-056, AI-060, AI-072, AI-074, AI-092 |
+| IN REVIEW, merged, awaiting decision approval (1) | AI-065 (R7) |
+| BLOCKED_DECISION (7) | AI-007 (R4) · AI-073 (R2) · AI-045 (R3 plus a sourced squat coefficient) · AI-055 close (R3 → AI-045) · AI-071 (R9) · AI-032 close (R6 plus INT-B10) · AI-057 (R11 plus INT-Q4) |
+| BLOCKED_EXTERNAL (6) | AI-020, AI-021, AI-022, AI-024 (data, flag D) · AI-042 (needs AI-021) · AI-070 close (INT-B6 grants) |
+| DEFERRED (1) | AI-033 (DEC-17) |
+| WAITING on unfinished prerequisites (31) | Part 1 chain: AI-040, AI-041, AI-043, AI-046 to AI-049 · Part 2: AI-058, AI-059, AI-061, AI-062 · yard: AI-066, AI-067, AI-068 · integration and ops: AI-080 to AI-084, AI-090, AI-091, AI-093 to AI-095 · ML: AI-100 to AI-106 |
+| READY (0) | none |
+
+**How it was checked:** a script read every backlog section's prerequisites against the `DONE` rows of `WORK_STATUS.md`. Each task whose prerequisites are all met was then checked against its flags, its acceptance criteria and the decisions it depends on. No independently executable AI-owned task is left, apart from the item below, which has now been done.
+
+## R5.3 Overlooked item found and done: DEC-28 / DEC-32 schema follow-ups
+
+- **What changed:** the Backend delivered G-14 (per-job pilot and tug intervals, INT-B4) and G-09 (`loading_container_count`) in PortHub `schema.sql` `d55a263`.
+- **The AI side, on branch `feature/AI-050-dec28-dec32-schema-followups` (`6e9f23e`, pushed):**
+  - schema re-pinned;
+  - five columns added to `tables.py`;
+  - pending pilot and tug holds use their own job interval (else the option window, DEC-32 rule 4);
+  - the request read carries the loading count.
+- **Tests:** full suite with MySQL and Redis: 2192 passed, 50 skipped, 1 xfailed. Ruff and Mypy are clean.
+- **PR:** https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-050-dec28-dec32-schema-followups
+- **Status:** AI-050 stays DONE; this is recorded as a follow-up in its status record and decision entry.
+
+## R5.4 Exact next actions
+
+1. **Merge `feature/SETUP-round3-merge-records`** (records; carries rounds 4 and 5).
+2. **Merge `feature/AI-050-dec28-dec32-schema-followups`** (code). The two touch different files except `INTEGRATION_TASKS.md`, which only the AI-050 branch edits.
+3. **Tell me once they're merged.** I'll then move the PortHub pointer, verify CI and set the records.
+4. **Decide R1 to R11** (handoff in `DECISION_RECOMMENDATIONS.md`). What each one unblocks:
+
+   | Decision | Unblocks |
+   |---|---|
+   | R9 | AI-071 |
+   | R2 | AI-073 |
+   | R3 | AI-045, then closing AI-055 |
+   | R4 | AI-007, then AI-046 to AI-048 |
+   | R6 | closing AI-032 |
+   | R7 | closing AI-065 |
+   | R8 | AI-072 in production |
+   | R11 | starting AI-057's factor slice |
+
+5. **Ask the other teams for INT-Q4, INT-B1, INT-B10 and INT-B6.** These are external deliverables, not decisions, so they sit outside R1–R11 (see the handoff).

@@ -2,6 +2,26 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0c. Checkpoint 5 (2026-11-22, full audit)
+
+All 76 backlog tasks are classified in `reports/AUTONOMOUS_EXECUTION_FINAL.md` § Round 5:
+- 30 DONE;
+- 1 merged and awaiting decision approval;
+- 7 blocked on a decision;
+- 6 blocked externally;
+- 1 deferred;
+- 31 waiting on unfinished prerequisites;
+- 0 READY.
+
+**Overlooked item, now done:** the DEC-28 and DEC-32 schema follow-ups, on `feature/AI-050-dec28-dec32-schema-followups` (`6e9f23e`).
+
+**Handoff:** R1–R11 and the external requests are in `DECISION_RECOMMENDATIONS.md` § Handoff.
+
+**Next:**
+1. Merge this branch and the AI-050 follow-up branch.
+2. Move the PortHub pointer.
+3. Act on whichever decision lands first.
+
 ## 0b. Checkpoint 4 (2026-11-22, after the round-3 merges)
 
 **Verified on GitHub (pulls API and check runs):** PRs #48 (AI-065, `7fc6954`), #49 (AI-056, `44fd4ec`), #50 (AI-074, `8b2032c`), #51 (AI-032, `44e4b95`), #53 (AI-060 handler, `7042ceb`), #52 (AI-072, `b98024a`) and #54 (SETUP-post-merge-records, `ddfb551`) merged into `develop` on 2026-11-22. CI on `ddfb551`: `ci-ok`, `tests`, `lint`, `typecheck`, `secret-scan` all success. The SETUP merge kept every tracker row, so stale duplicates came back; `feature/SETUP-round3-merge-records` removes them.
