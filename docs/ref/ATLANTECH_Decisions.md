@@ -2289,3 +2289,71 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | Proposed change | 2026-11-21 · AI-070 · (1) **Module** `common/registry.py`: `read_champion(connection, model_key)`, `load_champion(connection, model_key, store)`, `ArtifactStore`. (2) **Fallback:** no CHAMPION row → `None`, and the caller runs its Phase 1 path (formula, rule or NULL). (3) **Hash:** the schema has no hash column, so each artefact has a SHA-256 sidecar `<artefact>.sha256` written with it; `load` refuses a missing file, a missing sidecar or a mismatch. A champion with a damaged artefact raises `ArtifactError`: it is never used and never silently replaced by Phase 1. (4) **Paths:** `artifact_path` is relative to the store root (`<model_key>/v<version_no>/model.bin`); absolute paths, drives, URLs and `..` are refused, and an artefact is never overwritten. (5) **One champion:** held by the schema (`champion_key` UNIQUE), tested against MySQL; `read_champion` also refuses two CHAMPION rows. (6) **Not built:** registering versions and promoting a champion write `ml_model_versions`, which no worker may do until retraining is built (DEC-08); they come with AI-104 and the grant change through CT-17. · Reason: the backlog asks for a hash but the schema has nowhere to store it, and the write side has no grant · Evidence: `common/registry.py`, `common/db/tables.py` (`ML_MODELS`, `ML_MODEL_VERSIONS`); `tests/unit/common/test_registry.py` (16 tests), `tests/integration/test_registry.py` (2 tests, MySQL, CI) on branch `feature/AI-070-model-registry-integration` · Impact: Part 3 and Phase 2 model use · Awaiting: AI Team (owner) |
 
 **Follow-ups:** OD-17 (whether Phase 1 methods get version rows, cited by the backlog) is not decided in this repository; the read path does not need it. A hash column on `ml_model_versions` would replace the sidecar; that is the Backend Team's schema (CT-17).
+
+### AI-065 · B8 yard placement: constraint-to-table mapping, inputs and reason codes
+
+| | |
+| --- | --- |
+| Source | AI-065 (backlog acceptance criteria: "OD-15 recorded"; "Constraint list mapped to tables"; guidance "No LIFO rule assumed (AD-14)") · DEC-29 (Closed 2026-11-07, rules 1–11 and open items) · DEC-16 (as edited by DEC-29) · CT-11 Approved v1.1 and Proposed v1.2 (PortHub) · DEC-08 (`w_yard` INSERT on `yard_placement_items`) · PortHub `contracts/db/schema.sql` tables `storage_facilities`, `yard_zones`, `yard_zone_types`, `yard_blocks`, `yard_slots`, `reefer_zone_details`, `dg_zone_allowed_classes`, `oog_zone_details`, `containers`, `container_size_types`, `container_manifest_entries`, `baplie_files`, `berthing_requests`, `operational_plans`, `recommendation_options`, `terminal_recommendations`, `yard_placement_items`, `yard_runs`, `rationale_templates`, `port_profiles`, `port_settings` |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-066 · AI-067 · AI-068 · AI-009 · CT-11 (names marked "to confirm with the AI Team") · CT-18 (two yard keys) · Backend Team (G-01, G-02, G-04, G-05 data gaps, for information) |
+| Decision | ______ |
+| Proposed change | 2026-11-21 · AI-065 · (1) **Criterion 1 is met by DEC-29** (source OD-15, Closed 2026-11-07): method Option B (CP-SAT at slot level), objective, confidence and the departure-time ("schedule") rule. Nothing in DEC-29 is reopened or reworded. (2) **Criterion 2:** the constraint-to-table mapping below is the B8 specification that AI-066 implements. (3) **AI Team confirmation of the CT-11 v1.2 names** marked "to confirm with the AI Team": `no_rehandle_count`; reason codes `NO_SLOT_OF_LENGTH` and `STACK_HEIGHT_REACHED`; `departure_source` values `ONWARD_PLAN` · `ONWARD_REQUEST_ETA` · `ONWARD_BAPLIE_ETA` · `IMPORT_DWELL` · `UNKNOWN`. Recommended: confirm all as written (they match DEC-29 rule 2 (a)–(c) one to one). (4) **Engineering rulings P1–P8** below, each a reversible interpretation where DEC-29 is silent. · Reason: DEC-29 settles the method but no document maps each rule to the columns that feed it, so AI-066 would otherwise guess joins and NULL handling · Evidence: DEC-29 entry; CT-11 v1.2 text in PortHub; PortHub `schema.sql` DDL of the tables listed in Source (yard tables identical to `docs/ref/db/schema.sql`) · Impact: AI-066 (implementation), AI-068 (test scenarios), CT-11 v1.2 approval (names), CT-18 (two keys) · Awaiting: AI Team (owner) for items (2)–(4); the CT-11 names also need the Backend Team (CT-11 owner) when v1.2 is approved |
+
+**Inputs (what the solver reads, per yard run):**
+
+| # | Input | DEC-29 / CT-11 | Tables and columns | Data today |
+| --- | --- | --- | --- | --- |
+| I1 | Containers in scope | CT-11 "Containers in scope" | `container_manifest_entries` of the request's `baplie_files` with `status = 'ACTIVE'` and `parse_status = 'PARSED'`, where `port_of_discharge = port_profiles.port_code` | Available |
+| I2 | Length and TEU | rule 4 (one length per stack), CT-11 capacity | `container_manifest_entries.container_id` → `containers.size_type_id` → `container_size_types.length_ft`, `teu_factor` | Available |
+| I3 | Reefer | rule 4 | `container_size_types.is_reefer` (generated from `type_group = 'REEFER'`) | Available |
+| I4 | DG class | rule 4 | `container_manifest_entries.imdg_class` (FK `imdg_classes.code`; NULL = not dangerous) | Available |
+| I5 | OOG size and weight | rule 4 | `container_manifest_entries.oog_over_front_cm`, `oog_over_back_cm`, `oog_over_right_cm`, `oog_over_left_cm`, `oog_over_height_cm`, `weight_kg`; standard size from `container_size_types` (`length_ft`, `is_high_cube`) | Overhangs and weight available; standard width and height are not columns (P6) |
+| I6 | Departure time, rule 2 (a) onward vessel | rule 2 (a), open item 1 | No onward-vessel column exists (G-01: nullable columns on `container_manifest_entries`, CT-12 optional fields). When it exists: onward request's CONFIRMED `operational_plans` → `recommendation_options.planned_start` of `recommendation_option_id` (`ONWARD_PLAN`), else `berthing_requests.requested_eta` (`ONWARD_REQUEST_ETA`), else the BAPLIE onward ETA (`ONWARD_BAPLIE_ETA`) | **Gap G-01 (Backend).** Rule 2 (a) never applies until then |
+| I7 | Departure time, rule 2 (b) import | rule 2 (b), open item 5 | Discharging request's CONFIRMED `operational_plans` → `recommendation_options.planned_start` + `port_settings` import dwell key (P7) | **Gap G-05 (AI Team key, value from Terminal operations).** Until seeded, every container falls to rule 2 (c) |
+| I8 | Departure time, rule 2 (c) | rule 2 (c) | — (`UNKNOWN`, `departure_at` null) | — |
+| I9 | Yard structure of the terminal | rule 4, CT-11 precondition 8 | `storage_facilities` (`terminal_id` = `terminal_recommendations.terminal_id`, `detail_kind = 'CONTAINER_YARD'`) → `yard_zones` (`container_yard_id`, `zone_detail`) → `yard_blocks` (`yard_zone_id`) → `yard_slots` (`yard_block_id`, `bay`, `row_no`, `tier`, `status`, `container_id`) | Available; demo yard from G-03 (Backend) |
+| I10 | Stack height limit | rule 4 ("no tier above the highest tier row of that stack") | MAX(`yard_slots.tier`) per (`yard_block_id`, `bay`, `row_no`) | Derived |
+| I11 | Current occupancy | rules 5 (c), 11 | `yard_slots.container_id IS NOT NULL` = taken; `status = 'BLOCKED'` = unusable (holds existing stock, rule 11). Departure of a recorded container: its `container_manifest_entries` row on the ACTIVE `baplie_files` of its discharging request, then rule 2 | `container_id` available; recording from the tablet is G-02 (Backend + Mobile, Sprint 6) |
+| I12 | Slots held by other recommendations | rule 5 (a) | `yard_placement_items.yard_slot_id` of `terminal_recommendations` with the same `terminal_id`, `rec_type = 'YARD_PLACEMENT'`, `lifecycle_status IN ('YARD_REC_GENERATED','YARD_REC_ACCEPTED','EXPORTED_TO_TOS')`, other than the run's own row. Released when the item's container is recorded in that slot (`yard_slots.container_id` = its `container_id`) or the plan joined on `operational_plans.recommendation_id = terminal_recommendations.recommendation_id` is `CANCELLED` or `COMPLETED` | Available |
+| I13 | Look-ahead TEU kept free | rule 5 (b) | `berthing_requests` with `requested_terminal_id` = the run's terminal, an ACTIVE `baplie_files`, no CONFIRMED `operational_plans` (`active_key` IS NULL), ordered by `requested_eta`; TEU = SUM(`teu_factor`) of their in-scope lines, per category (reefer, DG class, OOG, general) | Available; request-status filter is P8 |
+
+**Hard constraints (never broken; DEC-29 rules 4 and 7):**
+
+| # | Constraint | DEC-29 | Tables and columns | Reason code when no slot satisfies it |
+| --- | --- | --- | --- | --- |
+| H1 | One container per slot | rule 4 | `yard_slots` (one `container_id`, UNIQUE); free = `container_id IS NULL`, not held (I12), not placed in this run | `NO_CAPACITY` |
+| H2 | Only `ACTIVE` slots | rule 4 | `yard_slots.status = 'ACTIVE'` (`chk_ys_blocked_empty`) | `NO_CAPACITY` |
+| H3 | No tier above the stack's highest tier row | rule 4 | I10 | `STACK_HEIGHT_REACHED` (compatible stacks exist but all are full to their highest tier) |
+| H4 | No floating container | rule 4 | tier t > 1 needs (`yard_block_id`, `bay`, `row_no`, t − 1) filled: recorded (I11), held (I12) or placed in this run | `STACK_HEIGHT_REACHED` / `NO_CAPACITY` |
+| H5 | One length per stack: 20 ft, or 40 / 45 ft | rule 4 | I2 for placed containers; for recorded and held containers via `containers.size_type_id` | `NO_SLOT_OF_LENGTH` |
+| H6 | 40 / 45 ft takes bays b and b+1, same block, row and tier | rule 1, open item 4 | both slots meet H1–H5; `yard_placement_items.yard_slot_id` = slot of bay b | `NO_SLOT_OF_LENGTH` |
+| H7 | Reefer only in a REEFER zone, reefers ≤ plugs | rule 4, open item 10 | `yard_zones.zone_detail = 'REEFER'`; COUNT(reefers recorded + held + placed in the zone) ≤ `reefer_zone_details.total_power_plugs` | `NO_REEFER_CAPACITY` |
+| H8 | DG only in a DG zone that allows its class | rule 4 | `yard_zones.zone_detail = 'DANGEROUS_GOODS'` and a `dg_zone_allowed_classes` row (`yard_zone_id`, `imdg_class`) equal to `container_manifest_entries.imdg_class` | `NO_DG_ZONE` |
+| H9 | OOG only in an OOG zone within its limits | rule 4 | `yard_zones.zone_detail = 'OOG'`; overall size (standard size + overhangs, P6) ≤ `oog_zone_details.max_length`, `max_width`, `max_height`; `weight_kg` / 1000 ≤ `max_weight` | `NO_OOG_ZONE` |
+| H10 | Same terminal only | rule 5 | every slot via `yard_blocks` → `yard_zones` → `storage_facilities.terminal_id` = run's terminal; other terminals are never read | — |
+| H11 | Unknown-departure containers stack apart | rule 2 (c) | a stack holding an `UNKNOWN` container holds only `UNKNOWN` containers of the same arrival request (`baplie_files.berthing_request_id`) | `NO_CAPACITY` |
+
+**Objective and outputs:**
+
+- **Objective (rule 3; no LIFO rule assumed, AD-14):** minimise Σ expected re-handles. A container's expected re-handles = 1 when any container below it in the same stack (recorded, held or placed) has an earlier `departure_at`, else 0 (P2). Travel distance and fuel are not terms (DEC-29 detail).
+- **Confidence (rule 8):** `terminal_recommendations.confidence` = placed containers with 0 expected re-handles ÷ `in_scope_count`, rounded to 3 decimals (`decimal(4,3)`, `chk_tr_confidence`); NULL with `GENERATION_FAILED`.
+- **Writes (one transaction, CT-11 run-flow step 3):** `yard_placement_items` (`terminal_recommendation_id`, `rec_type = 'YARD_PLACEMENT'`, `manifest_entry_id`, `yard_block_id`, `yard_slot_id`; INSERT by `w_yard`, DEC-08); `terminal_recommendations` (`lifecycle_status`, `confidence`, `rationale_template_id`, `rationale_params`, `failure_reason`); `yard_runs` (`status`, `outcome`, `error_category`, `result_detail` with `in_scope_count`, `placed_count`, `no_rehandle_count`, `placements[]`, `unplaced[]`, `failure_reason`).
+- **Rationale template:** an active `rationale_templates` row for the yard is not seeded yet (AI-009 criterion 3); without it the run fails with `CONFIGURATION_ERROR` (CT-11).
+
+**Engineering rulings where DEC-29 is silent (Proposed, reversible):**
+
+- **P1 · Reason-code precedence.** An unplaced container gets the first code that applies: its category code (`NO_REEFER_CAPACITY`, `NO_DG_ZONE`, `NO_OOG_ZONE`), then `NO_SLOT_OF_LENGTH`, then `STACK_HEIGHT_REACHED`, then `NO_CAPACITY`. A container that is both reefer and DG, or both DG and OOG, needs a zone of two kinds, which one `zone_detail` cannot be; it is unplaced with the code of its first category in the order reefer, DG, OOG.
+- **P2 · Ties.** Equal `departure_at` values are not a re-handle. `UNKNOWN` containers are never compared with dated ones (H11 keeps them apart).
+- **P3 · General containers stay out of special zones.** A container that is not reefer, DG or OOG is placed only in zones with `zone_detail = 'NONE'`, so special capacity stays free. Recommended; requires AI Team confirmation.
+- **P4 · Lengths other than 20, 40 and 45 ft** are unplaced with `NO_SLOT_OF_LENGTH`.
+- **P5 · Facility status.** Only `storage_facilities` with `status = 'ACTIVE'` are used.
+- **P6 · OOG standard size.** The schema stores `length_ft` and `is_high_cube` only. The standard width and height come from ISO 668 nominal external dimensions, kept as named constants in AI-066 with the source cited; a NULL `oog_zone_details` limit means that dimension is not limited. Requires AI Team confirmation; if the Backend adds dimension columns, they win.
+- **P7 · Two `port_settings` key names (CT-18, AI-owned seed):** `yard_import_dwell_hours` (G-05, value from Terminal operations) and `yard_solver_time_limit_seconds` (DEC-29 open item 8, value through DEC-30). Names only; no value is proposed.
+- **P8 · Look-ahead request filter (rule 5 (b)).** Requests count only while their status is before the plan is confirmed and not closed; the exact status list is taken from CT-21 when AI-066 starts.
+
+**Follow-ups (they don't reopen DEC-29):**
+
+- AI-066 cannot run on production data before G-01 (onward vessel), G-02 (tablet recording), G-04 (two-slot representation) and G-05 (dwell value) are delivered; until then it runs on the G-03 demo yard and its results are not fit for production (DEC-29 open item 2).
+- The two keys of P7 are added to `seed-spec.json` and CT-18 by AI-009 or AI-066, with values only from their owners.
