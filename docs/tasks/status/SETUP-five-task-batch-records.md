@@ -22,5 +22,10 @@ Code tests: NOT APPLICABLE to this branch (no code changes; only `docs/tasks/` a
 ## Remote PR review
 Has not occurred: `gh` is not installed on this machine, so no PR was opened from here.
 
+## Delivery state (2026-11-22)
+- `4fa9f24` pushed; CI success (`ci-ok`, `tests`, `lint`, `typecheck`, `secret-scan`). A second commit records the independent review, the AI-031 head `36b2a8e`, R12 and the explicit squat-coefficient requirement for AI-045.
+- **PR: none yet** for this branch or the AI-031 fix. They could not be opened from this machine (`gh` is not installed, and using the stored Git credential for the API was not permitted). Not merged.
+
 ## Blockers and follow-ups
-- Merge order: the AI-031 follow-up first, then this branch.
+- Merge order: the AI-031 follow-up first, then this branch. After the AI-031 merge, record its PR number and merge SHA here before this branch is merged.
+- PortHub pointer: only after this branch is merged.

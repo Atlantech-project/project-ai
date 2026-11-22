@@ -179,3 +179,11 @@ No new decision owned by the user, the Backend, QA or the Leads Council came up.
 | R1 | Open. AI-055 item (1) `RESOURCE_COST` = tugs assigned ÷ `N_cap` re-read: it uses only DEC-20's own `N_cap` and needs no new data | Accept as written; not self-approved | Confirmation only |
 | R3 | Open. Nothing new: no squat-coefficient source, AI-043 not started | Unchanged | AI-045 → closing AI-055 |
 | R6 | Open. Re-verified: CT-12 v1.1 step 5 and the Backend's own `table-ownership.md` give the status change to the Backend | Accept: close criterion 3 as the Backend's once INT-B10 passes | Closing AI-032 |
+
+## R12 · Corrected `call_sign` longer than the column (owner: AI Team; added 2026-11-22)
+
+- **Found by:** the independent review of the AI-031 storable-range fix. The issue is older than that fix.
+- **Problem:** `vessels.call_sign` is `varchar(10)`. `edi/rules/staged.py` accepts a corrected `call_sign` of any length, and `edi/commit.py` writes it as a fill-empty value. A longer value would fail the UPDATE (MySQL 1406), so the correction job fails instead of quarantining. Only the correction path is exposed: the file parser gives `call_sign = None`.
+- **Options:** (a) a new ERROR code (for example `MALFORMED_CALL_SIGN`), which also needs a CT-24 Proposed change by the QA Team; (b) no fill, plus a WARNING under a new code; (c) no fill and no issue.
+- **Recommended:** (a). It matches how every other value the schema cannot hold is handled, and staff see what to fix.
+- **Effect:** a small AI-031 follow-up (one rule and its tests) once chosen. Nothing changes until then.
