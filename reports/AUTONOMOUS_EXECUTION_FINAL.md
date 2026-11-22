@@ -284,3 +284,97 @@ To open the PRs, use these compare links, each against `develop`:
 2. Merge `develop` into the SETUP branch, keeping every task's own row; push; check CI; merge.
 3. Move the PortHub pointer.
 4. Start AI-033 (after AI-032 merges). AI-058 then needs AI-056, AI-057 and INT-B1.
+
+---
+
+# Round 4 — round-3 merge verification (2026-11-22)
+
+## R4.1 Merges verified
+
+| Task | PR | Merge commit | Merged (UTC) | Status now |
+|---|---|---|---|---|
+| AI-065 | #48 | `7fc6954` | 2026-11-22 09:29 | IN REVIEW (Proposed mapping; R7) |
+| AI-056 | #49 | `44fd4ec` | 2026-11-22 09:29 | DONE |
+| AI-074 | #50 | `8b2032c` | 2026-11-22 09:29 | DONE |
+| AI-032 | #51 | `44e4b95` | 2026-11-22 09:29 | BLOCKED (criterion 3: R6, INT-B10) |
+| AI-060 handler | #53 | `7042ceb` | 2026-11-22 09:30 | DONE (with service PR #47) |
+| AI-072 | #52 | `b98024a` | 2026-11-22 09:32 | DONE (production values: R8) |
+| SETUP-post-merge-records | #54 | `ddfb551` | 2026-11-22 09:33 | DONE |
+
+CI on `develop` `ddfb551`: all checks success.
+
+## R4.2 Work this round
+
+- **Tracker clean-up:** the SETUP merge kept every row, so seven stale duplicates were removed and the statuses above set, each with its merge evidence.
+- **AI-033:** `DEFERRED (DEC-17)`. NFR-PERF-2 was removed from the MVP (Leads Council, 2026-10-27), so there is nothing to build (R10).
+- **AI-071:** investigated. The metric definitions are missing (R9), so it was not started.
+- **CT-12 `flag_state`:** checked. The worker may fill it, but the parsed records don't carry it; this was already recorded in the AI-032 decision entry, so it isn't a new gap.
+- **PortHub:** the `project-ai` pointer moved to `ddfb551`.
+
+## R4.3 Exact next action
+
+1. Merge `feature/SETUP-round3-merge-records`.
+2. Decide R2, R3, R4, R6, R7, R8 and R9.
+3. Deliver INT-Q4, INT-B1 and INT-B10.
+
+---
+
+# Round 5 — full backlog audit and handoff (2026-11-22)
+
+## R5.1 Verified state
+
+- **`develop`:** `ddfb551`, CI green.
+- **`feature/SETUP-round3-merge-records`:** at `dafda7b` with CI green, but **not merged**. No PR exists for it (GitHub pulls API, filtered by head branch).
+- **PortHub:** `project-ai` points at `ddfb551` = `develop` HEAD (PortHub `e24424e`).
+- **Shared documents:**
+  - The Decisions shared part is identical in both repositories (sha256 `07472a76…`).
+  - `ATLANTECH_Contracts.md` differs only in project-ai's local header (canonical-file rules) and in rewritten PortHub links.
+  - Every `contracts/ai/` file matches `docs/ref/ai-payloads/`.
+- **Gap found and fixed:** the pinned `docs/ref/db/schema.sql` was PortHub `b4d2deb`, but PortHub is at `d55a263`. It is re-pinned on `feature/AI-050-dec28-dec32-schema-followups` (see R5.3).
+- **Tracker:** at `dafda7b`, `WORK_STATUS.md` has exactly one row per task (script check: no duplicate IDs).
+
+## R5.2 Every backlog task (76), classified
+
+| Class | Tasks |
+|---|---|
+| DONE (30) | AI-001 to AI-006, AI-008 to AI-016, AI-023, AI-025, AI-030, AI-031, AI-044, AI-050 to AI-054, AI-056, AI-060, AI-072, AI-074, AI-092 |
+| IN REVIEW, merged, awaiting decision approval (1) | AI-065 (R7) |
+| BLOCKED_DECISION (7) | AI-007 (R4) · AI-073 (R2) · AI-045 (R3 plus a sourced squat coefficient) · AI-055 close (R3 → AI-045) · AI-071 (R9) · AI-032 close (R6 plus INT-B10) · AI-057 (R11 plus INT-Q4) |
+| BLOCKED_EXTERNAL (6) | AI-020, AI-021, AI-022, AI-024 (data, flag D) · AI-042 (needs AI-021) · AI-070 close (INT-B6 grants) |
+| DEFERRED (1) | AI-033 (DEC-17) |
+| WAITING on unfinished prerequisites (31) | Part 1 chain: AI-040, AI-041, AI-043, AI-046 to AI-049 · Part 2: AI-058, AI-059, AI-061, AI-062 · yard: AI-066, AI-067, AI-068 · integration and ops: AI-080 to AI-084, AI-090, AI-091, AI-093 to AI-095 · ML: AI-100 to AI-106 |
+| READY (0) | none |
+
+**How it was checked:** a script read every backlog section's prerequisites against the `DONE` rows of `WORK_STATUS.md`. Each task whose prerequisites are all met was then checked against its flags, its acceptance criteria and the decisions it depends on. No independently executable AI-owned task is left, apart from the item below, which has now been done.
+
+## R5.3 Overlooked item found and done: DEC-28 / DEC-32 schema follow-ups
+
+- **What changed:** the Backend delivered G-14 (per-job pilot and tug intervals, INT-B4) and G-09 (`loading_container_count`) in PortHub `schema.sql` `d55a263`.
+- **The AI side, on branch `feature/AI-050-dec28-dec32-schema-followups` (`6e9f23e`, pushed):**
+  - schema re-pinned;
+  - five columns added to `tables.py`;
+  - pending pilot and tug holds use their own job interval (else the option window, DEC-32 rule 4);
+  - the request read carries the loading count.
+- **Tests:** full suite with MySQL and Redis: 2192 passed, 50 skipped, 1 xfailed. Ruff and Mypy are clean.
+- **PR:** https://github.com/Atlantech-project/project-ai/compare/develop...feature/AI-050-dec28-dec32-schema-followups
+- **Status:** AI-050 stays DONE; this is recorded as a follow-up in its status record and decision entry.
+
+## R5.4 Exact next actions
+
+1. **Merge `feature/SETUP-round3-merge-records`** (records; carries rounds 4 and 5).
+2. **Merge `feature/AI-050-dec28-dec32-schema-followups`** (code). The two touch different files except `INTEGRATION_TASKS.md`, which only the AI-050 branch edits.
+3. **Tell me once they're merged.** I'll then move the PortHub pointer, verify CI and set the records.
+4. **Decide R1 to R11** (handoff in `DECISION_RECOMMENDATIONS.md`). What each one unblocks:
+
+   | Decision | Unblocks |
+   |---|---|
+   | R9 | AI-071 |
+   | R2 | AI-073 |
+   | R3 | AI-045, then closing AI-055 |
+   | R4 | AI-007, then AI-046 to AI-048 |
+   | R6 | closing AI-032 |
+   | R7 | closing AI-065 |
+   | R8 | AI-072 in production |
+   | R11 | starting AI-057's factor slice |
+
+5. **Ask the other teams for INT-Q4, INT-B1, INT-B10 and INT-B6.** These are external deliverables, not decisions, so they sit outside R1–R11 (see the handoff).
