@@ -590,6 +590,24 @@ TERMINAL_RECOMMENDATIONS: Final = sa.Table(
     sa.Column("updated_at", UtcDateTime(fsp=6), nullable=False),
 )
 
+TERMINAL_PRODUCTIVITY_PROFILES: Final = sa.Table(
+    "terminal_productivity_profiles",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("terminal_id", _ID, nullable=False),
+    sa.Column("terminal_type", KnownEnum("CONTAINER", "NON_CONTAINER"), nullable=False),
+    sa.Column("vessel_type_id", _ID),
+    sa.Column("productivity_rate", mysql.DECIMAL(10, 2), nullable=False),
+    sa.Column(
+        "rate_unit",
+        KnownEnum("MOVES_PER_HOUR", "TONNES_PER_HOUR", "CUBIC_METRES_PER_HOUR", "UNITS_PER_HOUR"),
+        nullable=False,
+    ),
+    sa.Column("fixed_overhead_minutes", mysql.INTEGER(), nullable=False),
+    sa.Column("valid_from", mysql.DATE(), nullable=False),
+    sa.Column("valid_to", mysql.DATE()),
+)
+
 TIDE_PREDICTION_POINTS: Final = sa.Table(
     "tide_prediction_points",
     metadata,
