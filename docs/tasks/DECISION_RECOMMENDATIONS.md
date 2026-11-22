@@ -271,3 +271,19 @@ These are technical proposals, so the AI Team has something concrete to approve,
 | R11 | Slice built (AI-057, `feature/AI-057-rationale-factors`); (a) recommended above; (b) and (c) wait for INT-Q4 |
 | R12 | Approved and merged (PR #61) |
 | R13 | New, open: needs the Backend Team and the Leads Council |
+
+## Batch 2 resumed (2026-11-22): AI-058 and AI-059
+
+Recommendations only; nothing here is approved.
+
+| ID | Question | Recommended | Owner | Blocks |
+|---|---|---|---|---|
+| R13 | Regenerate write (INT-B11) | Unchanged: option (a). AI-058 is built so that only its precondition check changes once this is decided | Backend Team, Leads Council | AI-058 regenerate, AI-059 MANUAL and RESOURCE_CHANGE |
+| R14 | Confirm the AI-058 and AI-059 task decisions | Accept as written | AI Team | Confirmation only |
+
+### R14 · AI-058 and AI-059 task decisions (both `Proposed`)
+
+| Entry | In short | Why | Risk | Recommended |
+|---|---|---|---|---|
+| AI-058 | Schema CHECKs mirrored before the write; regenerate refused before any write (INT-B11); `result_detail` kept to CT-10 v1.1, the two Proposed codes written as their approved parents; job intervals NULL (DEC-32 rule 4) | Stays inside DEC-02, CT-10 v1.1 and CT-15 without waiting for INT-B1 | Staff see `PILOT_UNAVAILABLE` where the finer reason is a rank limit (the `detail` text still says so) | Accept |
+| AI-059 | Begun = a `STARTED` or `DONE` event; "fixed" = same resource and same interval, so the option's start and end are the started interval and B3 is not used; a started resource no longer usable gives `NO_FEASIBLE_PLAN`; disagreeing intervals fail the run | Architecture §8.13 "STARTED components fixed" with the one-interval option of DEC-32 rule 4; no duration invented | A delay after berthing can't lengthen a started berth stay; that needs a rule the sources don't have (follow-up) | Accept |

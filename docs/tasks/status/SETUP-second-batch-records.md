@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only; DONE when its PR merges) |
+| Status | DONE (PR #66, merge `10f3dc3`, 2026-11-22 14:12:12Z) [was: IN REVIEW (documents only; DONE when its PR merges)] |
 | Owner | AI Team |
 | Branch | `feature/SETUP-second-batch-records` (from `develop` at `6c29250`) |
 | Plan | the user's batch 2 instruction of 2026-11-22 (§13 checkpointing and documentation, §15 the Arabic report); the standing execution authorization approves the publish |
