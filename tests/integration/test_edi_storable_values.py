@@ -43,6 +43,7 @@ def test_weight_the_column_cannot_store_is_quarantined(
         "QUARANTINED"
     )
     assert _count(root, "SELECT COUNT(*) FROM container_manifest_entries") == 0
-    assert _count(root, "SELECT severity FROM baplie_parse_issues") == "ERROR"
+    assert _count(root, "SELECT COUNT(*) FROM baplie_parse_issues") == 1
+    assert _count(root, "SELECT COUNT(*) FROM baplie_parse_issues WHERE severity = 'ERROR'") == 1
     message = _count(root, "SELECT message FROM baplie_parse_issues")
     assert "larger than the stored maximum" in message

@@ -346,6 +346,24 @@ def test_values_the_int_columns_cannot_store_are_errors() -> None:
     assert codes(line(stowage=Stowage(1, INT_MAX + 1, 82))) == ["INVALID_STOWAGE_COORDINATE"]
 
 
+_INT_FIELDS = [
+    ("weight", lambda v: {"weight_kg": v}, "MALFORMED_WEIGHT"),
+    *[
+        (f"oog.{side}", lambda v, s=side: {"oog": Oog(**{f"{s}_cm": v})}, "MALFORMED_OOG")
+        for side in ("front", "back", "right", "left", "height")
+    ],
+    ("bay", lambda v: {"stowage": Stowage(v, 2, 82)}, "INVALID_STOWAGE_COORDINATE"),
+    ("row", lambda v: {"stowage": Stowage(1, v, 82)}, "INVALID_STOWAGE_COORDINATE"),
+    ("tier", lambda v: {"stowage": Stowage(1, 2, v)}, "INVALID_STOWAGE_COORDINATE"),
+]
+
+
+@pytest.mark.parametrize(("name", "fields", "code"), _INT_FIELDS, ids=[f[0] for f in _INT_FIELDS])
+def test_every_int_field_boundary(name: str, fields: Any, code: str) -> None:
+    assert codes(line(**fields(INT_MAX))) == []
+    assert codes(line(**fields(INT_MAX + 1))) == [code]
+
+
 def test_oversized_weight_from_a_file_is_quarantined() -> None:
     raw = READ_CASES[0].edi_path.read_bytes()
     assert b"MEA+WT++KGM:" in raw
