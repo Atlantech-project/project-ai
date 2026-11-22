@@ -20,7 +20,7 @@ Setup record (not in the backlog), written for the owning teams. Each item says 
 | ID | Priority | Request | Exact need | Blocks | Acceptance |
 |---|---|---|---|---|---|
 | INT-Q1 | Medium | Stowage upper bounds, or a corrected corpus case 12 | The case expects `LOC+147+9999999` (bay 999, row 99, tier 99) to be out of bounds and its message says "99/99/99"; no document gives the upper bounds of bay, row and tier | AI-031 case 12 (skipped; re-checked 2026-11-22: PortHub `main` schema, Contracts and Decisions still give no maxima) | Bounds written in CT-24 or CT-12, or the case changed |
-| INT-Q2 | Medium | CT-24 Proposed change for new issue codes | AI-031's six codes (`MALFORMED_CONTAINER_NUMBER`, `MALFORMED_TEMPERATURE`, `MALFORMED_OOG`, `MISSING_PORT_OF_DISCHARGE`, `VESSEL_NAME_MISMATCH`, `SIZE_TYPE_CHANGED`) and AI-023's three (`docs/followups/contracts-followup.md` item 3) | Corpus coverage | CT-24 lists the codes |
+| INT-Q2 | Medium | CT-24 Proposed change for new issue codes | AI-031's seven codes (`MALFORMED_CONTAINER_NUMBER`, `MALFORMED_TEMPERATURE`, `MALFORMED_OOG`, `MISSING_PORT_OF_DISCHARGE`, `VESSEL_NAME_MISMATCH`, `SIZE_TYPE_CHANGED`; `MALFORMED_CALL_SIGN` added 2026-11-22, R12) and AI-023's three (`docs/followups/contracts-followup.md` item 3) | Corpus coverage | CT-24 lists the codes |
 | INT-Q3 | Medium | Real recorded provider payloads and the real tide (DEC-34 gate) | Recorded forecasts for AI-020 and the tide from AI-042, to re-run the AI-044 table tests | AI-048 `DONE` | Tests pass on real data |
 
 ## Frontend Team

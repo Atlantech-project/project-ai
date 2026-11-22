@@ -34,11 +34,18 @@ def read_staged_payload(payload: Mapping[str, Any]) -> tuple[ParsedVessel, tuple
     lines_data = payload.get("lines")
     if not isinstance(vessel_data, Mapping) or not isinstance(lines_data, list):
         raise StagedPayloadError("staged_payload needs a 'vessel' object and a 'lines' array")
+    call_sign_value = vessel_data.get("call_sign")
     vessel = ParsedVessel(
         imo_number=_text(vessel_data.get("imo_number")),
         name=_text(vessel_data.get("name")),
-        call_sign=_text(vessel_data.get("call_sign")),
+        call_sign=_text(call_sign_value),
         segment_ref=None,
+        # A call sign of the wrong JSON type is reported, not dropped (R12).
+        unconverted=(
+            {"call_sign": _raw(call_sign_value)}
+            if call_sign_value is not None and not isinstance(call_sign_value, str)
+            else {}
+        ),
     )
     lines = []
     for index, item in enumerate(lines_data, start=1):

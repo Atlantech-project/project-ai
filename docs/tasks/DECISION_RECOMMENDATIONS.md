@@ -182,8 +182,15 @@ No new decision owned by the user, the Backend, QA or the Leads Council came up.
 
 ## R12 · Corrected `call_sign` longer than the column (owner: AI Team; added 2026-11-22)
 
+**Status: APPROVED 2026-11-22 by the user ("I approve R12: introduce ERROR `MALFORMED_CALL_SIGN` ..."), recorded as the approved item (10) of the AI-031 task decision.** Still pending: the QA Team's CT-24 code listing (INT-Q2). The independent review of `d7cd794` added the not-text case (a JSON number, boolean, list or object is also `MALFORMED_CALL_SIGN`, not dropped).
+
 - **Found by:** the independent review of the AI-031 storable-range fix. The issue is older than that fix.
 - **Problem:** `vessels.call_sign` is `varchar(10)`. `edi/rules/staged.py` accepts a corrected `call_sign` of any length, and `edi/commit.py` writes it as a fill-empty value. A longer value would fail the UPDATE (MySQL 1406), so the correction job fails instead of quarantining. Only the correction path is exposed: the file parser gives `call_sign = None`.
 - **Options:** (a) a new ERROR code (for example `MALFORMED_CALL_SIGN`), which also needs a CT-24 Proposed change by the QA Team; (b) no fill, plus a WARNING under a new code; (c) no fill and no issue.
 - **Recommended:** (a). It matches how every other value the schema cannot hold is handled, and staff see what to fix.
 - **Effect:** a small AI-031 follow-up (one rule and its tests) once chosen. Nothing changes until then.
+- **Investigated and implemented, 2026-11-22** (AI-owned technical decision under the AI-031 task decision, item (10); owner AI Team; approved by the user 2026-11-22), on `feature/AI-031-call-sign-length`:
+  - Reproduced against MySQL 8.4: a corrected 11-character call sign fails the fill with `DataError (1406, "Data too long for column 'call_sign'")`; 10 characters commit.
+  - The file path cannot carry a call sign (the parser reads IMO and name from TDT only); tested.
+  - No existing code fits; the new ERROR `MALFORMED_CALL_SIGN` follows the `MALFORMED_<FIELD>` pattern. It joins the INT-Q2 request to the QA Team (CT-24 code list). No contract text changes: CT-12's vessel object and fill rule are unchanged.
+  - `flag_state` (`char(2)`) is also fillable under CT-12, but nothing produces it today (not in the parser or the CT-12 `staged_payload` vessel object), so it carries no risk now.
