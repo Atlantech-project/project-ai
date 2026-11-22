@@ -18,10 +18,10 @@
 | التنفيذ الفعلي | الثلاثة متحققة منذ PR #45. أُضيف فحص النطاق القابل للتخزين (`INT_COLUMN_MAX`) في `edi/rules/checks.py` للوزن والبروزات الخمسة و bay/row/tier، بنفس الرموز الموجودة (`MALFORMED_WEIGHT`، `MALFORMED_OOG`، `INVALID_STOWAGE_COORDINATE`)، ويعمل على مسار الملف وعلى مسار التصحيح (`staged_payload`) معاً |
 | الملفات المعدلة | `edi/rules/checks.py`، `edi/README.md`، `tests/unit/edi/test_rules.py`، `tests/integration/test_edi_storable_values.py` (جديد)، `docs/ref/ATLANTECH_Decisions.md` (البند 9 في قرار مهمة AI-031، ما زال Proposed)، `docs/tasks/status/AI-031.md`، `docs/tasks/WORK_STATUS.md` |
 | الفرع | `feature/AI-031-storable-range-checks` (من `a604946`) |
-| Commit SHA | `3c563b9` |
+| Commit SHA | `3c563b9` (الإصلاح) ثم `36b2a8e` (إصلاحات المراجعة المستقلة: اختبار حدود لكل حقل، وتحقق أدق في اختبار MySQL) |
 | الاختبارات | TDD: فشلت الاختبارات الثلاثة الجديدة أولاً للسبب المتوقع. بعد الإصلاح: `tests/unit/edi` 212 نجح و2 متخطى؛ الجناح الكامل مع الخدمات 2196 نجح و50 متخطى و1 xfailed؛ اختبار MySQL الجديد يثبت أن الملف ينتهي `QUARANTINED` دون أي سطر manifest |
 | CI | أخضر على `3c563b9`: `ci-ok`، `tests`، `lint`، `typecheck`، `secret-scan` |
-| PR | لم يُفتح: أداة `gh` غير مثبتة على هذا الجهاز. الفرع مدفوع إلى `origin` |
+| PR | لا يوجد PR بعد. PR #45 يخص الفرع الأصلي `feature/AI-031-baplie-validation-rules` (مدموج `4408065`) وليس هذا الإصلاح. لم يُفتح PR من هذا الجهاز (`gh` غير مثبت، ولم يُسمح باستخدام بيانات اعتماد Git المخزنة مع الـ API) |
 | حالة الدمج | غير مدموج |
 | الحالة النهائية | DONE (PR #45)؛ إصلاح المتابعة IN REVIEW |
 | العمل المتبقي | الحالة 12 في الـ corpus: ما زالت متخطاة. تم التحقق من أن `schema.sql` المثبت مطابق لـ PortHub `main` (sha256 `afdfaadc…`)، وأن `chk_cme_stowage` يعطي حدوداً دنيا فقط، وأنه لا يوجد في Contracts أو Decisions في PortHub أي حد أعلى. مثال CT-12 نفسه يستخدم tier 82. لم تُخترع أي قيم؛ الطلب INT-Q1 لفريق QA ما زال مفتوحاً |
@@ -99,7 +99,8 @@
 
 ## 8. الـ Commits والـ PRs
 
-- `3c563b9` على `feature/AI-031-storable-range-checks`: `fix(ai): AI-031 quarantine values the int columns cannot store`.
+- `3c563b9` و`36b2a8e` على `feature/AI-031-storable-range-checks`: الإصلاح، ثم إصلاحات المراجعة المستقلة.
+- مراجعة مستقلة بواسطة وكيل فرعي (ليست مراجعة GitHub): لا توجد ملاحظات حرجة. ملاحظة مهمة قديمة لا يسببها الإصلاح: `call_sign` المصحح أطول من `varchar(10)`، وسُجلت كتوصية R12 لقرار فريق AI.
 - commit فرع SETUP: يُذكر SHA الخاص به في رسالة الجلسة، ولا يُكتب داخل الملف حتى لا تصبح شجرة العمل متسخة.
 - لم يُفتح أي PR من هذا الجهاز (لا يوجد `gh`). يجب فتح PR لكل فرع من المتصفح نحو `develop`.
 
