@@ -2,6 +2,38 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0m. Checkpoint 15 (2026-11-22, AI-065 mapping approved; PRs #75 and #76 merged)
+
+**Merges verified (pulls API):**
+- PR #75 (`feature/AI-062-part2-validation-harness`, head `475d426`) merged as `5a532c4` at 16:03:24Z.
+- PR #76 (`feature/SETUP-ai062-records`, head `cf1827d`) merged as `5f5acd2` at 16:03:39Z.
+- Content is identical to the pushed commits. CI on `5f5acd2`: all success.
+- These were the two branches prepared last. AI-065's own branch (`feature/AI-065-yard-placement-design`) merged earlier as PR #48 (`7fc6954`, 09:29:01Z). No new AI-065 branch existed to merge, and none was recreated.
+
+**Sync:**
+- Local `develop` = `origin/develop` = `5f5acd2`; the user's untracked `reports/` files untouched.
+- PortHub pointer `c1f2d00` → `5f5acd2` (PortHub `518bb47`).
+
+**AI-065 approval** (the user, for the AI Team, 2026-11-22: "I officially approve the Yard Placement Mapping you recommended for AI-065"):
+- **Recorded** on `feature/AI-065-mapping-approval` (`d21bdac`). The AI-065 task decision is Approved: the Decision row holds items (1)–(4), the Proposed change row is folded in, and P3 and P6 are confirmed. The Decisions file stays byte-identical with PortHub up to `## AI task decisions`.
+- **Status:** AI-065 is DONE. Both criteria are met: OD-15 by DEC-29, and the approved mapping. No criterion is open.
+- **Not covered:** Backend-owned fields and contracts. CT-11 stays Proposed v1.2 (INT-B2); the DEC-29 data gaps stay AI-066 dependencies (INT-B3, INT-L1, INT-L2, INT-Q4, and AI-032 / R6).
+
+**AI-062:** merged (PR #75). Status BLOCKED (R16): both criteria are met by the code, and the AI Team hasn't yet accepted "not defined" for cost and re-handling.
+
+**Checks:**
+- One AI-065 decision entry.
+- No duplicate tracker rows; the AI-065 (close) blocked row removed.
+- The `WORK_STATUS.md` edits of the two open branches sit on different rows (AI-065 at line 37; the tail rows here), so they merge cleanly.
+
+**Open branches, merge order:**
+1. `feature/AI-065-mapping-approval`
+2. `feature/SETUP-ai065-approval-records` (this branch)
+
+Move the PortHub pointer after the merges.
+
+**No new batch started** (user instruction). AI-066 is the task the approval moves closest. It still needs R6 / INT-B10 (AI-032) and the Backend yard data (INT-B3) before it can produce more than a demo-yard result.
+
 ## 0l. Checkpoint 14 (2026-11-22, AI-062 validation suite and baseline harness)
 
 **Merges verified (pulls API):**

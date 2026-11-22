@@ -97,3 +97,10 @@ DEC-30 TR-01 / TR-02 are AI Team values (R8), not an external request.
 | INT-B11 | Open; the only blocker of AI-058 and AI-059 | The PART2_SOLVE handler (`feature/AI-059-part2-solve-trigger-handler`) runs every trigger end to end; a MANUAL or RESOURCE_CHANGE re-solve of a request with a current version fails with `PRECONDITION_FAILED` naming INT-B11 and leaves the previous version current (MySQL + Redis scenarios) |
 | INT-B12 (new, information) | Backend Team | The AI side now sends real PART2_SOLVE C-06 messages (`SOLVED`, `PARTIALLY_SOLVED`, `NO_FEASIBLE_PLAN`, `FIFO_FALLBACK`, `GENERATION_FAILED`). Backend `develop` (`554b09c`, last read) has no C-06 handler for PART2_SOLVE: the request transition, REPLACED (after INT-B11), audit and SSE steps of CT-14 are the Backend's. Acceptance: a Backend test that consumes the C-06 of a SOLVED and of a FIFO_FALLBACK run |
 | Forecast feed | AI Team (AI-020, AI-021; data, flag D) | B4 gets no forecast: no feed writes `forecast_runs` yet, and no rule says which run a solve uses. When the feed exists, the AI Team decides the run-selection rule (for example the latest SUCCESS run covering the option) |
+
+## Update 2026-11-22 (AI-065 approved)
+
+| ID | State now | What changed |
+|---|---|---|
+| INT-B2 | Open (Backend Team, CT-11 owner) | The AI Team side is done: the user approved the AI-065 mapping, which confirms the CT-11 v1.2 names marked "to confirm with the AI Team" (`no_rehandle_count`, `NO_SLOT_OF_LENGTH`, `STACK_HEIGHT_REACHED`, the five `departure_source` values). CT-11 stays Proposed v1.2 until the Backend Team approves it |
+| INT-B3 | Open (Backend Team) | Unchanged: DEC-29 G-01, G-02, G-04, G-06 are AI-066 dependencies, not AI-065 blockers |
