@@ -47,6 +47,9 @@ TEMPERATURE_MIN: Final = Decimal(-40)
 TEMPERATURE_MAX: Final = Decimal(40)
 
 _OOG_SIDES: Final = ("front", "back", "right", "left", "height")
+# `container_manifest_entries` stores weight, overhangs and stowage in signed `int` columns; a
+# larger value cannot be written, so it is an ERROR here rather than a database error in AI-032.
+INT_COLUMN_MAX: Final = 2_147_483_647
 
 Outcome = Literal["PARSED", "QUARANTINED"]
 
@@ -248,6 +251,9 @@ def _weight(line: ParsedLine) -> list[ParseIssue]:
     if line.weight_kg <= 0:  # `chk_cme_weight`
         message = f"Weight {line.weight_kg} is not a positive number"
         return [_issue("ERROR", MALFORMED_WEIGHT, ref, message)]
+    if line.weight_kg > INT_COLUMN_MAX:
+        message = f"Weight {line.weight_kg} is larger than the stored maximum {INT_COLUMN_MAX}"
+        return [_issue("ERROR", MALFORMED_WEIGHT, ref, message)]
     return []
 
 
@@ -285,11 +291,13 @@ def _stowage(line: ParsedLine) -> list[ParseIssue]:
         message = f"Stowage position {raw} is not a valid bay/row/tier (BBBRRTT)"
         return [_issue("ERROR", INVALID_STOWAGE_COORDINATE, ref, message)]
     s = line.stowage
-    # `chk_cme_stowage` (schema): bay > 0, row >= 0, tier > 0. No document gives upper bounds.
+    # `chk_cme_stowage` (schema): bay > 0, row >= 0, tier > 0, and the `int` columns' maximum.
+    # No document gives operational upper bounds (corpus case 12).
     bad = (
         (s.bay is not None and s.bay <= 0)
         or (s.row is not None and s.row < 0)
         or (s.tier is not None and s.tier <= 0)
+        or any(v is not None and v > INT_COLUMN_MAX for v in (s.bay, s.row, s.tier))
     )
     if bad:
         message = f"Stowage bay/row/tier {s.bay}/{s.row}/{s.tier} out of bounds"
@@ -306,6 +314,12 @@ def _oog(line: ParsedLine) -> list[ParseIssue]:
         if raw is not None or (value is not None and value <= 0):  # `chk_cme_oog`
             shown = raw if raw is not None else value
             message = f"Out-of-gauge {side} overhang {shown} is not a positive number of cm"
+            issues.append(_issue("ERROR", MALFORMED_OOG, _ref(line, key), message))
+        elif value is not None and value > INT_COLUMN_MAX:
+            message = (
+                f"Out-of-gauge {side} overhang {value} cm is larger than the stored maximum "
+                f"{INT_COLUMN_MAX}"
+            )
             issues.append(_issue("ERROR", MALFORMED_OOG, _ref(line, key), message))
     return issues
 
