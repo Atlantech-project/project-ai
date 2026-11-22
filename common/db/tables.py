@@ -414,6 +414,14 @@ ML_MODEL_VERSIONS: Final = sa.Table(
     sa.Column("retired_at", UtcDateTime()),
 )
 
+OBJECTIVE_TERMS: Final = sa.Table(
+    "objective_terms",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(40), nullable=False),
+    sa.Column("name", mysql.VARCHAR(100), nullable=False),
+)
+
 PART1_RUNS: Final = sa.Table(
     "part1_runs",
     metadata,
@@ -429,6 +437,17 @@ PART1_RUNS: Final = sa.Table(
     sa.Column("started_at", UtcDateTime()),
     sa.Column("finished_at", UtcDateTime()),
     sa.Column("result_handled_at", UtcDateTime()),
+)
+
+RATIONALE_TEMPLATES: Final = sa.Table(
+    "rationale_templates",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(60), nullable=False),
+    sa.Column("version", mysql.INTEGER(), nullable=False),
+    sa.Column("template_text", mysql.TEXT(), nullable=False),
+    sa.Column("is_active", mysql.TINYINT(1), nullable=False),
+    sa.Column("active_code", mysql.VARCHAR(60), info=GENERATED_INFO),
 )
 
 RECOMMENDATION_OPTION_TUGS: Final = sa.Table(
