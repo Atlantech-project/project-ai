@@ -2,6 +2,52 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0l. Checkpoint 14 (2026-11-22, AI-062 validation suite and baseline harness)
+
+**Merges verified (pulls API):**
+- PR #74 (`feature/SETUP-handler-records`, head `f7148d4`) merged as `11c537c` at 15:42:11Z.
+- PR #73 (`feature/AI-059-part2-solve-trigger-handler`, head `92caa43`) merged as `c1f2d00` at 15:43:24Z.
+- **PR #70 closed without merging** (`merged_at` null).
+- Content is identical to the pushed commits; no duplicate tracker rows.
+
+**Sync:**
+- Local `develop` = `origin/develop` = `c1f2d00`. CI on `c1f2d00`: all success. The user's untracked `reports/` files are untouched.
+- PortHub pointer `4a1663f` → `c1f2d00` (PortHub `9e72da2`).
+
+**Stale rows fixed on this branch:**
+- AI-059 (handler merged, PR #73);
+- AI-058 (PR #71);
+- `SETUP-handler-records` (DONE, PR #74);
+- `SETUP-replan-batch-records` (PR #70 closed).
+
+Checkpoint 13 is accurate otherwise. INT-B11 (regenerate) and INT-B12 (Backend C-06 consumer) are kept as they are.
+
+**AI-062:** `feature/AI-062-part2-validation-harness` (`475d426`, from `c1f2d00`).
+- **Harness:** `tools/evaluate/harness.py` runs CP-SAT and FIFO on the same run (AI-056's `handle_solve`) and builds the indicator table.
+- **Tests:** a property suite on 10 seeds, guarded so it can't be vacuous; a hand-computed table; a MySQL test through the handler's readers. 36 unit + 1 MySQL.
+- **Full suite:** 2417 passed, 51 skipped, 1 xfailed. Ruff and mypy clean.
+- **Status:** IN REVIEW. On merge it becomes DONE if the AI Team accepts "not defined" for cost and re-handling, otherwise BLOCKED (R16).
+- **Finding:** CP-SAT places at least as many requests as FIFO (12 of 12 seeds), but with equal DEC-23 weights it can wait more than FIFO. That's the objective trading waiting against tugs, a point for weight tuning.
+
+**AI-061 is not started.** R15 is unresolved. Its requirements stay documented in BLOCKED_TASKS and R15:
+- NFR-PERF-1: p50 ≤ 3 s, p95 ≤ 8 s, p99 ≤ 15 s "with 15 concurrent pipelines";
+- NFR-ENG-1: 10 s deadline, total ≤ 12 s;
+- backlog: "≥ 5 parallel solves".
+
+**Open branches, merge order:**
+1. `feature/AI-062-part2-validation-harness`
+2. `feature/SETUP-ai062-records` (this branch)
+
+They don't conflict: the AI-062 branch doesn't touch `WORK_STATUS.md`. Move the PortHub pointer after the merges.
+
+**What blocks further AI work** (full list in `DECISION_RECOMMENDATIONS.md`, "Blocking decisions and dependencies after AI-062"):
+- Decisions only the user (AI Team owner) can take: R15, R16, R11 (a), R9, R3, R4, R2, R6, R8, plus confirmations R1, R7, R14.
+- Backend Team: INT-B11, INT-B12, INT-B1, INT-B6, INT-B3, INT-B10.
+- QA Team: INT-Q4, INT-Q1, INT-Q2.
+- Leads Council and data: forecast feed and providers (flag D), INT-L1, INT-L2, cost rates for R16.
+
+**Next AI-owned work with no blocker:** none of the remaining tasks is free of a blocker. AI-084 needs AI-062 merged plus a manual-planning baseline (AI-008 / DEC-30). AI-061 needs R15. Every other open task needs a decision or an external delivery listed above.
+
 ## 0k. Checkpoint 13 (2026-11-22, AI-059 PART2_SOLVE trigger handler)
 
 **Merges verified (pulls API):** PR #72 (`feature/SETUP-post-merge-replan-records`, head `847463c`) merged as `c28e49f` at 15:15:07Z; PR #71 (`feature/AI-058-fifo-infeasible-mysql-tests`, head `bb1c5f5`) as `4a1663f` at 15:15:19Z. Content identical to the pushed commits; no duplicate tracker rows.
