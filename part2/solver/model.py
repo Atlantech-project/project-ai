@@ -4,7 +4,8 @@ Every datetime is timezone-aware UTC. Scores are on the CT-18 §5 scale: each te
 [0, 1] per request, multiplied by its weight, summed and scaled by 1000.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 from typing import Final
@@ -119,3 +120,42 @@ class SolveResult:
     solve_time_ms: int
     solver_version: str
     flags: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Pin:
+    """What a REPLAN request's new option must keep, because it has started (AI-059).
+
+    Architecture §8.13: a delay re-plan re-solves "with `STARTED` components fixed". A started
+    component keeps its resource and its interval; an option has one interval for its berth, pilot
+    and tugs (DEC-32 rule 4), so the option's start and end are the started components' interval.
+    `None` (or an empty set) leaves that part free.
+    """
+
+    start: datetime
+    end: datetime
+    berth_id: int | None = None
+    pilot_user_id: int | None = None
+    tug_ids: frozenset[int] = field(default_factory=frozenset)
+
+    def __post_init__(self) -> None:
+        for name, value in (("start", self.start), ("end", self.end)):
+            if value.utcoffset() is None:
+                raise ValueError(f"pin {name} must be timezone-aware")
+            if value.second or value.microsecond:
+                raise ValueError(f"pin {name} must be a whole minute (the solve grid): {value}")
+        if self.end <= self.start:
+            raise ValueError("pin end must be after its start")
+
+    @property
+    def duration(self) -> timedelta:
+        return self.end - self.start
+
+    def honoured_by(self, option: Option) -> bool:
+        return (
+            option.start == self.start
+            and option.end == self.end
+            and (self.berth_id is None or option.berth_id == self.berth_id)
+            and (self.pilot_user_id is None or option.pilot_user_id == self.pilot_user_id)
+            and self.tug_ids <= set(option.tug_ids)
+        )

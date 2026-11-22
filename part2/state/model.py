@@ -40,6 +40,24 @@ class ConfirmedHold:
 
 
 @dataclass(frozen=True)
+class StartedComponent:
+    """A berth, pilot or tug component of a run request's CONFIRMED plan that has begun (AI-059).
+
+    Begun = a `STARTED` or `DONE` field event (CT-07, DEC-39). The lifecycle only moves forward
+    (UNASSIGNED → ASSIGNED → STARTED → DONE), so the order the events arrived in doesn't matter.
+    """
+
+    kind: ResourceKind
+    resource_id: int  # identified like a ConfirmedHold (AI-050 rule 1)
+    start: datetime  # `plan_components.planned_start`
+    end: datetime
+    berthing_request_id: int
+    operational_plan_id: int
+    plan_component_id: int
+    status: str  # STARTED or DONE (DONE if any DONE event)
+
+
+@dataclass(frozen=True)
 class PendingHold:
     """Option 1 of a PENDING_REVIEW or MODIFIED_BY_STAFF recommendation (DEC-32 rule 3(b)).
 
@@ -170,3 +188,5 @@ class PortState:
     inconsistencies: tuple[Inconsistency, ...]
     # Seconds, per step and "total". Measured, never a pass/fail threshold (AI-050).
     timings: dict[str, float] = field(default_factory=dict)
+    # Begun components of the requests' own CONFIRMED plans (AI-059; fixed in a delay re-plan).
+    started_components: tuple[StartedComponent, ...] = ()
