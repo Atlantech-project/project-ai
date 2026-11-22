@@ -2,6 +2,25 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0h. Checkpoint 10 (2026-11-22, batch 2: AI-057 → AI-058 → AI-059 → AI-070 → AI-071 → AI-092)
+
+**Start:** PR #63 (`feature/SETUP-r12-merge-records`, head `c4868bf`) merged as `6c29250` at 13:09:51Z, CI all green (pulls API, check runs). No open PRs. PortHub pointer `bba5945` → `6c29250` (PortHub `7e99595`).
+
+**Baseline (local MySQL 8.4 and Redis 7.4 in Docker, CI environment):** `develop` `6c29250`: 2220 passed, 50 skipped, 1 xfailed.
+
+| Task | Result | Branch · head · CI | Status |
+|---|---|---|---|
+| AI-057 | Independent slice built: `part2/rationale/` (CT-18 §6 placeholder grammar, active template catalogue, renderer, factor rows, placeholder values, isolation test) | `feature/AI-057-rationale-factors` · `e18654b` · all green · no PR yet | BLOCKED (INT-Q4; R11 (a)) |
+| AI-058 | Not started on purpose. New blocker INT-B11 (`uq_rec_active` versus DEC-02 / CT-10, reproduced, MySQL 1062); AI-057 not merged; INT-B1 open | — | BLOCKED (AI-057 merge; INT-B11; INT-B1) |
+| AI-059 | Not started: needs AI-058; RESOURCE_CHANGE also needs INT-B11; DELAY_REPLAN needs STARTED components fixed in the solve | — | BLOCKED (AI-058) |
+| AI-070 | Re-verified, no code: read side green against MySQL; registration still has no grant | — | BLOCKED (INT-B6) |
+| AI-071 | Metric-row slice built: `part3/evaluation.py` (schema scope rules, MAE via AI-072's `rolling_mae`, no data → no row, MySQL test); R9 definitions proposed, not decided | `feature/AI-071-evaluation-metric-rows` · `3098391` · all green · no PR yet | BLOCKED (R9; TR-11; OD-17) |
+| AI-092 | Re-verified, no defect | — | DONE |
+
+**Merge order:** `feature/AI-057-rationale-factors` → `feature/AI-071-evaluation-metric-rows` → `feature/SETUP-second-batch-records`. Each appends a row to the end of `WORK_STATUS.md` after the same line, so the second and third PRs show a conflict there: keep both sides. The decision entries are in different places (AI-057 after AI-056, AI-071 after AI-070) and merge cleanly (`git merge-tree`). After each merge, move the PortHub pointer.
+
+**Next:** merge the three branches; take R13 / INT-B11 to the Backend Team and the Leads Council; decide R11 (a) and R9. Then AI-058 can start from `develop`.
+
 ## 0g. Checkpoint 9 (2026-11-22, R12 merged)
 
 **Verified with the GitHub pulls API and check runs:** PR #61 (`feature/AI-031-call-sign-length`, head `7cc4a55`) merged as `c116038` at 12:55:46Z; PR #62 (`feature/SETUP-five-task-records-pr60`, head `1284df0`) merged as `bba5945` at 12:56:18Z. CI on both: all success. No open PRs.

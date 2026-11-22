@@ -194,3 +194,80 @@ No new decision owned by the user, the Backend, QA or the Leads Council came up.
   - The file path cannot carry a call sign (the parser reads IMO and name from TDT only); tested.
   - No existing code fits; the new ERROR `MALFORMED_CALL_SIGN` follows the `MALFORMED_<FIELD>` pattern. It joins the INT-Q2 request to the QA Team (CT-24 code list). No contract text changes: CT-12's vessel object and fill rule are unchanged.
   - `flag_state` (`char(2)`) is also fillable under CT-12, but nothing produces it today (not in the parser or the CT-12 `staged_payload` vessel object), so it carries no risk now.
+
+## Batch 2 recommendations (2026-11-22)
+
+Everything below is a recommendation. Nothing here is approved or implemented as a decision; the canonical entries stay as they are until their owners approve.
+
+| ID | Question | Recommended | Owner | Blocks |
+|---|---|---|---|---|
+| R11 (a) | Which factors explain a FIFO option? | No factor rows; scope exception on AI-057 criterion 1 for FIFO options | AI Team | AI-057 criterion 1 |
+| R9 (proposals) | Definitions of `OVERRIDE_RATE`, `WAIT_TIME`, `WINDOW_ACCURACY`, and the MAE pairs | The definitions below, for review | AI Team (TR-11 in DEC-30) | AI-071 |
+| R13 | How does a re-solve of a pending request get written, given `uq_rec_active`? | INT-B11 option (a): `w_part2` sets the previous current version to `REPLACED` in its own transaction | Backend Team (DEC-02, CT-10, CT-15), Leads Council | AI-058, AI-059 |
+
+### R11 (a) · FIFO factors (updates R11)
+
+- **Question:** AI-057 criterion "Every option has ≥ 1 factor". A FIFO option (AI-056: plan by arrival order after a solver timeout or defect) has no objective terms and no binding constraint.
+- **Recommended:** **Option 1: no factor row for FIFO options, recorded as a scope exception to criterion 1** ("every option" read as every AI option). FIFO options are still explained, by their template (INT-Q4: a FIFO template naming the fallback) and `recommendations.source = FIFO`.
+- **Why:**
+  - The table means "Constraints/objective terms that actually drove the solve (FR-1.4.10)" (`schema.sql` comment). Nothing drove a FIFO plan except arrival order.
+  - Computing `WAITING_TIME` and `RESOURCE_COST` after the fact (Option 2) would put values in that table that no solve used, and staff would read them as reasons.
+  - The code already keeps FIFO apart (`fifo_factors`), so Option 1 changes nothing and Option 2 is one function.
+- **Alternatives:** (2) the two term values computed after the fact; (3) a new factor type for arrival order, which needs a schema change (Backend Team, CT-17).
+- **Risks:** a staff user sees a FIFO option with no factor list; the FIFO template must say why.
+- **Affected:** AI-057 criterion 1; CT-18 §6 unchanged; no contract change.
+- **Impact if approved:** record the scope exception in the AI-057 task decision; no code change.
+
+### R9 · proposed C1 definitions (updates R9; not decided)
+
+These are technical proposals, so the AI Team has something concrete to approve, change or reject. None is used in code: `part3/evaluation.py` computes only MAE.
+
+**`OVERRIDE_RATE`** (system-level, no model version, `dataset_type = PRODUCTION`)
+- **Proposed formula:** for a period [start, end): among `operational_plans` confirmed in the period (`confirmed_at`) whose recommendation has `source = AI`, the share whose berthing request had at least one `recommendation_overrides` row on any option of any of its recommendation versions with `overridden_at ≤ confirmed_at`. Value in [0, 1], 5 decimals. No confirmed AI plan in the period → no row.
+- **Source fields:** `operational_plans.confirmed_at`, `recommendation_id`, `berthing_request_id`; `recommendations.source`; `recommendation_overrides.recommendation_option_id`, `overridden_at`; `recommendation_options.recommendation_id`.
+- **Business meaning:** how often staff had to change what the engine proposed before acting on it.
+- **Why per request:** an override creates a `MODIFIED_BY_STAFF` version (ClassDiagramContext), so the override row and the confirmed option may sit on different versions; counting per request avoids that question.
+- **Limitations:** rejections and "Regenerate" are not counted as overrides; FIFO plans are left out because they don't measure the engine (a business choice to confirm); one number for all component types (the schema has no component column).
+- **Alternatives:** per option instead of per plan; count regenerations; include FIFO.
+
+**`WAIT_TIME`** (system-level, `PRODUCTION`)
+- **Proposed formula:** the mean, in minutes and to 5 decimals, of max(0, actual berthing start − `requested_eta`) over the vessels whose BERTH component's first trusted "berthing started" event falls in the period. Trusted means read through `part3/trusted.py` (`clock_skew_suspect = 0`). No such vessel → no row.
+- **Missing input (owner Backend Team):** which `actual_status_updates.status` code of a BERTH component means "berthing started" (the `status_types` seed is the Backend's).
+- **Business meaning:** the delay between when a vessel asked to arrive and when it got its berth; Master_Context's "avoidable idle time".
+- **Limitations:** `requested_eta` is the planned arrival, not an observed one (the schema records no actual arrival for every vessel); early berthing counts as 0.
+- **Alternatives:** from the confirmed window's start instead of `requested_eta`; median instead of mean; from a PILOT "boarded" event if it is recorded for every vessel.
+
+**`WINDOW_ACCURACY`** (DEC-30 TR-11, DEFERRED, OD-16)
+- **Proposed formula, for TR-11:** among confirmed entry windows whose vessel's first trusted entry event falls in the period, the share where that event lies inside [window start, window end). No model version while Part 1 is rules and physics.
+- **Missing input:** the status code that marks entry (Backend Team), and the TR-11 decision itself (AI Team, DEC-30).
+- **Limitations:** a vessel that never enters is not counted.
+
+**MAE pairs** (formula defined; inputs not)
+- **Proposed:** for M2, actual service time = last trusted "departed" − first trusted "berthing started" of the BERTH component, in hours, against the confirmed option's `service_time_p50_hours`; the model version from `solver_run_model_versions` of the run that produced the option. Only options with `service_time_method = ML` count.
+- **Missing input:** the two status codes (Backend Team) and a model version (OD-17, INT-B6).
+
+### R13 · Writing a re-solve of a pending request (INT-B11)
+
+- **Question:** the worker must insert a new `PENDING_REVIEW` INITIAL recommendation for every solved request (CT-10). When the request already has a current INITIAL version (`PENDING_REVIEW` or `MODIFIED_BY_STAFF`), `uq_rec_active` refuses the insert (reproduced: MySQL 8.4, error 1062), because DEC-02 and CT-10 let only the Backend set `REPLACED`, after C-06.
+- **Recommended:** INT-B11 **option (a)**: in the worker's result transaction, for each solved request, set its current version to `REPLACED` (guarded: that row id, and status `PENDING_REVIEW` or `MODIFIED_BY_STAFF`), then do the inserts. The Backend keeps every other C-06 step (request transition, audit, SSE); its "marks REPLACED" step becomes a no-op it can keep for safety.
+- **Why:**
+  - It is the backlog's own criterion for AI-058: "Previous version REPLACED only on success".
+  - One transaction: a failed, timed-out or infeasible run changes nothing, so the previous version stays current and staff can regenerate later (UML 2.13).
+  - It is the smallest change: one column grant and one transition. The CT-08 run guard already rolls back a run that is no longer RUNNING.
+- **Alternatives:** (b) the Backend replaces before enqueueing: simple, but a failed re-solve leaves the request with no current version, against the backlog criterion and UML 2.13. (c) a schema change so the new row doesn't count in `active_key` until C-06: keeps DEC-02 intact but adds a status and changes CT-17, CT-15 and the Backend's reads.
+- **Risks:** reopens a Closed Backend decision (DEC-02) for one transition; the worker must find the right current version (one per request, guaranteed by `uq_rec_active` itself).
+- **Affected contracts:** CT-10 (Solve scope), CT-15 (grants), DEC-02; CT-17 only for (c).
+- **Affected criteria:** AI-058 "Previous version REPLACED only on success" and "Run fully traceable"; AI-059 "Failure keeps previous version current".
+- **Implementation impact:** AI-058 writes the update first in its transaction; tests with a `PENDING_REVIEW` and a `MODIFIED_BY_STAFF` previous version, and a failure case.
+- **Owner:** Backend Team, with the Leads Council since DEC-02 is Closed. The AI Team (you) proposes it; nothing changes in DEC-02 or CT-10 until they approve.
+
+### Open recommendations after batch 2
+
+| ID | State |
+|---|---|
+| R1, R2, R3, R4, R6, R7, R8 | Unchanged (see the handoff table above) |
+| R9 | Open; proposals written above |
+| R10 | Recorded (DEC-17) |
+| R11 | Slice built (AI-057, `feature/AI-057-rationale-factors`); (a) recommended above; (b) and (c) wait for INT-Q4 |
+| R12 | Approved and merged (PR #61) |
+| R13 | New, open: needs the Backend Team and the Leads Council |

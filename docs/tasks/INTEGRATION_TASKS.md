@@ -60,3 +60,22 @@ Setup record (not in the backlog), written for the owning teams. Each item says 
 - INT-L1, INT-L2: yard dwell and time-limit values.
 
 DEC-30 TR-01 / TR-02 are AI Team values (R8), not an external request.
+
+## Additions 2026-11-22 (batch 2: AI-057, AI-058, AI-059, AI-070, AI-071, AI-092)
+
+| ID | Owner | Request | Exact deliverable | Blocks | Acceptance / tests |
+|---|---|---|---|---|---|
+| INT-B11 | Backend Team (DEC-02 and CT-10 owner; schema owner), Leads Council if DEC-02 is reopened | Regenerating a pending request cannot be written: `uq_rec_active` versus "REPLACED on C-06" | Choose one: **(a)** let `w_part2` set the previous current INITIAL version of each solved request (`PENDING_REVIEW` or `MODIFIED_BY_STAFF`) to `REPLACED` in the same transaction that inserts the new version: column grant UPDATE `recommendations.status`, limited by CT-15 to that transition, guarded by `WHERE id = ? AND status IN (…)`; DEC-02, CT-10 "Solve scope" and CT-15 updated. **(b)** the Backend marks it `REPLACED` before it enqueues the solve (then a failed or infeasible re-solve leaves the request with no current version). **(c)** a schema change so the new row is not counted by `active_key` until the Backend handles C-06 (for example a new status), with CT-17 and CT-15 updates. AI recommendation: (a), see R13 | AI-058 (every MANUAL and RESOURCE_CHANGE re-solve of a pending request); AI-059 (RESOURCE_CHANGE path) | The chosen option written in DEC-02 / CT-10 / CT-15 (and the schema for (c)); a MySQL test that regenerating a request with a `PENDING_REVIEW` and with a `MODIFIED_BY_STAFF` version succeeds, and that a failed run leaves the previous version current |
+| INT-Q4 (extended) | QA Team / domain reviewer; AI Team for the selection rule | Rationale templates (AI-009 criterion 3) | Besides the rows (code, version, text) and the language: which template goes with which option (AI rank 1, AI alternatives, FIFO), and whether any template needs `{terminal}`, `{delta_minutes}` or `{constraint}` `{value}` `{limit}` `{unit}` for options, with their definitions (AI-057 fills only `vessel`, `berth`, `etb`, `waiting_minutes`, `tug_count`, `window_start`, `window_end`) | AI-057 criteria 1 (FIFO, with R11 (a)) and 2 | Rows in `seed-spec.json`; `test_every_seeded_template_parses_and_renders` runs for each row |
+
+**Evidence for INT-B11 (2026-11-22):**
+- `schema.sql` (pin `d55a263` = PortHub `main`, same SHA-256): `active_key` = `berthing_request_id` while `status IN (PENDING_REVIEW, MODIFIED_BY_STAFF, CONFIRMED)` and `purpose = INITIAL`; `uq_rec_active` UNIQUE.
+- DEC-02 (Closed, owner Backend Team, "Affects … AI-058"): the Backend closes old rows (REPLACED); workers insert new rows. CT-10 "Solve scope": "When the Backend receives C-06, it marks REPLACED only the previous PENDING_REVIEW version". CT-15: `recommendations` INSERT only for `w_part2`.
+- Reproduced on MySQL 8.4 with the schema's exact generated column: the second INITIAL insert for a request fails with `ERROR 1062 (23000): Duplicate entry '1550' for key 'uq_rec_active'`, and the same over a `MODIFIED_BY_STAFF` version; a `DELAY_REPLAN` insert succeeds (`active_key` NULL).
+- The Backend's own `tests/Feature/Database/DatabaseRulesTest.php` (`develop` `554b09c`) asserts "one live INITIAL recommendation per request: uq_rec_active". The Backend has no PART2_SOLVE result handler yet.
+- Also affected: CT-10 replaces only `PENDING_REVIEW`, but a `MODIFIED_BY_STAFF` version blocks the insert too.
+
+**Re-checked 2026-11-22 (batch 2):**
+- INT-B1: still open. PortHub `main` CT-10 is `Proposed v1.2` with the AI-051 `Proposed change` row; no approval recorded.
+- INT-B6: still open. PortHub `table-ownership.md`: "No worker writes them until retraining is built (DEC-08)".
+- INT-Q4: no `rationale_templates` rows (`seed-spec.json`: `[]`).
