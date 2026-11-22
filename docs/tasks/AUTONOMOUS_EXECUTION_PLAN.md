@@ -2,6 +2,103 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0j. Checkpoint 12 (2026-11-22, post-merge verification of PRs #67 to #69)
+
+**GitHub (pulls API, check runs):**
+
+| PR | Branch | Head | Merge | Merged at (UTC) | State |
+|---|---|---|---|---|---|
+| #67 | `feature/AI-055-random-instance-tugs` | `47051a7` | `a45192a` | 14:55:06 | merged |
+| #68 | `feature/AI-058-recommendation-persistence` | `229787c` | `e1576a8` | 14:55:17 | merged |
+| #69 | `feature/AI-059-started-components-replan` | `10427ed` (a `develop` merge on `2737d38`) | `e395bac` | 14:59:56 | merged |
+| #70 | `feature/SETUP-replan-batch-records` | `c3123ff` | — | — | **open, not merged**; its `WORK_STATUS.md` tail conflicts with `develop`. Superseded by this branch, which carries its content unchanged: close it unmerged |
+
+- Final `develop` HEAD `e395bac`: CI all success (`ci-ok`, `lint`, `tests`, `typecheck`, `secret-scan`). No other open PR.
+- Every merged file is byte-identical to the pushed commits; no conflict markers. `develop` still had the stale duplicate `SETUP-r12-merge-records` row; removed here.
+
+**Sync:**
+- Local `develop` fast-forwarded to `e395bac` = `origin/develop`; the user's untracked `reports/` files untouched.
+- PortHub pointer `254757c` → `e395bac` (PortHub `e3e1273`, confirmed on `origin/main`).
+- Shared files against PortHub `main`:
+  - `schema.sql` pin: same SHA-256 (`afdfaadc…`, PortHub `d55a263`).
+  - Decisions: byte-identical up to `## AI task decisions`.
+  - Payload schemas and `table-ownership.md`: identical.
+  - Contracts: same text; the only differences are the long-standing local adaptations (the no-log rule, the mirror note, "PortHub `contracts/…`" in place of relative links). No contract version, status or row differs.
+
+**Tests on `develop` `e395bac`** (local MySQL 8.4 and Redis 7.4, CI environment): 2351 passed, 51 skipped, 1 xfailed; ruff, format, mypy (171 files) clean. 2351 = 2281 + 39 (AI-058) + 31 (AI-059).
+
+**AI-058 verified:**
+- First recommendation written transactionally and traceable (MySQL).
+- DELAY_REPLAN next to a CONFIRMED version (MySQL).
+- Regenerate refused before any write, with the previous version still current, for `PENDING_REVIEW` and `MODIFIED_BY_STAFF` (MySQL).
+- CT-10 v1.1 code mapping (unit).
+- FIFO and NO_FEASIBLE_PLAN were unit-only: two MySQL tests added on `feature/AI-058-fifo-infeasible-mysql-tests` (`bb1c5f5`, 7 of 7 passed locally). The NO_FEASIBLE_PLAN test also shows `TUG_COUNT` stored as `TUG_UNAVAILABLE` and an existing `PENDING_REVIEW` left current.
+- Status: BLOCKED (INT-B11).
+
+**AI-059 verified:**
+- STARTED and DONE events read by the loader; CONSUMED counts, RELEASED never; other requests are not read (MySQL).
+- Resources and interval kept, through CP-SAT, alternatives, FIFO and 8 random instances.
+- A started tug in `MAINTENANCE` gives NO_FEASIBLE_PLAN.
+- Status: IN PROGRESS. Its "needs AI-058 merged" blocker is gone. Criteria 1 and 2 stay open until the PART2_SOLVE trigger handler exists, and the regenerate path stays blocked by INT-B11.
+
+**Random-instance tests verified:** a mutation run with the old helper makes all five corrected tests fail on their guards. With the real helper, the property seeds place 1 to 5 requests each (36 of 72).
+
+**Checkpoint 10 re-read:** its per-task table is historical. Current states:
+
+| Task | Status |
+|---|---|
+| AI-057 | BLOCKED (INT-Q4, R11 (a)) |
+| AI-058 | BLOCKED (INT-B11) |
+| AI-059 | IN PROGRESS |
+| AI-070 | BLOCKED (INT-B6) |
+| AI-071 | BLOCKED (R9, TR-11, OD-17) |
+| AI-092 | DONE |
+
+Its merge order was not followed exactly (#66 before #65), which changed nothing.
+
+**Kept open:**
+- Recommendations R9, R11 (a), R13 and R14.
+- External requests INT-B1, INT-B6, INT-B11, INT-Q4, plus the Backend status codes for C1.
+
+**Open branches, merge order:**
+1. `feature/AI-058-fifo-infeasible-mysql-tests` (tests and the AI-058 record only).
+2. `feature/SETUP-post-merge-replan-records` (this branch).
+
+Close PR #70 unmerged. Then move the PortHub pointer.
+
+**Next (same task, not a new batch):** the AI-059 PART2_SOLVE trigger handler on a new branch from `develop`:
+- scope → AI-050 snapshot → B2 to B6 with pins → AI-058;
+- one scenario test per trigger;
+- the RESOURCE_CHANGE "pending only" check;
+- the regenerate path stays refused until INT-B11.
+
+## 0i. Checkpoint 11 (2026-11-22, batch 2 resumed: AI-058 → AI-059)
+
+**Merges verified (pulls API, `git diff`):**
+
+| PR | Branch | Head | Merge | Merged at (UTC) |
+|---|---|---|---|---|
+| #64 | `feature/AI-057-rationale-factors` | `e18654b` | `a758b45` | 13:48:05 |
+| #66 | `feature/SETUP-second-batch-records` | `e55b8bb` (a `develop` merge on `7d8a391`) | `10f3dc3` | 14:12:12 |
+| #65 | `feature/AI-071-evaluation-metric-rows` | `1d36379` (a `develop` merge on `3098391`) | `254757c` | 14:12:22 |
+
+- #66 merged 10 s before #65 (not the suggested order); both are in. The merged code and records are byte-identical to the pushed commits. The `WORK_STATUS.md` conflict resolution brought back a stale `SETUP-r12-merge-records` IN REVIEW row; removed on this branch.
+- Local `develop` = `origin/develop` = `254757c`, CI green. PortHub pointer `6c29250` → `254757c` (PortHub `ed340ef`).
+
+**Baseline:** `develop` `254757c` was not run locally on its own. Its count, 2281 passed, 51 skipped, 1 xfailed, is 2220 (Checkpoint 10) + 39 (AI-057) + 22 (AI-071), and the corrective branch, which changes only test bodies on top of it, ran exactly that locally. CI on `254757c`: all success.
+
+| Task | Result | Branch · head · CI | Status |
+|---|---|---|---|
+| AI-058 | `part2/persist.py`: first recommendations, DELAY_REPLAN proposals, FIFO and NO_FEASIBLE_PLAN runs written in one transaction as `w_part2`; schema CHECKs mirrored before the write; regenerate refused with `PRECONDITION_FAILED` before any write (INT-B11); `result_detail` kept to CT-10 v1.1 (`PILOT_RANK_LIMIT` → `PILOT_UNAVAILABLE`, `TUG_COUNT` → `TUG_UNAVAILABLE` until INT-B1). Reuses AI-057's catalogue and AI-056's outcome | `feature/AI-058-recommendation-persistence` · `229787c` · all green · no PR | BLOCKED (INT-B11, regenerate only) |
+| AI-059 | STARTED components fixed in a delay re-plan: AI-050 loader reads begun components (`STARTED`/`DONE` events); `Pin` keeps their resources and interval through CP-SAT, alternatives and FIFO; scope from the CT-10 triggers | `feature/AI-059-started-components-replan` · `2737d38` · all green · no PR | BLOCKED (handler needs AI-058 merged; regenerate needs INT-B11) |
+| Corrective | AI-055 / AI-056 / AI-057 random-instance tests were empty (eligible tugs 41–43, instance tugs 300+; 0 of 72 requests placed). Helper fixed; each test asserts a placement | `feature/AI-055-random-instance-tugs` · `47051a7` · all green · no PR | Tests only |
+
+**Verification:** AI-058 full suite 2320 passed, 51 skipped, 1 xfailed; AI-059 2312 passed; corrective 2281 passed (same tests, now non-empty). AI-058 and AI-059 together (their trees overlaid in scratch): `tests/unit/part2` 572 passed, mypy clean.
+
+**Merge order:** `feature/AI-055-random-instance-tugs` (clean with both) → `feature/AI-058-recommendation-persistence` → `feature/AI-059-started-components-replan` → `feature/SETUP-replan-batch-records`. AI-058, AI-059 and SETUP each append to the end of `WORK_STATUS.md`: keep every row. Their decision entries are at different anchors and merge cleanly. Move the PortHub pointer after the merges.
+
+**Next:** after AI-058 merges, the PART2_SOLVE handler (AI-059 remainder) on a new branch from `develop`: scope → snapshot → B2 to B6 with pins → AI-058, one scenario test per trigger, and the RESOURCE_CHANGE "pending only" check. INT-B11 / R13 to the Backend Team and the Leads Council.
+
 ## 0h. Checkpoint 10 (2026-11-22, batch 2: AI-057 → AI-058 → AI-059 → AI-070 → AI-071 → AI-092)
 
 **Start:** PR #63 (`feature/SETUP-r12-merge-records`, head `c4868bf`) merged as `6c29250` at 13:09:51Z, CI all green (pulls API, check runs). No open PRs. PortHub pointer `bba5945` → `6c29250` (PortHub `7e99595`).
