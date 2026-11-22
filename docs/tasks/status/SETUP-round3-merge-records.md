@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (records written; documents only) |
+| Status | DONE (PR #55 merged into `develop`, merge `a604946`, 2026-11-22; verified with the GitHub pulls API on 2026-11-22) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-round3-merge-records` (from `develop` at `ddfb551`) |
 | Plan | the user's instruction of 2026-11-22: verify the round-3 merges, update the records, resume eligible work |

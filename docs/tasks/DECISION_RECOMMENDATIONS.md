@@ -169,3 +169,13 @@ Setup record (not in the backlog), written for the user as AI Team owner. Each i
 | INT-L1 / INT-L2 | Leads, Terminal operations | Yard dwell and time-limit values | AI-066 |
 | Data (flag D) | Leads Council, domain experts | Providers, tidal constants, master data, history | AI-020 to AI-024, AI-042 → Part 1 chain |
 | INT-B4 | Backend | Delivered in the schema (PortHub `d55a263`); P4-L1 copying into `plan_components` remains | Already done on the AI side (R5.3) |
+
+## Five-task batch review (2026-11-22)
+
+No new decision owned by the user, the Backend, QA or the Leads Council came up. The one new rule is AI-owned and recorded as item (9) of the AI-031 task decision (still Proposed, owner AI Team): a value above the `int` columns' maximum is an ERROR, so the file is quarantined. It is the column's storage limit, not an operational bound.
+
+| ID | State after the batch | Recommendation | Unblocks |
+|---|---|---|---|
+| R1 | Open. AI-055 item (1) `RESOURCE_COST` = tugs assigned ÷ `N_cap` re-read: it uses only DEC-20's own `N_cap` and needs no new data | Accept as written; not self-approved | Confirmation only |
+| R3 | Open. Nothing new: no squat-coefficient source, AI-043 not started | Unchanged | AI-045 → closing AI-055 |
+| R6 | Open. Re-verified: CT-12 v1.1 step 5 and the Backend's own `table-ownership.md` give the status change to the Backend | Accept: close criterion 3 as the Backend's once INT-B10 passes | Closing AI-032 |

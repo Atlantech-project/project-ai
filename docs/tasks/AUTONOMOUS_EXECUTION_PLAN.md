@@ -2,6 +2,27 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0d. Checkpoint 6 (2026-11-22, five-task batch: AI-031, AI-032, AI-051, AI-055, AI-025)
+
+**Base:** `develop` `a604946` (= `origin/develop`; PRs #55 and #56 merged, so Checkpoint 5's "next 1" is done). No PR open before the batch. Verified with the GitHub pulls API.
+
+**Baseline (local MySQL 8.4 and Redis 7.4 configured like CI):** `uv run pytest -q`: 2192 passed, 50 skipped, 1 xfailed; ruff, ruff format, mypy (156 files) clean.
+
+| Order | Task | Finding | Branch / commit | Status after the batch |
+|---|---|---|---|---|
+| 1 | AI-031 | Defect: a weight, overhang or stowage value above the `int` maximum passed the rules and failed the AI-032 write (MySQL 1264), so the file never reached quarantine. Fixed. Case 12 re-checked: still no upper bounds anywhere (INT-Q1) | `feature/AI-031-storable-range-checks`, `3c563b9`, pushed, CI green (`ci-ok`, `tests`, `lint`, `typecheck`, `secret-scan`); PR not opened (no `gh` here) | DONE (PR #45); follow-up IN REVIEW |
+| 2 | AI-032 | No AI-owned defect. Criterion 3 stays the Backend's (CT-12 step 5, DEC-08); Backend `develop` `554b09c` has no step-5 handler or test | none | BLOCKED (R6, INT-B10) |
+| 3 | AI-051 | No defect; criteria, FIFO re-check and loader integration verified | none | DONE |
+| 4 | AI-055 | No defect; DEC-32 holds use per-job intervals (AI-050 #56); new assignments keep the rule-4 interim (no job durations); `pilot_requested` still missing (INT-B9) | none | BLOCKED (AI-045, R3) |
+| 5 | AI-025 | No defect; 48 h boundary tested; AI-053 has an equivalent inline age check (follow-up for AI-053) | none | DONE |
+
+**Records branch:** `feature/SETUP-five-task-batch-records` (this file, the four records, the trackers, the report `reports/AI_FIVE_TASKS_EXECUTION_REPORT.md`, and two stale records: SETUP-round3-merge-records → DONE, AI-050 → PR #56).
+
+**Next (exact):**
+1. Open and merge the PR for `feature/AI-031-storable-range-checks`, then the PR for `feature/SETUP-five-task-batch-records` (keep both sides of any `WORK_STATUS.md` conflict; the AI-031 row is changed only on the AI-031 branch).
+2. Move the PortHub `project-ai` pointer to the new `develop` head.
+3. Decisions R3 (unblocks AI-045 → AI-055 close) and R6 plus INT-B10 (closes AI-032); INT-Q1 (AI-031 case 12).
+
 ## 0c. Checkpoint 5 (2026-11-22, full audit)
 
 All 76 backlog tasks are classified in `reports/AUTONOMOUS_EXECUTION_FINAL.md` § Round 5:
