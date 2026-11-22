@@ -48,6 +48,22 @@ _ID: Final = mysql.BIGINT(unsigned=True)
 # Generated columns the database computes; no worker may write them (CT-17 §2).
 GENERATED_INFO: Final = {"generated": True}
 
+ACTUAL_STATUS_UPDATES: Final = sa.Table(
+    "actual_status_updates",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("client_event_id", mysql.CHAR(36), nullable=False),
+    sa.Column("plan_component_id", _ID, nullable=False),
+    sa.Column("component_type", KnownEnum("BERTH", "PILOT", "TUG", "TERMINAL_OPS"), nullable=False),
+    sa.Column("reported_by", _ID, nullable=False),
+    sa.Column("status", mysql.VARCHAR(30), nullable=False),
+    sa.Column("reported_at", UtcDateTime(), nullable=False),
+    sa.Column("client_sent_at", UtcDateTime()),
+    sa.Column("received_at", UtcDateTime(), nullable=False),
+    sa.Column("clock_skew_suspect", mysql.TINYINT(1), nullable=False),
+    sa.Column("sync_source", KnownEnum("MOBILE", "TABLET", "WEB", "EXTERNAL"), nullable=False),
+)
+
 BAPLIE_FILES: Final = sa.Table(
     "baplie_files",
     metadata,
@@ -166,6 +182,31 @@ BLOCKED_PERIODS: Final = sa.Table(
     sa.Column("limiting_constraint_type_id", _ID, nullable=False),
 )
 
+CONSTRAINT_TYPES: Final = sa.Table(
+    "constraint_types",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.VARCHAR(60), nullable=False),
+    sa.Column("category", KnownEnum("ENVIRONMENTAL", "UKC", "VESSEL_SAFETY"), nullable=False),
+    sa.Column(
+        "unit",
+        KnownEnum(
+            "KNOTS",
+            "METRES_PER_SECOND",
+            "METRES",
+            "NAUTICAL_MILES",
+            "PERCENT",
+            "DEGREES",
+            "MINUTES",
+            "TONNES",
+        ),
+        nullable=False,
+    ),
+    sa.Column("comparator", KnownEnum("MAX_ALLOWED", "MIN_REQUIRED"), nullable=False),
+    sa.Column("is_hard_safety_limit", mysql.TINYINT(1), nullable=False),
+    sa.Column("description", mysql.VARCHAR(255)),
+)
+
 CONTAINER_MANIFEST_ENTRIES: Final = sa.Table(
     "container_manifest_entries",
     metadata,
@@ -186,6 +227,22 @@ CONTAINER_MANIFEST_ENTRIES: Final = sa.Table(
     sa.Column("stowage_tier", mysql.INTEGER()),
     sa.Column("port_of_load", mysql.CHAR(5)),
     sa.Column("port_of_discharge", mysql.CHAR(5)),
+)
+
+CONTAINER_SIZE_TYPES: Final = sa.Table(
+    "container_size_types",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("code", mysql.CHAR(4), nullable=False),
+    sa.Column("length_ft", mysql.INTEGER(), nullable=False),
+    sa.Column("is_high_cube", mysql.TINYINT(1), nullable=False),
+    sa.Column(
+        "type_group",
+        KnownEnum("GENERAL", "REEFER", "TANK", "OPEN_TOP", "FLAT_RACK", "VENTILATED", "BULK"),
+        nullable=False,
+    ),
+    sa.Column("teu_factor", mysql.DECIMAL(3, 2), nullable=False),
+    sa.Column("is_reefer", mysql.TINYINT(1), info=GENERATED_INFO),
 )
 
 CONTAINERS: Final = sa.Table(
@@ -312,6 +369,13 @@ FORECAST_RUNS: Final = sa.Table(
     sa.Column(
         "visibility_unit", KnownEnum("NAUTICAL_MILES", "KILOMETRES", "METRES"), nullable=False
     ),
+)
+
+IMDG_CLASSES: Final = sa.Table(
+    "imdg_classes",
+    metadata,
+    sa.Column("code", mysql.VARCHAR(3), primary_key=True),
+    sa.Column("name", mysql.VARCHAR(80), nullable=False),
 )
 
 ML_MODELS: Final = sa.Table(
