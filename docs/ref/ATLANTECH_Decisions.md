@@ -2324,6 +2324,19 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 **Follow-ups:** OD-17 (whether Phase 1 methods get version rows, cited by the backlog) is not decided in this repository; the read path does not need it. A hash column on `ml_model_versions` would replace the sidecar; that is the Backend Team's schema (CT-17).
 
+### AI-071 · C1 evaluation: metric rows, scope, missing data, and what waits for definitions
+
+| | |
+| --- | --- |
+| Source | AI-071 (backlog: outputs "`evaluation_metric` rows: MAE, OVERRIDE_RATE, WAIT_TIME, WINDOW_ACCURACY"; guidance "System-level metrics without model version; MAE requires one"; criteria "Hand-computed metric expectations reproduced", "Untrusted rows excluded (test)"; open question "Window-accuracy definition (OD-16)") · Architecture §9.1 (C1) · `schema.sql` `evaluation_metrics` (`chk_em_scope`, `chk_em_period`, `decimal(14,5)`) · CT-15 (`w_part3` INSERT) · DEC-30 TR-11 (DEFERRED) · AI-072 task decision (`rolling_mae`) · AI-074 task decision (the only read of field events) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-073 (schedules the run, DEC-31) · AI-094 · Backend Team (dashboards read the rows) |
+| Decision | ______ |
+| Proposed change | 2026-11-22 · AI-071 · (1) **Module** `part3/evaluation.py`: `EvaluationMetric` (one row), `mae_metric`, `write_metrics`; pure apart from the insert, which the caller commits. (2) **Scope** follows `chk_em_scope` exactly and is checked before the database: `MAE` needs `model_version_id`; `OVERRIDE_RATE` and `WAIT_TIME` must have none; `WINDOW_ACCURACY` may have either. `period_end > period_start`; datetimes timezone-aware UTC. (3) **Value:** finite, at most 5 decimals and below 10⁹ in absolute value (`decimal(14,5)`); the code never rounds a value it is given, it refuses it. (4) **MAE** = mean absolute error over the (actual, predicted) pairs the caller passes, computed by AI-072's `rolling_mae` (rounded half-up to 5 decimals), in the model's own unit. (5) **Missing data:** no pairs → no row, never a zero. (6) **Not built, because no source defines them:** the computation of `OVERRIDE_RATE` and `WAIT_TIME` (R9) and `WINDOW_ACCURACY` (DEC-30 TR-11, OD-16), and the selection of the MAE pairs (which trusted field events give the actual service time). Rows for them can be stored once a definition is approved; the scope rules already hold. · Reason: the backlog names the metrics but defines only their scope; every formula except MAE is missing · Evidence: `part3/evaluation.py`; `tests/unit/part3/test_evaluation.py`, `tests/integration/test_evaluation.py` (MySQL) on branch `feature/AI-071-evaluation-metric-rows` · Impact: Part 3 · Awaiting: AI Team (owner); definitions per R9 and DEC-30 TR-11 |
+
+**Follow-ups (open):** the R9 definitions (proposals in `docs/tasks/DECISION_RECOMMENDATIONS.md`, not decided); TR-11 window accuracy; a model version to attach MAE to (OD-17, AI-070 registration).
+
 ### AI-072 · C2 drift monitor: PSI binning, rolling MAE and thresholds
 
 | | |
