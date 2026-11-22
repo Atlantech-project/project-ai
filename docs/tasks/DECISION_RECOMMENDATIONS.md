@@ -182,7 +182,7 @@ No new decision owned by the user, the Backend, QA or the Leads Council came up.
 
 ## R12 · Corrected `call_sign` longer than the column (owner: AI Team; added 2026-11-22)
 
-**Status: APPROVED 2026-11-22 by the user ("I approve R12: introduce ERROR `MALFORMED_CALL_SIGN` ..."), recorded as the approved item (10) of the AI-031 task decision.** Still pending: the QA Team's CT-24 code listing (INT-Q2). The independent review of `d7cd794` added the not-text case (a JSON number, boolean, list or object is also `MALFORMED_CALL_SIGN`, not dropped).
+**Status: APPROVED 2026-11-22 by the user ("I approve R12: introduce ERROR `MALFORMED_CALL_SIGN` ..."), recorded as the approved item (10) of the AI-031 task decision. Implemented and merged: PR #61, merge `c116038`, 2026-11-22.** Still pending: the QA Team's CT-24 code listing (INT-Q2), which does not block the AI implementation. Surrounding spaces are not trimmed, by decision. A lone UTF-16 surrogate cannot reach the fill (MySQL rejects it in the JSON column, error 3140; reproduced 2026-11-22). The independent review of `d7cd794` added the not-text case (a JSON number, boolean, list or object is also `MALFORMED_CALL_SIGN`, not dropped).
 
 - **Found by:** the independent review of the AI-031 storable-range fix. The issue is older than that fix.
 - **Problem:** `vessels.call_sign` is `varchar(10)`. `edi/rules/staged.py` accepts a corrected `call_sign` of any length, and `edi/commit.py` writes it as a fill-empty value. A longer value would fail the UPDATE (MySQL 1406), so the correction job fails instead of quarantining. Only the correction path is exposed: the file parser gives `call_sign = None`.

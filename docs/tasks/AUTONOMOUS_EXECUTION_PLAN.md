@@ -2,6 +2,19 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0g. Checkpoint 9 (2026-11-22, R12 merged)
+
+**Verified with the GitHub pulls API and check runs:** PR #61 (`feature/AI-031-call-sign-length`, head `7cc4a55`) merged as `c116038` at 12:55:46Z; PR #62 (`feature/SETUP-five-task-records-pr60`, head `1284df0`) merged as `bba5945` at 12:56:18Z. CI on both: all success. No open PRs.
+- Local `develop` = `origin/develop` = `bba5945`: 2220 passed, 50 skipped, 1 xfailed; ruff, format, mypy clean.
+- PortHub pointer `db42b4a` → `bba5945` (PortHub `3a69e8b`).
+- R12: approved (user, for the AI Team) and implemented (PR #61); QA's CT-24 listing (INT-Q2) pending, not an AI blocker.
+- Review follow-ups: no trimming, by decision; lone surrogate not reproducible (MySQL rejects it, error 3140), no fix.
+- Records: no duplicate tracker rows, decision headings, R entries or INT rows.
+
+**Statuses:** AI-031 DONE · AI-032 BLOCKED (R6, INT-B10) · AI-051 DONE · AI-055 BLOCKED (AI-045; squat-coefficient source, R3) · AI-025 DONE · AI-065 IN REVIEW (Proposed mapping, R7) · AI-070 BLOCKED (INT-B6).
+
+**Next:** merge `feature/SETUP-r12-merge-records`, move the PortHub pointer, then the user's review before any new batch.
+
 ## 0f. Checkpoint 8 (2026-11-22, R12 and the last records)
 
 **Verified with the GitHub pulls API and check runs:** PR #59 (`feature/AI-031-review-followups`, head `cd5e001`) merged as `a5de981` at 12:20:09Z; PR #60 (`feature/SETUP-five-task-post-merge-records`, head `5e95e6b`) merged as `db42b4a` at 12:20:32Z. CI on `db42b4a`: all success. Local `develop` = `db42b4a` (2205 passed, 50 skipped, 1 xfailed). PortHub pointer `0040139` → `db42b4a` (PortHub `2c9fd5c`).

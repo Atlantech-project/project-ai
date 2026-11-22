@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only) |
+| Status | DONE (PR #62, merge `bba5945`, 2026-11-22; verified with the GitHub pulls API) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-five-task-records-pr60` (from `develop` at `db42b4a`) |
 | Plan | the user's instruction of 2026-11-22: "Prepare a separate SETUP documentation branch to correct the stale SETUP row from IN REVIEW to DONE, referencing PR #60", kept out of the AI-031 code branch |
@@ -18,3 +18,6 @@ Code tests: NOT APPLICABLE (documents only). Evidence: GitHub pulls API (PRs #59
 
 ## Follow-ups
 - This task's own row becomes DONE in the next records task after its PR merges.
+
+## Merge verification (2026-11-22, recorded by SETUP-r12-merge-records)
+- PR #62, head `1284df0`, merged at 2026-11-22T12:56:18Z as `bba5945`; CI on `bba5945`: all success.
