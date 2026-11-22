@@ -6,6 +6,7 @@ so the test covers the whole transaction a PART2_SOLVE job commits.
 
 import json
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Final
@@ -20,7 +21,7 @@ from common.db.repository import WorkerRepository
 from common.runtime.envelope import JobType
 from common.runtime.errors import JobError
 from common.runtime.runs import RUN_TABLES, write_done
-from part2.filter import Option
+from part2.filter import BindingConstraint, Kind, Option
 from part2.outcomes import PlannedOption, RequestOutcome, RequestResult, RunOutcome, SolveOutcome
 from part2.persist import (
     OptionEstimate,
@@ -368,3 +369,80 @@ def test_a_delay_replan_proposal_is_written_next_to_the_confirmed_version(
     rows = _fetch(root, "SELECT id, status, purpose FROM recommendations ORDER BY id")
     assert rows[0] == (confirmed, "CONFIRMED", "INITIAL")  # untouched
     assert rows[1][1:] == ("PENDING_REVIEW", "DELAY_REPLAN")
+
+
+def test_a_fifo_run_is_written_with_its_failure_reason(root: Any, worker: WorkerConnection) -> None:
+    port = Port(root)
+    option = replace(port.option(1, 0), objective_score=None, terms=())
+    fifo = SolveOutcome(
+        RunOutcome.FIFO_FALLBACK,
+        "ERROR",
+        "FIFO",
+        "TIMEOUT",
+        "CP-SAT reached solver_time_limit_seconds (10) without a feasible solution",
+        (RequestOutcome(port.request, RequestResult.FIFO_FALLBACK, "INITIAL", (option,), ()),),
+        None,
+        50,
+        "FIFO",
+        (),
+    )
+    result = _complete(port, worker, fifo)
+    assert result.outcome == "FIFO_FALLBACK" and result.error_category.value == "TIMEOUT"
+
+    [(rec_id, source, status)] = _fetch(root, "SELECT id, source, status FROM recommendations")
+    assert (source, status) == ("FIFO", "PENDING_REVIEW")
+    assert _fetch(
+        root,
+        "SELECT objective_score FROM recommendation_options WHERE recommendation_id = %s",
+        rec_id,
+    ) == ((None,),)
+    assert _fetch(root, "SELECT COUNT(*) FROM recommendation_rationale_factors") == ((0,),)
+    [(run_status, value, detail)] = _fetch(
+        root,
+        "SELECT status, objective_value, result_detail FROM solver_runs WHERE id = %s",
+        port.run,
+    )
+    assert (run_status, value) == ("ERROR", None)
+    stored = json.loads(detail)
+    assert stored["outcome"] == "FIFO_FALLBACK"
+    assert stored["failure_reason"]["error_category"] == "TIMEOUT"
+    assert stored["requests"][0]["recommendation_id"] == rec_id
+
+
+def test_a_no_feasible_plan_run_writes_no_recommendation_and_keeps_the_current_one(
+    root: Any, worker: WorkerConnection
+) -> None:
+    port = Port(root)
+    previous = port.recommendation("PENDING_REVIEW")
+    reason = BindingConstraint(Kind.STRUCTURAL, "TUG_COUNT", "SYNTHETIC: 1 eligible tug, 2 needed")
+    infeasible = SolveOutcome(
+        RunOutcome.NO_FEASIBLE_PLAN,
+        "INFEASIBLE",
+        "AI",
+        None,
+        None,
+        (RequestOutcome(port.request, RequestResult.NO_FEASIBLE_PLAN, "INITIAL", (), (reason,)),),
+        None,
+        40,
+        "ortools SYNTHETIC",
+        (),
+    )
+    result = _complete(port, worker, infeasible)
+    assert result.outcome == "NO_FEASIBLE_PLAN" and result.error_category is None
+
+    assert _fetch(root, "SELECT id, status FROM recommendations") == ((previous, "PENDING_REVIEW"),)
+    assert _fetch(root, "SELECT COUNT(*) FROM recommendation_options") == ((0,),)
+    [(run_status, detail)] = _fetch(
+        root, "SELECT status, result_detail FROM solver_runs WHERE id = %s", port.run
+    )
+    assert run_status == "INFEASIBLE"
+    [request] = json.loads(detail)["requests"]
+    assert request["recommendation_id"] is None and request["options_count"] == 0
+    # CT-10 v1.1: the Proposed TUG_COUNT is stored as the approved TUG_UNAVAILABLE.
+    assert request["binding_constraints"] == [
+        {
+            "kind": "STRUCTURAL",
+            "constraint_type_code": "TUG_UNAVAILABLE",
+            "detail": "SYNTHETIC: 1 eligible tug, 2 needed",
+        }
+    ]
