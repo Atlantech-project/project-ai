@@ -14,7 +14,7 @@ Nothing here reads or writes the database: the AI-050 snapshot carries the start
 """
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Final
 
 from common.runtime.errors import ErrorCategory, JobError
@@ -32,12 +32,14 @@ class SolveScope:
     request_ids: tuple[int, ...]  # the run, sorted
     replan_request_ids: frozenset[int]
     trigger_of: Mapping[int, str]  # request id → the trigger type of its entry
+    replan_plans: Mapping[int, int] = field(default_factory=dict)  # request → operational_plan_id
 
 
 def scope_from_payload(payload: Mapping[str, Any]) -> SolveScope:
     """The run's scope from a C-02 payload (CT-10), checking the cross-entry rules."""
     trigger_of: dict[int, str] = {}
     replan: set[int] = set()
+    plans: dict[int, int] = {}
     for entry in payload["triggers"]:
         trigger = str(entry["trigger_type"])
         if trigger not in TRIGGER_TYPES:
@@ -57,9 +59,10 @@ def scope_from_payload(payload: Mapping[str, Any]) -> SolveScope:
             trigger_of[request_id] = trigger
             if trigger == REPLAN:
                 replan.add(request_id)
+                plans[request_id] = int(entry["operational_plan_id"])
     if not trigger_of:
         raise JobError(ErrorCategory.INVALID_ENVELOPE, "the payload names no request")
-    return SolveScope(tuple(sorted(trigger_of)), frozenset(replan), trigger_of)
+    return SolveScope(tuple(sorted(trigger_of)), frozenset(replan), trigger_of, plans)
 
 
 def pins_for(state: PortState, replan_request_ids: Iterable[int]) -> dict[int, Pin]:
