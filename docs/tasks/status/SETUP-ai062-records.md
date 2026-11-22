@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only; DONE when its PR merges) |
+| Status | DONE (PR #76, merge `5f5acd2`, 2026-11-22 16:03:39Z) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-ai062-records` (from `develop` at `c1f2d00`) |
 | Plan | the user's instruction of 2026-11-22 (post-merge verification; AI-062; records and checkpoints; Arabic report with the remaining decisions and dependencies); the standing execution authorization approves the publish |

@@ -364,3 +364,11 @@ Recommendations only; nothing is approved and no formula is used in code. The ha
 | INT-L1, INT-L2 | Leads, Terminal operations | Yard dwell and time limit | AI-066 |
 | Cost rates (new, R16) | Leads Council / Port Authority | Tug, pilot, berth and waiting rates | Cost indicator |
 | Data (flag D) | Leads Council, domain experts | Providers, forecast feed, tides, history | AI-020 to AI-024, AI-042, B4 forecast, Part 1 chain |
+
+## Approval recorded (2026-11-22)
+
+| ID | State |
+|---|---|
+| R7 (AI-065 part) | **Approved** 2026-11-22 by the user, for the AI Team: the AI-065 constraint-to-table mapping, the AI Team's confirmation of the CT-11 v1.2 names, and rulings P1–P8. Recorded in the AI-065 task decision (Status Approved). AI-065 is DONE. Backend-owned fields and contracts are not covered (CT-11 v1.2 still needs its owner, INT-B2) |
+| R7 (AI-056, AI-074, AI-032, AI-072 entries) | Still open: confirmation only |
+| R16 | Still open: AI-062 is BLOCKED (R16) until it is answered |
