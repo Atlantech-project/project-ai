@@ -369,9 +369,11 @@ def test_respects_the_time_limit_on_a_large_instance() -> None:
     port, ids, times = random_instance(random.Random(7), requests=40, berths=4, tugs=8, pilots=4)  # noqa: S311 (seeded test data)
     settings = replace(SETTINGS, time_limit_seconds=1)
     began = time.monotonic()
-    result = solve(port, ids, context(tug_requirements=requirements(ids)), times, settings)
+    result = solve(port, ids, context(tug_requirements=requirements(port, ids)), times, settings)
     elapsed = time.monotonic() - began
 
+    # B2 must leave work for CP-SAT, or the limit is never tested.
+    assert any(s.unscheduled is not Unscheduled.FILTERED for s in result.requests)
     assert result.status in (SolveStatus.OPTIMAL, SolveStatus.FEASIBLE, SolveStatus.TIMEOUT)
     assert elapsed < 1 + 2  # the limit, plus model building and B2 re-checks
 
@@ -428,8 +430,10 @@ def test_settings_outside_ct18_ranges_are_rejected(change: dict[str, object]) ->
 # --- property test: zero hard-constraint violations -----------------------------------------
 
 
-def requirements(ids: list[int]) -> dict[int, TugRequirement]:
-    return {r: replace(requirement(n_min=1), n_cap=2, bp_req=50) for r in ids}
+def requirements(port: PortState, ids: list[int]) -> dict[int, TugRequirement]:
+    """DEC-20 inputs for a random instance; its tugs (ids 300+) are the eligible ones."""
+    tugs = frozenset(t.id for t in port.tugs)
+    return {r: replace(requirement(n_min=1), n_cap=2, bp_req=50, eligible_tugs=tugs) for r in ids}
 
 
 def random_instance(
@@ -481,10 +485,11 @@ def random_instance(
 def test_property_no_hard_constraint_violation(seed: int) -> None:
     rng = random.Random(seed)  # noqa: S311 (seeded test data, never a secret)
     port, ids, times = random_instance(rng, requests=6, berths=2, tugs=4, pilots=2)
-    ctx = context(tug_requirements=requirements(ids))
+    ctx = context(tug_requirements=requirements(port, ids))
     result = solve(port, ids, ctx, times, SETTINGS)  # B2 re-checks every option inside
 
     firsts = [s.options[0].option for s in result.requests if s.options]
+    assert firsts, "the instance must place something, or the property checks nothing"
     windows = {w.berthing_request_id: w for w in port.confirmed_windows}
     bollard = {t.id: t.tug_power for t in port.tugs}
     for option in firsts:
