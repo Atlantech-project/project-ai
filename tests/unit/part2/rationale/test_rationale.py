@@ -206,10 +206,12 @@ def test_every_ai_option_has_a_factor_and_the_shares_make_its_score() -> None:
 def test_every_ai_option_has_a_factor_on_random_instances(seed: int) -> None:
     rng = random.Random(seed)  # noqa: S311 (seeded test data)
     port, ids, times = random_instance(rng, requests=8, berths=2, tugs=4, pilots=2)
-    outcome = handle_solve(port, ids, context(tug_requirements=requirements(ids)), times, SETTINGS)
+    ctx = context(tug_requirements=requirements(port, ids))
+    outcome = handle_solve(port, ids, ctx, times, SETTINGS)
     assert outcome.source == "AI"
 
     rationales = build_rationales(port, outcome)
+    assert rationales, "the instance must place something, or the test checks nothing"
     assert len(rationales) == sum(len(r.options) for r in outcome.requests)
     assert all(len(r.factors) >= 1 for r in rationales)
 

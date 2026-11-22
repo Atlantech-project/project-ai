@@ -229,10 +229,11 @@ def test_fifo_filtered_request_keeps_b2_reasons() -> None:
 def test_fifo_output_passes_the_filter(seed: int) -> None:
     rng = random.Random(seed)  # noqa: S311 (seeded test data)
     port, ids, times = random_instance(rng, requests=8, berths=2, tugs=4, pilots=2)
-    ctx = context(tug_requirements=requirements(ids))
+    ctx = context(tug_requirements=requirements(port, ids))
     outcome = handle_solve(port, ids, ctx, times, SETTINGS, solve_fn=timed_out)
 
     plan = [o.options[0].option for o in outcome.requests if o.options]
+    assert plan, "FIFO must place something, or the filter check checks nothing"
     assert all(check.passes for check in check_plan(port, plan, ctx))
     assert all(o.binding_constraints for o in outcome.requests if not o.options)
 
@@ -240,10 +241,11 @@ def test_fifo_output_passes_the_filter(seed: int) -> None:
 def test_total_time_stays_under_twelve_seconds() -> None:
     rng = random.Random(3)  # noqa: S311 (seeded test data)
     port, ids, times = random_instance(rng, requests=40, berths=4, tugs=8, pilots=4)
-    ctx = context(tug_requirements=requirements(ids))
+    ctx = context(tug_requirements=requirements(port, ids))
     settings = replace(SETTINGS, time_limit_seconds=10)
     began = time.monotonic()
-    handle_solve(port, ids, ctx, times, settings)
-    handle_solve(port, ids, ctx, times, settings, solve_fn=timed_out)
+    solved = handle_solve(port, ids, ctx, times, settings)
+    fifo = handle_solve(port, ids, ctx, times, settings, solve_fn=timed_out)
 
     assert time.monotonic() - began < 12
+    assert any(r.options for r in solved.requests) and any(r.options for r in fifo.requests)
