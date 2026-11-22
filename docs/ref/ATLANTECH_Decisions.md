@@ -2288,6 +2288,17 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 | Affects | AI-041 · AI-048 · AI-071 · AI-074 · AI-100 |
 | Decision | ______ |
 | Proposed change | 2026-11-21 · AI-025 · (1) **Module** `common/quality.py`; every check returns a `QualityResult` of `QualityIssue(code, field, detail)` and never raises on bad data (only on a caller error such as a naive datetime). (2) **Freshness:** usable when `now − measured_at ≤ max_age`, so exactly 48 h is usable and one microsecond more is `STALE`; a measurement after `now` is `FUTURE_TIMESTAMP`, not usable. (3) **Coverage of `[start, end]`:** a point at or before `start` and one at or after `end`; consecutive points inside the horizon are checked for a gap only when the caller passes `max_gap` (the tolerance is AI-048's, DEC-24 Open; no default is assumed). (4) **Ranges** follow the schema checks of `environment_forecast_points` (directions in [0, 360), other measures ≥ 0); a missing value is a completeness issue, not a range issue. (5) **Datum equality** wraps `common.datum.check_datum_consistency` (no second implementation). (6) **Trusted rows:** kept only when `clock_skew_suspect` is 0; 1, NULL or a missing flag is excluded (trust is never assumed). · Reason: the sources state the 48 h rule and I-13 but not the boundary, a future timestamp, the coverage test or a NULL flag · Evidence: `common/quality.py`; `tests/unit/common/test_quality.py` (21 tests) on branch `feature/AI-025-data-quality-checks` · Impact: Part 1 data checks (AI-041, AI-048), Part 3 trusted-data selection (AI-074) · Awaiting: AI Team (owner) |
+
+### AI-074 · Trusted-data selection: one read path for field events
+
+| | |
+| --- | --- |
+| Source | AI-074 (backlog: "Only trusted events feed evaluation and training"; guidance "Human review never makes a record trusted"; criterion "Suspect rows excluded in every Part 3 query (test)") · Architecture I-13 · UML rule 8 ("a record is trusted when `clock_skew_suspect` = 0") · `schema.sql` `actual_status_updates` · AI-025 task decision (trusted-row rule) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-071 · AI-072 · AI-100 · AI-104 · AI-105 |
+| Decision | ______ |
+| Proposed change | 2026-11-21 · AI-074 · (1) **Module** `part3/trusted.py`: `trusted_select(...)` always adds `clock_skew_suspect = 0`; `trusted_status_updates(connection, reported_from, reported_to, plan_component_ids=None)` reads trusted events in a half-open period, ordered by `reported_at`, then id; `filter_trusted(rows)` applies AI-025's rule to in-memory datasets. (2) **No way to include suspect rows:** no parameter, flag or override exists; a human review never makes a row trusted. (3) **Every Part 3 query:** a unit test fails if any Part 3 module other than `part3/trusted.py` names `actual_status_updates`, so new Part 3 code must use the trusted read. (4) `part3` joins the mypy and coverage scopes (`pyproject.toml`) now that it has code; `ACTUAL_STATUS_UPDATES` is added to `common/db/tables.py`. · Reason: the backlog asks for exclusion in every Part 3 query before those queries exist · Evidence: `part3/trusted.py`; `tests/unit/part3/test_trusted.py` (8 tests), `tests/integration/test_trusted.py` (MySQL, CI) on branch `feature/AI-074-trusted-data-selection` · Impact: Part 3 tasks · Awaiting: AI Team (owner) |
 ### AI-070 · Model registry: champion read, artefact hash and what waits for grants
 
 | | |

@@ -48,6 +48,22 @@ _ID: Final = mysql.BIGINT(unsigned=True)
 # Generated columns the database computes; no worker may write them (CT-17 §2).
 GENERATED_INFO: Final = {"generated": True}
 
+ACTUAL_STATUS_UPDATES: Final = sa.Table(
+    "actual_status_updates",
+    metadata,
+    sa.Column("id", _ID, primary_key=True),
+    sa.Column("client_event_id", mysql.CHAR(36), nullable=False),
+    sa.Column("plan_component_id", _ID, nullable=False),
+    sa.Column("component_type", KnownEnum("BERTH", "PILOT", "TUG", "TERMINAL_OPS"), nullable=False),
+    sa.Column("reported_by", _ID, nullable=False),
+    sa.Column("status", mysql.VARCHAR(30), nullable=False),
+    sa.Column("reported_at", UtcDateTime(), nullable=False),
+    sa.Column("client_sent_at", UtcDateTime()),
+    sa.Column("received_at", UtcDateTime(), nullable=False),
+    sa.Column("clock_skew_suspect", mysql.TINYINT(1), nullable=False),
+    sa.Column("sync_source", KnownEnum("MOBILE", "TABLET", "WEB", "EXTERNAL"), nullable=False),
+)
+
 BAPLIE_FILES: Final = sa.Table(
     "baplie_files",
     metadata,
