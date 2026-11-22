@@ -30,7 +30,9 @@ _REFUSED = {1142, 1143}
 # Administration and DDL can also be refused as: 1044 database, 1227 a global privilege.
 _ADMIN_REFUSED = {1044, 1045, 1142, 1143, 1227, 1370, 1410}
 PARTS = list(ACCOUNTS)
-LARAVEL_TABLES = 8
+# Laravel framework tables no worker can read; the ninth, `personal_access_tokens` (Sanctum mobile
+# tokens), came with PortHub schema.sql at d55a263.
+LARAVEL_TABLES = 9
 
 
 @dataclass(frozen=True)
@@ -165,7 +167,7 @@ def test_each_account_holds_only_its_role(part: WorkerPart, port_db: PortDatabas
 def test_the_schema_has_the_tables_the_matrix_expects(
     schema: SchemaFacts, ownership: Ownership
 ) -> None:
-    assert len(schema.columns) == 100
+    assert len(schema.columns) == 101
     hidden_by_grant = set(schema.columns) - set(ownership.readable)
     assert ownership.hidden <= hidden_by_grant
     assert len(hidden_by_grant) == len(ownership.hidden) + LARAVEL_TABLES

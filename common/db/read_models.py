@@ -38,6 +38,8 @@ class RequestWithVessel:
     loa: Decimal
     beam: Decimal
     max_draft: Decimal
+    # Containers to load at this port; None = not entered, so B3 estimates it (DEC-28, G-09).
+    loading_container_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,7 @@ def read_request_with_vessel(connection: Connection, request_id: int) -> Request
         VESSELS.c.loa,
         VESSELS.c.beam,
         VESSELS.c.max_draft,
+        BERTHING_REQUESTS.c.loading_container_count,
     )
     statement = (
         sa.select(*columns)

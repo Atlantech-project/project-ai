@@ -151,6 +151,7 @@ BERTHING_REQUESTS: Final = sa.Table(
     sa.Column("block_coefficient", mysql.DECIMAL(4, 3), nullable=False),
     sa.Column("gross_tonnage", mysql.INTEGER(), nullable=False),
     sa.Column("deadweight_tonnes", mysql.INTEGER(), nullable=False),
+    sa.Column("loading_container_count", mysql.INTEGER()),
     sa.Column(
         "status",
         KnownEnum(
@@ -435,6 +436,8 @@ RECOMMENDATION_OPTION_TUGS: Final = sa.Table(
     metadata,
     sa.Column("option_id", _ID, primary_key=True, autoincrement=False),
     sa.Column("tugboat_id", _ID, primary_key=True, autoincrement=False),
+    sa.Column("planned_start", UtcDateTime()),
+    sa.Column("planned_end", UtcDateTime()),
 )
 
 RECOMMENDATION_OPTIONS: Final = sa.Table(
@@ -448,6 +451,8 @@ RECOMMENDATION_OPTIONS: Final = sa.Table(
     sa.Column("planned_start", UtcDateTime(), nullable=False),
     sa.Column("planned_end", UtcDateTime(), nullable=False),
     sa.Column("pilot_user_id", _ID),
+    sa.Column("pilot_start", UtcDateTime()),
+    sa.Column("pilot_end", UtcDateTime()),
     sa.Column("service_time_method", KnownEnum("FORMULA", "ML"), nullable=False),
     sa.Column("service_time_p50_hours", mysql.DECIMAL(6, 2), nullable=False),
     sa.Column("service_time_p90_hours", mysql.DECIMAL(6, 2)),

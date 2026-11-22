@@ -722,7 +722,23 @@ def test_a_request_reads_with_its_vessel_in_exact_types(
     assert isinstance(model.loa, Decimal)
     assert model.requested_eta == datetime(2026, 11, 3, 10)
     assert model.gross_tonnage == 40000
+    assert model.loading_container_count is None
     assert read_request_with_vessel(worker, request + 1000) is None
+
+
+def test_a_request_reads_its_loading_count_when_entered(
+    worker: WorkerConnection, root: pymysql.connections.Connection[Any]
+) -> None:
+    # DEC-28 / G-09: an entered count is used as is; NULL leaves the estimate to B3.
+    request, _ = _seed_request(root)
+    with root.cursor() as cursor:
+        cursor.execute(
+            "UPDATE berthing_requests SET loading_container_count = 120 WHERE id = %s", (request,)
+        )
+    root.commit()
+    model = read_request_with_vessel(worker, request)
+    assert model is not None
+    assert model.loading_container_count == 120
 
 
 def test_tugboats_read_in_id_order(
