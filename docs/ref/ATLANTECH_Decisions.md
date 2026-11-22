@@ -2122,6 +2122,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 - Backend: confirm rule (1), or fill `plan_components.assigned_user_id` for the `PILOT` row at confirm time, which makes the fallback unnecessary. The Backend confirmed rule (1) on 2026-11-06 (G-16); DEC-32 rule 4 is amended to match.
 - If `MODIFIED_BY_STAFF` versions keep the staff-modified assignment somewhere other than option 1 of that recommendation, the loader must read it from there (Backend to confirm).
+- 2026-11-22 · schema follow-ups (DEC-32 follow-up 2, G-14; DEC-28 follow-up 1, G-09), now in PortHub `schema.sql` at `d55a263`. Option 1 of a pending recommendation holds its pilot over `pilot_start`/`pilot_end` and each tug over its own `planned_start`/`planned_end` when they are set, else over the option window (rule 4). Each hold is kept only when its own interval overlaps the horizon. The request read carries `loading_container_count` (NULL = not entered, B3 estimates). Branch `feature/AI-050-dec28-dec32-schema-followups`. Writing per-job intervals for new options is AI-058's; the solver still schedules pilots and tugs over the option window, because no source gives the job durations.
 
 ### AI-053 · Delay-risk Phase 1: missing inputs, boundaries and flags
 

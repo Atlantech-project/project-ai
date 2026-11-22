@@ -514,7 +514,15 @@ def _read_confirmed_holds(
 def _read_pending_holds(
     connection: Connection, horizon_start: datetime, horizon_end: datetime
 ) -> tuple[PendingHold, ...]:
+    """Option 1 of every pending recommendation holds its berth, pilot and tugs (DEC-32 rule 3).
+
+    The berth is held over the option window. The pilot and each tug are held over their own job
+    interval (`pilot_start`/`pilot_end`, the tug's `planned_start`/`planned_end`) when it is set,
+    else over the option window (DEC-32 rule 4 and follow-up 2, G-14). Each hold is kept only when
+    its own interval overlaps the horizon.
+    """
     ro = RECOMMENDATION_OPTIONS
+    rot = RECOMMENDATION_OPTION_TUGS
     columns = (
         RECOMMENDATIONS.c.id,
         RECOMMENDATIONS.c.berthing_request_id,
@@ -525,6 +533,13 @@ def _read_pending_holds(
         ro.c.pilot_user_id,
         ro.c.planned_start,
         ro.c.planned_end,
+        ro.c.pilot_start,
+        ro.c.pilot_end,
+    )
+    tug_in_horizon = (
+        sa.select(rot.c.option_id)
+        .where(rot.c.planned_start < horizon_end, rot.c.planned_end > horizon_start)
+        .scalar_subquery()
     )
     statement = (
         sa.select(*columns)
@@ -532,48 +547,69 @@ def _read_pending_holds(
         .where(
             RECOMMENDATIONS.c.status.in_(PENDING_STATUSES),
             ro.c.option_rank == 1,
-            ro.c.planned_start < horizon_end,
-            ro.c.planned_end > horizon_start,
+            sa.or_(
+                sa.and_(ro.c.planned_start < horizon_end, ro.c.planned_end > horizon_start),
+                sa.and_(ro.c.pilot_start < horizon_end, ro.c.pilot_end > horizon_start),
+                ro.c.id.in_(tug_in_horizon),
+            ),
         )
         .order_by(ro.c.id)
     )
     options = _rows(connection, statement, columns)
-    tugs_by_option: dict[int, list[int]] = {}
+    tugs_by_option: dict[int, list[tuple[int, datetime | None, datetime | None]]] = {}
     if options:
         option_ids = [row[ro.c.id] for row in options]
         tug_rows = core_of(connection).execute(
-            sa.select(
-                RECOMMENDATION_OPTION_TUGS.c.option_id, RECOMMENDATION_OPTION_TUGS.c.tugboat_id
-            )
-            .where(RECOMMENDATION_OPTION_TUGS.c.option_id.in_(option_ids))
-            .order_by(
-                RECOMMENDATION_OPTION_TUGS.c.option_id, RECOMMENDATION_OPTION_TUGS.c.tugboat_id
-            )
+            sa.select(rot.c.option_id, rot.c.tugboat_id, rot.c.planned_start, rot.c.planned_end)
+            .where(rot.c.option_id.in_(option_ids))
+            .order_by(rot.c.option_id, rot.c.tugboat_id)
         )
-        for option_id, tugboat_id in tug_rows:
-            tugs_by_option.setdefault(option_id, []).append(tugboat_id)
+        for option_id, tugboat_id, tug_start, tug_end in tug_rows:
+            tugs_by_option.setdefault(option_id, []).append((tugboat_id, tug_start, tug_end))
     holds: list[PendingHold] = []
     for row in options:
         option_id = row[ro.c.id]
-        resources = [(ResourceKind.BERTH, row[ro.c.berth_id])]
+        window = (_utc(row[ro.c.planned_start]), _utc(row[ro.c.planned_end]))
+        resources: list[tuple[ResourceKind, int, tuple[datetime, datetime]]] = [
+            (ResourceKind.BERTH, row[ro.c.berth_id], window)
+        ]
         if row[ro.c.pilot_user_id] is not None:
-            resources.append((ResourceKind.PILOT, row[ro.c.pilot_user_id]))
-        resources.extend((ResourceKind.TUG, tug_id) for tug_id in tugs_by_option.get(option_id, []))
+            resources.append(
+                (
+                    ResourceKind.PILOT,
+                    row[ro.c.pilot_user_id],
+                    _job_interval(row[ro.c.pilot_start], row[ro.c.pilot_end], window),
+                )
+            )
+        resources.extend(
+            (ResourceKind.TUG, tug_id, _job_interval(tug_start, tug_end, window))
+            for tug_id, tug_start, tug_end in tugs_by_option.get(option_id, [])
+        )
         holds.extend(
             PendingHold(
                 kind=kind,
                 resource_id=resource_id,
-                start=_utc(row[ro.c.planned_start]),
-                end=_utc(row[ro.c.planned_end]),
+                start=start,
+                end=end,
                 berthing_request_id=row[RECOMMENDATIONS.c.berthing_request_id],
                 recommendation_id=row[RECOMMENDATIONS.c.id],
                 recommendation_status=row[RECOMMENDATIONS.c.status],
                 option_id=option_id,
                 option_rank=row[ro.c.option_rank],
             )
-            for kind, resource_id in resources
+            for kind, resource_id, (start, end) in resources
+            if start < horizon_end and end > horizon_start
         )
     return tuple(holds)
+
+
+def _job_interval(
+    start: datetime | None, end: datetime | None, window: tuple[datetime, datetime]
+) -> tuple[datetime, datetime]:
+    """A job's own interval, or the option window when it has none (DEC-32 rule 4)."""
+    if start is None or end is None:
+        return window
+    return _utc(start), _utc(end)
 
 
 def _read_safety_constraints(

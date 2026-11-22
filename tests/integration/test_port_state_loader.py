@@ -295,6 +295,8 @@ class World:
         *,
         pilot_id: int | None = None,
         tug_ids: tuple[int, ...] = (),
+        pilot_job: tuple[datetime, datetime] | None = None,
+        tug_jobs: dict[int, tuple[datetime, datetime]] | None = None,
     ) -> int:
         option_id = seed_row(
             self.root,
@@ -306,10 +308,18 @@ class World:
             planned_start=_sql(start),
             planned_end=_sql(end),
             pilot_user_id=pilot_id,
+            pilot_start=_sql(pilot_job[0]) if pilot_job else None,
+            pilot_end=_sql(pilot_job[1]) if pilot_job else None,
         )
         for tug_id in tug_ids:
+            job = (tug_jobs or {}).get(tug_id)
             seed_row(
-                self.root, "recommendation_option_tugs", option_id=option_id, tugboat_id=tug_id
+                self.root,
+                "recommendation_option_tugs",
+                option_id=option_id,
+                tugboat_id=tug_id,
+                planned_start=_sql(job[0]) if job else None,
+                planned_end=_sql(job[1]) if job else None,
             )
         return option_id
 
@@ -533,6 +543,62 @@ def test_option_one_of_a_pending_recommendation_holds_berth_pilot_and_tugs(
         assert hold.recommendation_id == recommendation
         assert hold.recommendation_status == status
         assert (hold.option_id, hold.option_rank) == (option, 1)
+
+
+def test_pilot_and_tugs_are_held_over_their_own_job_interval_when_set(
+    world: World, worker: WorkerConnection
+) -> None:
+    # DEC-32 rule 4 and follow-up 2 (G-14): a set job interval replaces the option window for
+    # that resource only; a tug without one keeps the option window.
+    berth, pilot, tug_a, tug_b = world.berth(), world.pilot(), world.tug(), world.tug()
+    recommendation = world.recommendation(world.request())
+    start, end = H0 + timedelta(hours=2), H0 + timedelta(hours=8)
+    pilot_job = (H0 + timedelta(hours=1), H0 + timedelta(hours=3))
+    tug_job = (H0 + timedelta(hours=1, minutes=30), H0 + timedelta(hours=2, minutes=30))
+    world.option(
+        recommendation,
+        1,
+        berth,
+        start,
+        end,
+        pilot_id=pilot,
+        tug_ids=(tug_a, tug_b),
+        pilot_job=pilot_job,
+        tug_jobs={tug_a: tug_job},
+    )
+
+    held = {(h.kind, h.resource_id): (h.start, h.end) for h in _load(worker).pending_holds}
+
+    assert held == {
+        (ResourceKind.BERTH, berth): (start, end),
+        (ResourceKind.PILOT, pilot): pilot_job,
+        (ResourceKind.TUG, tug_a): tug_job,
+        (ResourceKind.TUG, tug_b): (start, end),
+    }
+
+
+def test_a_job_interval_decides_on_its_own_whether_it_overlaps_the_horizon(
+    world: World, worker: WorkerConnection
+) -> None:
+    # The option window lies after the horizon; the pilot and tug jobs reach into it.
+    berth, pilot, tug_in, tug_out = world.berth(), world.pilot(), world.tug(), world.tug()
+    recommendation = world.recommendation(world.request())
+    start, end = H1 + timedelta(hours=1), H1 + timedelta(hours=6)
+    world.option(
+        recommendation,
+        1,
+        berth,
+        start,
+        end,
+        pilot_id=pilot,
+        tug_ids=(tug_in, tug_out),
+        pilot_job=(H1 - timedelta(hours=1), H1 + timedelta(hours=2)),
+        tug_jobs={tug_in: (H1 - timedelta(minutes=30), H1 + timedelta(hours=1))},
+    )
+
+    held = {(h.kind, h.resource_id) for h in _load(worker).pending_holds}
+
+    assert held == {(ResourceKind.PILOT, pilot), (ResourceKind.TUG, tug_in)}
 
 
 def test_options_two_and_three_hold_nothing(world: World, worker: WorkerConnection) -> None:
