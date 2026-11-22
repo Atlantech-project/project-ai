@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only; DONE when its PR merges) |
+| Status | DONE (PR #63, merge `6c29250`, 2026-11-22 13:09:51Z; CI green on `6c29250`) [was: IN REVIEW (documents only; DONE when its PR merges)] |
 | Owner | AI Team |
 | Branch | `feature/SETUP-r12-merge-records` (from `develop` at `bba5945`) |
 | Plan | the user's instruction of 2026-11-22: verify PRs #61 and #62, sync `develop` and PortHub, correct remaining stale status records, record the trimming decision and the Unicode result; no new batch |
