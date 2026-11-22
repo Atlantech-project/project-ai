@@ -2220,7 +2220,7 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 **Follow-ups (they don't change the rules above):**
 
-- **Worker handler not wired yet.** The `queue:validate` handler must read the option row and its recommendation status (precondition `PENDING_REVIEW` or `MODIFIED_BY_STAFF`), load the port state (AI-050) and build B2's `FilterContext` (`constraint_types`, vessel-type ids, AI-054 tug requirement) from the database. No loader for that context exists yet; AI-056 / AI-058 need the same one. Owner: AI Team, as one shared loader, then the AI-060 handler.
+- **Worker handler (2026-11-21, Proposed, branch `feature/AI-060-validate-queue-handler`).** `part2/validation/job.py` reads the option, its tugs and its recommendation status (precondition `PENDING_REVIEW` or `MODIFIED_BY_STAFF`, else `PRECONDITION_FAILED`), rolls back, loads the port state over the option interval and the changed interval together, and builds B2's context with the shared loader `part2/context.py` (`constraint_types`, `vessel_types`, AI-054 tug requirements from the snapshot; `pilot_requested` stays `None`, no such column exists). A change that does not fit the option → `PRECONDITION_FAILED`; tug data DEC-20 rejects → `DATA_UNAVAILABLE`; `YARD_ADJUSTMENT` → `CONFIGURATION_ERROR` until AI-067. Reference rows are read in their own read-only transaction after the snapshot. Evidence: `tests/unit/part2/validation/test_job.py` (12), `tests/integration/test_validate_reads.py` (2, MySQL).
 - `YARD_ADJUSTMENT` is AI-067.
 ### AI-055 · B5 CP-SAT model: objective terms, grid, scheduling order and alternatives
 
