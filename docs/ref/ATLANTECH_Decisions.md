@@ -2323,6 +2323,16 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 **Follow-ups:** OD-17 (whether Phase 1 methods get version rows, cited by the backlog) is not decided in this repository; the read path does not need it. A hash column on `ml_model_versions` would replace the sidecar; that is the Backend Team's schema (CT-17).
 
+### AI-072 · C2 drift monitor: PSI binning, rolling MAE and thresholds
+
+| | |
+| --- | --- |
+| Source | AI-072 (backlog: "PSI per feature, rolling MAE; alert signal for Backend notification"; guidance "Threshold from the register; alert delivered by the Backend"; criteria: PSI and MAE computations tested, above-threshold case produces alert signal, healthy case stored with `is_drifted` false; open question "Needs model version rows (OD-17)") · Architecture §9 (C2) · UML 3.4 · DEC-30 TR-01 / TR-02 (DEFERRED) · CT-18 keys `drift_psi_threshold`, `drift_mae_threshold` · `schema.sql` `drift_measurements` (`is_drifted` = `metric_value > threshold`, `chk_dm_feature`) · CT-15 (`w_part3` INSERT; Backend writes `notified_at`) |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-073 (schedules the run) · AI-106 · Backend Team (`DRIFT_ALERT` notification) |
+| Decision | ______ |
+| Proposed change | 2026-11-21 · AI-072 · (1) **Module** `part3/drift.py`: `psi`, `rolling_mae`, `measure`, `write_measurements`, `alerts`, `Thresholds.from_port_settings`. (2) **PSI:** bin edges are the reference deciles; repeated edges merge; PSI = Σ (a − e) · ln(a / e) with an empty bin's share raised to 10⁻⁴; values rounded half-up to 5 decimals (`decimal(14,5)`). (3) **Rolling MAE** is over the pairs the caller passes; the window length is the caller's (not set by any document). (4) **Drifted** = `metric_value > threshold`, the schema's own expression; the alert signal is the stored row, which the Backend turns into `DRIFT_ALERT` (CT-17 §7). (5) **Thresholds** come only from the CT-18 keys; while DEC-30 TR-01 / TR-02 are DEFERRED, reading them raises `ConfigurationError`, so no drift run stores a guessed threshold. (6) **Blocked in production** until a model version exists to watch (`drift_measurements.model_version_id` NOT NULL; no M2/M3/M4 version rows yet, OD-17) and the thresholds are seeded. · Reason: the backlog fixes the metrics but not the binning, the empty-bin rule or the window · Evidence: `part3/drift.py`; `tests/unit/part3/test_drift.py` (15 tests), `tests/integration/test_drift.py` (MySQL, CI) on branch `feature/AI-072-drift-monitor` · Impact: Part 3 · Awaiting: AI Team (owner); threshold values from DEC-30 |
 ### AI-065 · B8 yard placement: constraint-to-table mapping, inputs and reason codes
 
 | | |
