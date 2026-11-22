@@ -33,6 +33,7 @@ from part2.filter import (
 )
 from part2.filter.pairing import confirmed_window, rank_allows, truncate, tug_requirement
 from part2.solver import (
+    Pin,
     RankedOption,
     RequestSolution,
     SolveResult,
@@ -151,26 +152,44 @@ def handle_solve(
     settings: SolverSettings,
     *,
     replan_request_ids: Iterable[int] = (),
+    pins: Mapping[int, Pin] | None = None,
     solve_fn: SolveFn = solve,
     clock: Callable[[], float] = time.monotonic,
 ) -> SolveOutcome:
-    """Run B5 and turn its result into the CT-10 outcome, with FIFO on a technical failure."""
+    """Run B5 and turn its result into the CT-10 outcome, with FIFO on a technical failure.
+
+    `pins` (AI-059): the started parts of REPLAN requests; B5 and FIFO keep them.
+    """
     began = clock()
     run = tuple(sorted(set(request_ids)))
     replan = frozenset(replan_request_ids)
+    pinned = dict(pins or {})
+    if not set(pinned) <= replan:
+        raise ValueError(f"pins for requests that are not REPLAN: {sorted(set(pinned) - replan)}")
     try:
-        result = solve_fn(state, run, context, service_times, settings, clock=clock)
+        result = solve_fn(state, run, context, service_times, settings, clock=clock, pins=pinned)
     except SolverInvariantError as error:
         return _fifo(
-            state, run, context, service_times, replan, SOLVER_ERROR, str(error), began, clock
+            state,
+            run,
+            context,
+            service_times,
+            replan,
+            pinned,
+            SOLVER_ERROR,
+            str(error),
+            began,
+            clock,
         )
     if result.status is SolveStatus.TIMEOUT:
         message = (
             f"CP-SAT reached solver_time_limit_seconds ({settings.time_limit_seconds}) "
             "without a feasible solution"
         )
-        return _fifo(state, run, context, service_times, replan, TIMEOUT, message, began, clock)
-    return _from_solver(state, run, context, service_times, replan, result)
+        return _fifo(
+            state, run, context, service_times, replan, pinned, TIMEOUT, message, began, clock
+        )
+    return _from_solver(state, run, context, service_times, replan, pinned, result)
 
 
 # --- solved runs ----------------------------------------------------------------------------
@@ -182,6 +201,7 @@ def _from_solver(
     context: FilterContext,
     service_times: Mapping[int, timedelta],
     replan: frozenset[int],
+    pins: Mapping[int, Pin],
     result: SolveResult,
 ) -> SolveOutcome:
     firsts = [s.options[0].option for s in result.requests if s.options]
@@ -194,7 +214,7 @@ def _from_solver(
                 RequestOutcome(solution.request_id, RequestResult.SOLVED, purpose, options, ())
             )
             continue
-        reasons = _reasons(state, run, context, service_times, solution, firsts)
+        reasons = _reasons(state, run, context, service_times, solution, firsts, pins)
         outcomes.append(
             RequestOutcome(
                 solution.request_id, RequestResult.NO_FEASIBLE_PLAN, purpose, (), reasons
@@ -235,6 +255,7 @@ def _reasons(
     service_times: Mapping[int, timedelta],
     solution: RequestSolution,
     firsts: Sequence[Option],
+    pins: Mapping[int, Pin],
 ) -> tuple[BindingConstraint, ...]:
     """Why a request of a solved run got no option (CT-10 needs at least one reason)."""
     if solution.unscheduled is Unscheduled.FILTERED:
@@ -243,7 +264,9 @@ def _reasons(
     if solution.unscheduled is Unscheduled.NO_START:
         detail = "The confirmed entry window holds no whole minute to start in"
         return (BindingConstraint(Kind.STRUCTURAL, Code.ENTRY_WINDOW, detail),)
-    search = _Search.build(state, run, context, request_id, service_times[request_id], firsts)
+    search = _Search.build(
+        state, run, context, request_id, service_times[request_id], firsts, pins.get(request_id)
+    )
     return search.missing_resources()
 
 
@@ -256,6 +279,7 @@ def _fifo(
     context: FilterContext,
     service_times: Mapping[int, timedelta],
     replan: frozenset[int],
+    pins: Mapping[int, Pin],
     category: str,
     message: str,
     began: float,
@@ -276,7 +300,15 @@ def _fifo(
             detail = "No service time (B3) for this request"
             reasons[request_id] = (BindingConstraint(Kind.STRUCTURAL, Code.ENTRY_WINDOW, detail),)
             continue
-        search = _Search.build(state, run, context, request_id, service_times[request_id], planned)
+        search = _Search.build(
+            state,
+            run,
+            context,
+            request_id,
+            service_times[request_id],
+            planned,
+            pins.get(request_id),
+        )
         option = search.first_fit()
         if option is None:
             reasons[request_id] = search.missing_resources()
@@ -331,6 +363,7 @@ class _Search:
     confirmed: tuple[ConfirmedHold, ...]
     pending: tuple[PendingHold, ...]
     others: tuple[Option, ...]
+    pin: Pin | None = None
 
     @classmethod
     def build(
@@ -341,6 +374,7 @@ class _Search:
         request_id: int,
         service: timedelta,
         others: Sequence[Option],
+        pin: Pin | None = None,
     ) -> _Search:
         window = confirmed_window(state, request_id)
         if window is None:  # B2 removes a request without a window; kept as a guard
@@ -358,17 +392,24 @@ class _Search:
         starts = sorted(
             {_ceil_minute(t) for t in events if window.start <= _ceil_minute(t) < window.end}
         )
+        berth_ids = candidates.feasible_berth_ids
+        if pin is not None:  # AI-059: the started interval and parts, nothing else
+            duration = pin.duration
+            starts = [pin.start] if window.start <= pin.start < window.end else []
+            if pin.berth_id is not None:
+                berth_ids = tuple(b for b in berth_ids if b == pin.berth_id)
         return cls(
             state,
             request_id,
             request.requested_terminal_id,
-            candidates.feasible_berth_ids,
+            berth_ids,
             tuple(starts),
             duration,
             tug_requirement(context, request_id),
             confirmed,
             pending,
             tuple(others),
+            pin,
         )
 
     def _busy_in_others(self, start: datetime, end: datetime) -> list[Option]:
@@ -395,6 +436,8 @@ class _Search:
         used = {o.pilot_user_id for o in self._busy_in_others(start, end)}
         request = next(r for r in self.state.requests if r.request_id == self.request_id)
         for pilot in sorted(self.state.pilots, key=lambda p: p.user_id):
+            if self.pin is not None and self.pin.pilot_user_id not in (None, pilot.user_id):
+                continue
             if (
                 pilot.user_id not in used
                 and rank_allows(pilot, request.loa, self.state.pilot_rank_limits)
@@ -432,9 +475,12 @@ class _Search:
             ),
             key=lambda t: (-t.tug_power, t.id),
         )
-        chosen: list[int] = []
-        power = Decimal(0)
-        for tug in free:
+        required = set() if self.pin is None else set(self.pin.tug_ids)
+        if not required <= {t.id for t in free}:  # a started tug is busy or no longer eligible
+            return None
+        chosen = sorted(required)
+        power = sum((t.tug_power for t in free if t.id in required), Decimal(0))
+        for tug in (t for t in free if t.id not in required):
             if len(chosen) >= req.n_min and power >= req.bp_req:
                 break
             chosen.append(tug.id)

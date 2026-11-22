@@ -26,6 +26,7 @@ import sqlalchemy as sa
 from common.db.connection import core_of
 from common.db.read_models import _is_known, read_request_with_vessel, read_tugboats
 from common.db.tables import (
+    ACTUAL_STATUS_UPDATES,
     BAPLIE_FILES,
     BERTH_TERMINALS,
     BERTHS,
@@ -65,6 +66,7 @@ from part2.state.model import (
     ResourceKind,
     SafetyConstraint,
     Shift,
+    StartedComponent,
     TugMaster,
 )
 
@@ -193,6 +195,8 @@ def _read_all(
         constraints = _read_safety_constraints(connection, horizon_start, horizon_end)
     with _timed(timings, "manifests"):
         manifests = _read_manifests(connection, in_scope)
+    with _timed(timings, "started_components"):
+        started = _read_started_components(connection, in_scope, inconsistencies)
     return PortState(
         horizon_start=horizon_start,
         horizon_end=horizon_end,
@@ -211,6 +215,7 @@ def _read_all(
         safety_constraints=constraints,
         manifest_entries=manifests,
         inconsistencies=tuple(inconsistencies),
+        started_components=started,
     )
 
 
@@ -509,6 +514,94 @@ def _read_confirmed_holds(
             )
         )
     return tuple(holds)
+
+
+BEGUN: tuple[str, ...] = ("STARTED", "DONE")  # CT-07 / DEC-39 field statuses
+
+
+def _read_started_components(
+    connection: Connection, request_ids: Sequence[int], inconsistencies: list[Inconsistency]
+) -> tuple[StartedComponent, ...]:
+    """Berth, pilot and tug components of the requests' CONFIRMED plans with a STARTED or DONE
+    event. Every row but RELEASED counts: no source says when a row becomes CONSUMED, and a
+    finished job is as fixed as a running one. Field events are taken as reported: being
+    conservative here only keeps a component fixed."""
+    if not request_ids:
+        return ()
+    pc = PLAN_COMPONENTS
+    events = (
+        sa.select(
+            ACTUAL_STATUS_UPDATES.c.plan_component_id,
+            sa.func.max(sa.case((ACTUAL_STATUS_UPDATES.c.status == "DONE", 1), else_=0)).label(
+                "done"
+            ),
+        )
+        .where(ACTUAL_STATUS_UPDATES.c.status.in_(BEGUN))
+        .group_by(ACTUAL_STATUS_UPDATES.c.plan_component_id)
+        .subquery()
+    )
+    columns = (
+        pc.c.id,
+        pc.c.operational_plan_id,
+        pc.c.component_type,
+        pc.c.berth_id,
+        pc.c.tugboat_id,
+        pc.c.assigned_user_id,
+        pc.c.planned_start,
+        pc.c.planned_end,
+        OPERATIONAL_PLANS.c.berthing_request_id,
+        RECOMMENDATION_OPTIONS.c.pilot_user_id,
+    )
+    statement = (
+        sa.select(*columns, events.c.done)
+        .select_from(
+            pc.join(OPERATIONAL_PLANS, OPERATIONAL_PLANS.c.id == pc.c.operational_plan_id)
+            .join(events, events.c.plan_component_id == pc.c.id)
+            .outerjoin(
+                RECOMMENDATION_OPTIONS,
+                RECOMMENDATION_OPTIONS.c.id == OPERATIONAL_PLANS.c.recommendation_option_id,
+            )
+        )
+        .where(
+            OPERATIONAL_PLANS.c.status == "CONFIRMED",
+            OPERATIONAL_PLANS.c.berthing_request_id.in_(list(request_ids)),
+            pc.c.reservation_state != "RELEASED",
+            pc.c.component_type.in_(_COMPONENT_KINDS),
+        )
+        .order_by(pc.c.id)
+    )
+    started: list[StartedComponent] = []
+    for row in core_of(connection).execute(statement).mappings():
+        kind = ResourceKind(row[pc.c.component_type])
+        if kind is ResourceKind.BERTH:
+            resource_id = row[pc.c.berth_id]
+        elif kind is ResourceKind.TUG:
+            resource_id = row[pc.c.tugboat_id]
+        else:
+            resource_id = row[pc.c.assigned_user_id] or row[RECOMMENDATION_OPTIONS.c.pilot_user_id]
+        if resource_id is None:
+            inconsistencies.append(
+                Inconsistency(
+                    "started_resource_unidentified",
+                    "plan_components",
+                    row[pc.c.id],
+                    f"started {kind} row of plan {row[pc.c.operational_plan_id]} names no resource",
+                )
+            )
+            continue
+        started.append(
+            StartedComponent(
+                kind=kind,
+                resource_id=resource_id,
+                start=_utc(row[pc.c.planned_start]),
+                end=_utc(row[pc.c.planned_end]),
+                berthing_request_id=row[OPERATIONAL_PLANS.c.berthing_request_id],
+                operational_plan_id=row[pc.c.operational_plan_id],
+                plan_component_id=row[pc.c.id],
+                status="DONE" if row["done"] else "STARTED",
+            )
+        )
+    return tuple(started)
 
 
 def _read_pending_holds(

@@ -4,6 +4,7 @@ from part2.solver.cpsat import FLAG_ALTERNATIVES_TIME_LIMIT, SolverInvariantErro
 from part2.solver.model import (
     TERM_RESOURCE_COST,
     TERM_WAITING_TIME,
+    Pin,
     RankedOption,
     RequestSolution,
     SolveResult,
@@ -17,6 +18,7 @@ __all__ = [
     "FLAG_ALTERNATIVES_TIME_LIMIT",
     "TERM_RESOURCE_COST",
     "TERM_WAITING_TIME",
+    "Pin",
     "RankedOption",
     "RequestSolution",
     "SolveResult",

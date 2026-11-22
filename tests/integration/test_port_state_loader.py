@@ -5,6 +5,7 @@ test states only the columns it cares about. Every test starts and ends with the
 empty, because the port database is shared with the other integration tests.
 """
 
+import uuid
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -44,6 +45,7 @@ REFERENCE: Final = (
 )
 
 TOUCHED_TABLES: Final = (
+    "actual_status_updates",
     "baplie_files",
     "berth_terminals",
     "berths",
@@ -954,3 +956,69 @@ def _fetch(conn: pymysql.connections.Connection[Any], sql: str) -> list[tuple[An
         rows = cursor.fetchall()
     conn.commit()
     return [tuple(row) for row in rows]
+
+
+# Started components of the run's own CONFIRMED plans (AI-059)
+
+
+def _request_with_vessel(world: World) -> int:
+    """A request the loader takes into scope: `read_request_with_vessel` joins its vessel."""
+    vessel_type = seed_row(world.root, "vessel_types", code=f"SYN{world._next()}")
+    vessel = seed_row(world.root, "vessels", vessel_type_id=vessel_type)
+    return seed_row(world.root, "berthing_requests", vessel_id=vessel, **REQUEST_COLUMNS)
+
+
+def _event(world: World, component_id: int, component_type: str, status: str) -> None:
+    seed_row(
+        world.root,
+        "actual_status_updates",
+        client_event_id=str(uuid.uuid4()),
+        plan_component_id=component_id,
+        component_type=component_type,
+        reported_by=1,
+        status=status,
+        reported_at="2026-11-10 09:00:00",
+        sync_source="MOBILE",
+    )
+
+
+def test_begun_components_of_a_run_request_are_read_with_their_resource(
+    world: World, worker: WorkerConnection
+) -> None:
+    berth, tug, pilot = world.berth(), world.tug(), world.pilot()
+    request = _request_with_vessel(world)
+    recommendation = world.recommendation(request, status="CONFIRMED")
+    option = world.option(recommendation, 1, berth, H0, H0 + timedelta(hours=4), pilot_id=pilot)
+    plan = world.plan(request, option_id=option)
+    end = H0 + timedelta(hours=4)
+    berth_row = world.component(plan, "BERTH", H0, end, resource_id=berth)
+    pilot_row = world.component(plan, "PILOT", H0, end)  # assigned_user_id NULL: the option's
+    tug_row = world.component(plan, "TUG", H0, end, resource_id=tug, state="CONSUMED")
+    released = world.component(plan, "TUG", H0, end, resource_id=tug, state="RELEASED")
+    _event(world, pilot_row, "PILOT", "STARTED")
+    _event(world, tug_row, "TUG", "STARTED")
+    _event(world, tug_row, "TUG", "DONE")
+    _event(world, released, "TUG", "STARTED")
+
+    state = _load(worker, request)
+
+    assert [
+        (c.plan_component_id, c.kind, c.resource_id, c.status) for c in state.started_components
+    ] == [
+        (pilot_row, ResourceKind.PILOT, pilot, "STARTED"),
+        (tug_row, ResourceKind.TUG, tug, "DONE"),  # CONSUMED still counts; RELEASED never
+    ]
+    assert berth_row not in {c.plan_component_id for c in state.started_components}  # no event
+    assert {(c.start, c.end) for c in state.started_components} == {(H0, end)}
+
+
+def test_begun_components_of_requests_outside_the_run_are_not_read(
+    world: World, worker: WorkerConnection
+) -> None:
+    berth = world.berth()
+    request, other = _request_with_vessel(world), world.request()
+    plan = world.plan(other)
+    row = world.component(plan, "BERTH", H0, H0 + timedelta(hours=4), resource_id=berth)
+    _event(world, row, "BERTH", "STARTED")
+
+    assert _load(worker, request).started_components == ()

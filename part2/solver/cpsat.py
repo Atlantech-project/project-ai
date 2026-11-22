@@ -19,7 +19,7 @@ minimises the DEC-23 objective. Every emitted option is checked again by B2 (Arc
 import time
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from importlib.metadata import version
@@ -39,6 +39,7 @@ from part2.solver.model import (
     SCORE_SCALE,
     TERM_RESOURCE_COST,
     TERM_WAITING_TIME,
+    Pin,
     RankedOption,
     RequestSolution,
     SolveResult,
@@ -115,6 +116,8 @@ class _Request:
     n_min: int
     n_cap: int
     bp_req: int  # BP_SCALE units
+    fixed_start: int | None = None  # AI-059: a started component fixes the start minute
+    required_tugs: frozenset[int] = frozenset()  # AI-059: started tug components
 
     @property
     def span(self) -> int:
@@ -153,12 +156,15 @@ def solve(
     settings: SolverSettings,
     *,
     clock: Callable[[], float] = time.monotonic,
+    pins: Mapping[int, Pin] | None = None,
 ) -> SolveResult:
     """Solve the run's requests jointly and rank up to `options_per_request` options each.
 
     `service_times`: B3's P50 duration per request (AI-052); a request B3 excluded is not passed in.
-    The time limit covers the joint solve and the alternatives together.
+    The time limit covers the joint solve and the alternatives together. `pins`: the started parts
+    of REPLAN requests (AI-059); every option of a pinned request keeps them.
     """
+    pins = dict(pins or {})
     started = clock()
     deadline = started + settings.time_limit_seconds
     run = tuple(sorted(set(request_ids)))
@@ -167,6 +173,9 @@ def solve(
     missing = [r for r in run if r not in service_times]
     if missing:
         raise ValueError(f"no service time for requests {missing}")
+    strays = sorted(set(pins) - set(run))
+    if strays:
+        raise ValueError(f"pins for requests outside the run: {strays}")
 
     solutions: dict[int, RequestSolution] = {}
     windows: dict[int, tuple[ConfirmedWindow, tuple[int, ...]]] = {}
@@ -190,7 +199,9 @@ def solve(
 
     requests: list[_Request] = []
     for request_id, (window, berth_ids) in windows.items():
-        prepared = _prepare(state, context, grid, request_id, window, berth_ids, service_times)
+        prepared = _prepare(
+            state, context, grid, request_id, window, berth_ids, service_times, pins.get(request_id)
+        )
         if prepared is None:
             solutions[request_id] = RequestSolution(request_id, (), Unscheduled.NO_START, ())
         else:
@@ -249,6 +260,10 @@ def solve(
             used.add(candidate.berth_id)
         solutions[request_id] = RequestSolution(request_id, tuple(options), None, ())
 
+    for request_id, pin in pins.items():
+        kept = solutions.get(request_id)
+        if kept is not None and not all(pin.honoured_by(o.option) for o in kept.options):
+            raise SolverInvariantError(f"an option of request {request_id} moves a started part")
     total = sum((s.options[0].objective_score for s in solutions.values() if s.options), Decimal(0))
     return _result(status, solutions, total, started, clock, sorted(set(flags)))
 
@@ -310,8 +325,13 @@ def _prepare(
     window: ConfirmedWindow,
     berth_ids: tuple[int, ...],
     service_times: Mapping[int, timedelta],
+    pin: Pin | None = None,
 ) -> _Request | None:
-    """The request's variables' domains, or None when the window holds no whole start minute."""
+    """The request's variables' domains, or None when the window holds no whole start minute.
+
+    A pin (AI-059) fixes the start minute and the duration to the started interval, and keeps only
+    the pinned berth, pilot and tugs; the confirmed window still bounds the start.
+    """
     service = service_times[request_id]
     if service <= timedelta(0):
         raise ValueError(f"service time of request {request_id} must be positive: {service}")
@@ -320,6 +340,14 @@ def _prepare(
     hi = grid.ceil(window.end) - 1  # half-open window: the start is before its end
     if lo > hi:
         return None
+    fixed_start = None
+    if pin is not None:
+        duration = pin.duration // MINUTE
+        fixed_start = grid.ceil(pin.start)
+        if grid.at(fixed_start) != pin.start or not lo <= fixed_start <= hi:
+            return None
+        if pin.berth_id is not None:
+            berth_ids = tuple(b for b in berth_ids if b == pin.berth_id)
 
     request = next(r for r in state.requests if r.request_id == request_id)
     pilots = tuple(
@@ -328,6 +356,7 @@ def _prepare(
         if p.is_active
         and p.has_active_pilot_role
         and rank_allows(p, request.loa, state.pilot_rank_limits)
+        and (pin is None or pin.pilot_user_id in (None, p.user_id))
         and (ranges := _start_ranges(grid, state.pilot_shifts, p.user_id, lo, hi, duration))
     )
     requirement = tug_requirement(context, request_id)
@@ -353,24 +382,14 @@ def _prepare(
         n_min=requirement.n_min,
         n_cap=requirement.n_cap,
         bp_req=requirement.bp_req * BP_SCALE,
+        fixed_start=fixed_start,
+        required_tugs=frozenset() if pin is None else pin.tug_ids,
     )
 
 
 def _without_berths(request: _Request, used: set[int]) -> _Request:
     """The request without the berths its better options use: alternatives differ by berth."""
-    berth_ids = tuple(b for b in request.berth_ids if b not in used)
-    return _Request(
-        request.request_id,
-        berth_ids,
-        request.lo,
-        request.hi,
-        request.duration,
-        request.pilots,
-        request.tugs,
-        request.n_min,
-        request.n_cap,
-        request.bp_req,
-    )
+    return replace(request, berth_ids=tuple(b for b in request.berth_ids if b not in used))
 
 
 def _coefficients(request: _Request, settings: SolverSettings) -> tuple[int, int]:
@@ -401,6 +420,8 @@ def _run(
     for request in requests:
         r = request.request_id
         start = model.new_int_var(request.lo, request.hi, f"start_{r}")
+        if request.fixed_start is not None:
+            model.add(start == request.fixed_start)
         assigned = model.new_bool_var(f"assigned_{r}")
         berths = {b: model.new_bool_var(f"berth_{r}_{b}") for b in request.berth_ids}
         model.add(cp_model.LinearExpr.sum(list(berths.values())) == assigned)
@@ -413,6 +434,11 @@ def _run(
         pilots = _workers(model, request, request.pilots, start, ResourceKind.PILOT, intervals)
         model.add(cp_model.LinearExpr.sum(list(pilots.values())) == assigned)
         tugs = _workers(model, request, request.tugs, start, ResourceKind.TUG, intervals)
+        for tug_id in sorted(request.required_tugs):  # a started tug stays on the option
+            if tug_id in tugs:
+                model.add(tugs[tug_id] == 1).only_enforce_if(assigned)
+            else:
+                model.add(assigned == 0)
         tug_count = cp_model.LinearExpr.sum(list(tugs.values()))
         bollard = cp_model.LinearExpr.weighted_sum(
             list(tugs.values()), [w.bollard_pull for w in request.tugs]
