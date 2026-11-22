@@ -2,6 +2,33 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0i. Checkpoint 11 (2026-11-22, batch 2 resumed: AI-058 → AI-059)
+
+**Merges verified (pulls API, `git diff`):**
+
+| PR | Branch | Head | Merge | Merged at (UTC) |
+|---|---|---|---|---|
+| #64 | `feature/AI-057-rationale-factors` | `e18654b` | `a758b45` | 13:48:05 |
+| #66 | `feature/SETUP-second-batch-records` | `e55b8bb` (a `develop` merge on `7d8a391`) | `10f3dc3` | 14:12:12 |
+| #65 | `feature/AI-071-evaluation-metric-rows` | `1d36379` (a `develop` merge on `3098391`) | `254757c` | 14:12:22 |
+
+- #66 merged 10 s before #65 (not the suggested order); both are in. The merged code and records are byte-identical to the pushed commits. The `WORK_STATUS.md` conflict resolution brought back a stale `SETUP-r12-merge-records` IN REVIEW row; removed on this branch.
+- Local `develop` = `origin/develop` = `254757c`, CI green. PortHub pointer `6c29250` → `254757c` (PortHub `ed340ef`).
+
+**Baseline:** `develop` `254757c` was not run locally on its own. Its count, 2281 passed, 51 skipped, 1 xfailed, is 2220 (Checkpoint 10) + 39 (AI-057) + 22 (AI-071), and the corrective branch, which changes only test bodies on top of it, ran exactly that locally. CI on `254757c`: all success.
+
+| Task | Result | Branch · head · CI | Status |
+|---|---|---|---|
+| AI-058 | `part2/persist.py`: first recommendations, DELAY_REPLAN proposals, FIFO and NO_FEASIBLE_PLAN runs written in one transaction as `w_part2`; schema CHECKs mirrored before the write; regenerate refused with `PRECONDITION_FAILED` before any write (INT-B11); `result_detail` kept to CT-10 v1.1 (`PILOT_RANK_LIMIT` → `PILOT_UNAVAILABLE`, `TUG_COUNT` → `TUG_UNAVAILABLE` until INT-B1). Reuses AI-057's catalogue and AI-056's outcome | `feature/AI-058-recommendation-persistence` · `229787c` · all green · no PR | BLOCKED (INT-B11, regenerate only) |
+| AI-059 | STARTED components fixed in a delay re-plan: AI-050 loader reads begun components (`STARTED`/`DONE` events); `Pin` keeps their resources and interval through CP-SAT, alternatives and FIFO; scope from the CT-10 triggers | `feature/AI-059-started-components-replan` · `2737d38` · all green · no PR | BLOCKED (handler needs AI-058 merged; regenerate needs INT-B11) |
+| Corrective | AI-055 / AI-056 / AI-057 random-instance tests were empty (eligible tugs 41–43, instance tugs 300+; 0 of 72 requests placed). Helper fixed; each test asserts a placement | `feature/AI-055-random-instance-tugs` · `47051a7` · all green · no PR | Tests only |
+
+**Verification:** AI-058 full suite 2320 passed, 51 skipped, 1 xfailed; AI-059 2312 passed; corrective 2281 passed (same tests, now non-empty). AI-058 and AI-059 together (their trees overlaid in scratch): `tests/unit/part2` 572 passed, mypy clean.
+
+**Merge order:** `feature/AI-055-random-instance-tugs` (clean with both) → `feature/AI-058-recommendation-persistence` → `feature/AI-059-started-components-replan` → `feature/SETUP-replan-batch-records`. AI-058, AI-059 and SETUP each append to the end of `WORK_STATUS.md`: keep every row. Their decision entries are at different anchors and merge cleanly. Move the PortHub pointer after the merges.
+
+**Next:** after AI-058 merges, the PART2_SOLVE handler (AI-059 remainder) on a new branch from `develop`: scope → snapshot → B2 to B6 with pins → AI-058, one scenario test per trigger, and the RESOURCE_CHANGE "pending only" check. INT-B11 / R13 to the Backend Team and the Leads Council.
+
 ## 0h. Checkpoint 10 (2026-11-22, batch 2: AI-057 → AI-058 → AI-059 → AI-070 → AI-071 → AI-092)
 
 **Start:** PR #63 (`feature/SETUP-r12-merge-records`, head `c4868bf`) merged as `6c29250` at 13:09:51Z, CI all green (pulls API, check runs). No open PRs. PortHub pointer `bba5945` → `6c29250` (PortHub `7e99595`).

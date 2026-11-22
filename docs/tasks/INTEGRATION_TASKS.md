@@ -79,3 +79,13 @@ DEC-30 TR-01 / TR-02 are AI Team values (R8), not an external request.
 - INT-B1: still open. PortHub `main` CT-10 is `Proposed v1.2` with the AI-051 `Proposed change` row; no approval recorded.
 - INT-B6: still open. PortHub `table-ownership.md`: "No worker writes them until retraining is built (DEC-08)".
 - INT-Q4: no `rationale_templates` rows (`seed-spec.json`: `[]`).
+
+## Update 2026-11-22 (batch 2 resumed: AI-058, AI-059)
+
+| ID | State now | What changed |
+|---|---|---|
+| INT-B11 | Open; now the only blocker of AI-058 | AI-058 refuses a regenerate before any write (`PRECONDITION_FAILED`, the message names INT-B11), so the previous version stays current; MySQL-tested for `PENDING_REVIEW` and `MODIFIED_BY_STAFF`. When the Backend Team and the Leads Council choose an option, only that check changes (option (a): plus one guarded `REPLACED` update and its grant) |
+| INT-B1 | Open, but no longer a merge gate for AI-058 | AI-058 writes `result_detail` with the approved CT-10 v1.1 codes: `PILOT_RANK_LIMIT` → `PILOT_UNAVAILABLE`, `TUG_COUNT` → `TUG_UNAVAILABLE`, B2's text kept in `detail`. Approving the Proposed change lets staff see the finer code; the two mappings are then removed |
+| Field status codes (for AI-071 R9 and MAE) | Open (Backend Team) | Unchanged |
+
+**For the Backend Team, from AI-059 (no request, information):** a DELAY_REPLAN proposal's options keep every component that has a `STARTED` or `DONE` event at its resource and interval, so the confirmation step "keep STARTED components" (UML 2.14) finds them unchanged in the proposal. A started resource that is no longer usable gives `NO_FEASIBLE_PLAN` with a reason instead of a proposal.
