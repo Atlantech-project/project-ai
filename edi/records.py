@@ -27,10 +27,17 @@ class ParseIssue:
 
 @dataclass(frozen=True)
 class ParsedVessel:
+    """The vessel of a file or of a corrected ``staged_payload``.
+
+    ``unconverted`` keeps the raw text of a corrected value of the wrong JSON type (today only
+    ``call_sign``), so the rules can report it instead of dropping it (R12).
+    """
+
     imo_number: str | None
     name: str | None
     call_sign: str | None
     segment_ref: str | None
+    unconverted: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

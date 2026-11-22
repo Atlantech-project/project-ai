@@ -432,6 +432,17 @@ def test_corrected_call_sign_boundary(call_sign: str, result: str) -> None:
     assert [f.issue.code for f in findings] == expected
 
 
+@pytest.mark.parametrize("value", [12345678901, True, ["3FAB7"], {"value": "3FAB7"}])
+def test_corrected_call_sign_that_is_not_text_is_malformed(value: Any) -> None:
+    parsed = parse_baplie(READ_CASES[0].edi_path.read_bytes())
+    payload = _payload(parsed.vessel, parsed.lines)
+    payload["vessel"]["call_sign"] = value
+
+    findings = validate_staged_payload(payload, REFERENCE)
+    assert [f.issue.code for f in findings] == ["MALFORMED_CALL_SIGN"]
+    assert outcome(findings) == "QUARANTINED"
+
+
 def test_full_empty_missing_or_unknown_is_a_warning() -> None:
     assert codes(line(full_empty=None)) == ["MISSING_FULL_EMPTY"]
     unknown = validate(VESSEL, [line(full_empty=None, unconverted={"full_empty": "7"})], REFERENCE)

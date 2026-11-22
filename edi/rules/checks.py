@@ -37,7 +37,8 @@ MALFORMED_OOG: Final = "MALFORMED_OOG"
 MISSING_PORT_OF_DISCHARGE: Final = "MISSING_PORT_OF_DISCHARGE"
 VESSEL_NAME_MISMATCH: Final = "VESSEL_NAME_MISMATCH"
 SIZE_TYPE_CHANGED: Final = "SIZE_TYPE_CHANGED"
-# Proposed (AI-031 task decision item 10, R12): a call sign `vessels.call_sign` cannot store.
+# Approved 2026-11-22 (AI-031 task decision item 10, R12): a call sign `vessels.call_sign` cannot
+# store, or one that is not text. Listing in CT-24 is pending with the QA Team (INT-Q2).
 MALFORMED_CALL_SIGN: Final = "MALFORMED_CALL_SIGN"
 
 # `chk_cme_pol` / `chk_cme_pod` (schema): five characters, country then location.
@@ -163,6 +164,10 @@ def _vessel_findings(vessel: ParsedVessel | None, reference: Reference) -> Itera
             f"({reference.vessel_name})"
         )
         yield Finding(None, ParseIssue("WARNING", VESSEL_NAME_MISMATCH, ref, message))
+    raw_call_sign = vessel.unconverted.get("call_sign") if vessel is not None else None
+    if raw_call_sign is not None:
+        message = f"Call sign {raw_call_sign} is not text"
+        yield Finding(None, ParseIssue("ERROR", MALFORMED_CALL_SIGN, ref, message))
     call_sign = vessel.call_sign if vessel is not None else None
     if call_sign is not None and len(call_sign) > CALL_SIGN_MAX_LENGTH:
         message = (
