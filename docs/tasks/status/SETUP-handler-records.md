@@ -10,7 +10,7 @@
 
 ## Summary of the change
 - `docs/tasks/AUTONOMOUS_EXECUTION_PLAN.md`: Checkpoint 13 (§0k): PRs #71 and #72 verified, PR #70 still open, sync, the handler branch, the recomputed dependency graph.
-- `docs/tasks/WORK_STATUS.md`: `SETUP-post-merge-replan-records` DONE (PR #72); AI-058 notes PR #71; PR #70's task to be closed by the user; this task's row. The AI-059 row comes with the handler branch.
+- `docs/tasks/WORK_STATUS.md`: `SETUP-post-merge-replan-records` DONE (PR #72); PR #70's task to be closed by the user; this task's row. The AI-059 row comes with the handler branch; the AI-058 row is left as it is, because it sits next to the AI-059 row and an edit there would conflict (PR #71 is recorded in Checkpoint 13).
 - `docs/tasks/BLOCKED_TASKS.md`: AI-059 (only INT-B11 left), AI-061 (R15), AI-062 (R16).
 - `docs/tasks/INTEGRATION_TASKS.md`: INT-B11 state, INT-B12 (new: Backend C-06 consumer for PART2_SOLVE; Backend `develop` `554b09c` re-checked), the forecast-feed note.
 - `docs/tasks/DECISION_RECOMMENDATIONS.md`: R13 and R14 unchanged, R15, R16.
