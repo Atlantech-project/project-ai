@@ -386,6 +386,52 @@ def test_oversized_corrected_values_are_quarantined() -> None:
     assert codes == {"MALFORMED_WEIGHT", "INVALID_STOWAGE_COORDINATE"}
 
 
+# R12: `vessels.call_sign` is `varchar(10)`; only a staff correction can supply a call sign.
+CALL_SIGN_MAX = 10
+
+
+@pytest.mark.parametrize(
+    ("call_sign", "expected"),
+    [
+        (None, []),
+        ("3FAB7", []),
+        ("A" * CALL_SIGN_MAX, []),
+        ("A" * (CALL_SIGN_MAX + 1), ["MALFORMED_CALL_SIGN"]),
+        ("X" * 40, ["MALFORMED_CALL_SIGN"]),
+    ],
+)
+def test_call_sign_must_fit_its_column(call_sign: str | None, expected: list[str]) -> None:
+    vessel = replace(VESSEL, call_sign=call_sign)
+    findings = validate(vessel, [line()], REFERENCE)
+    assert [f.issue.code for f in findings] == expected
+    assert all(f.issue.severity == "ERROR" and f.line_no is None for f in findings)
+
+
+def test_file_path_never_carries_a_call_sign() -> None:
+    raw = READ_CASES[0].edi_path.read_bytes()
+    edited = raw.replace(b"::11:MSC ALEXANDRIA'", b"::11:MSC ALEXANDRIA:" + b"X" * 40 + b"'", 1)
+    assert edited != raw
+    parsed = parse_baplie(edited)
+
+    assert parsed.vessel is not None and parsed.vessel.call_sign is None
+    assert validate(parsed.vessel, parsed.lines, REFERENCE) == ()
+
+
+@pytest.mark.parametrize(
+    ("call_sign", "result"),
+    [("A" * CALL_SIGN_MAX, "PARSED"), ("A" * (CALL_SIGN_MAX + 1), "QUARANTINED")],
+)
+def test_corrected_call_sign_boundary(call_sign: str, result: str) -> None:
+    parsed = parse_baplie(READ_CASES[0].edi_path.read_bytes())
+    payload = _payload(parsed.vessel, parsed.lines)
+    payload["vessel"]["call_sign"] = call_sign
+
+    findings = validate_staged_payload(payload, REFERENCE)
+    assert outcome(findings) == result
+    expected = [] if result == "PARSED" else ["MALFORMED_CALL_SIGN"]
+    assert [f.issue.code for f in findings] == expected
+
+
 def test_full_empty_missing_or_unknown_is_a_warning() -> None:
     assert codes(line(full_empty=None)) == ["MISSING_FULL_EMPTY"]
     unknown = validate(VESSEL, [line(full_empty=None, unconverted={"full_empty": "7"})], REFERENCE)

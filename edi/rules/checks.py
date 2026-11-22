@@ -37,6 +37,8 @@ MALFORMED_OOG: Final = "MALFORMED_OOG"
 MISSING_PORT_OF_DISCHARGE: Final = "MISSING_PORT_OF_DISCHARGE"
 VESSEL_NAME_MISMATCH: Final = "VESSEL_NAME_MISMATCH"
 SIZE_TYPE_CHANGED: Final = "SIZE_TYPE_CHANGED"
+# Proposed (AI-031 task decision item 10, R12): a call sign `vessels.call_sign` cannot store.
+MALFORMED_CALL_SIGN: Final = "MALFORMED_CALL_SIGN"
 
 # `chk_cme_pol` / `chk_cme_pod` (schema): five characters, country then location.
 _UNLOCODE: Final = re.compile(r"[A-Z]{2}[A-Z2-9]{3}")
@@ -50,6 +52,9 @@ _OOG_SIDES: Final = ("front", "back", "right", "left", "height")
 # `container_manifest_entries` stores weight, overhangs and stowage in signed `int` columns; a
 # larger value cannot be written, so it is an ERROR here rather than a database error in AI-032.
 INT_COLUMN_MAX: Final = 2_147_483_647
+# `vessels.call_sign` is `varchar(10)` (utf8mb4 counts characters, like `len`). Only a staff
+# correction can supply a call sign: the parser reads the IMO and name from TDT only.
+CALL_SIGN_MAX_LENGTH: Final = 10
 
 Outcome = Literal["PARSED", "QUARANTINED"]
 
@@ -158,6 +163,13 @@ def _vessel_findings(vessel: ParsedVessel | None, reference: Reference) -> Itera
             f"({reference.vessel_name})"
         )
         yield Finding(None, ParseIssue("WARNING", VESSEL_NAME_MISMATCH, ref, message))
+    call_sign = vessel.call_sign if vessel is not None else None
+    if call_sign is not None and len(call_sign) > CALL_SIGN_MAX_LENGTH:
+        message = (
+            f"Call sign is {len(call_sign)} characters; the stored maximum is "
+            f"{CALL_SIGN_MAX_LENGTH}"
+        )
+        yield Finding(None, ParseIssue("ERROR", MALFORMED_CALL_SIGN, ref, message))
 
 
 def _same_name(name: str) -> str:

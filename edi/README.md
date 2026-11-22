@@ -29,12 +29,13 @@ Where the parser stops:
 
 `edi.rules.validate(vessel, lines, reference) -> tuple[Finding, ...]` applies every CT-12 v1.1 content rule to the parser's records. `reference` (`edi.rules.Reference`) carries what the tables hold: the request vessel's IMO and name, `container_size_types` codes with `is_reefer`, `imdg_classes` codes, and the size types already stored for existing container numbers. `edi.rules.outcome(findings)` is `QUARANTINED` when any ERROR applies, otherwise `PARSED`.
 
-- **ERROR:** `IMO_MISMATCH`, `DUPLICATE_CONTAINER_NUMBER`, `UNKNOWN_SIZE_TYPE`, `UNKNOWN_IMDG_CLASS`, `MALFORMED_WEIGHT`, `MISSING_MANDATORY_SEGMENT` (no weight), `MALFORMED_UNLOCODE`, `TEMPERATURE_OUT_OF_RANGE`, `MALFORMED_TEMPERATURE`, `REEFER_MISSING_TEMPERATURE`, `INVALID_STOWAGE_COORDINATE`, `MALFORMED_OOG`, `MALFORMED_CONTAINER_NUMBER`.
+- **ERROR:** `IMO_MISMATCH`, `DUPLICATE_CONTAINER_NUMBER`, `UNKNOWN_SIZE_TYPE`, `UNKNOWN_IMDG_CLASS`, `MALFORMED_WEIGHT`, `MISSING_MANDATORY_SEGMENT` (no weight), `MALFORMED_UNLOCODE`, `TEMPERATURE_OUT_OF_RANGE`, `MALFORMED_TEMPERATURE`, `REEFER_MISSING_TEMPERATURE`, `INVALID_STOWAGE_COORDINATE`, `MALFORMED_OOG`, `MALFORMED_CONTAINER_NUMBER`, `MALFORMED_CALL_SIGN`.
 - **WARNING:** `CHECK_DIGIT_MISMATCH`, `MISSING_FULL_EMPTY`, `MISSING_PORT_OF_DISCHARGE`, `VESSEL_NAME_MISMATCH`, `SIZE_TYPE_CHANGED`.
 - Codes, references and messages follow the AI-023 corpus oracles where a case exists; the others are Proposed in the AI-031 task decision.
 - **Correction path (DEC-03, `source = STAGED_PAYLOAD`):** `edi.rules.validate_staged_payload(payload, reference)` reads a staff-corrected `staged_payload` back into the same records and calls the same `validate`. Issues then point at each line's `segment_ref`, because the payload carries no segment texts.
 - **Stowage:** only the schema's bounds are enforced (bay > 0, row ≥ 0, tier > 0); no document gives upper bounds, so corpus case 12 is skipped until they are defined.
 - **Storable range:** a weight, overhang or stowage value above 2,147,483,647 (the schema's `int` columns) is an ERROR under the rule's code, so the file is quarantined instead of failing the write. This is a storage limit, not an operational bound.
+- **Call sign (R12):** a corrected `call_sign` longer than 10 characters (`vessels.call_sign` is `varchar(10)`) is an ERROR, `MALFORMED_CALL_SIGN`, so the file stays quarantined instead of failing the fill. Only a correction can supply a call sign: the parser reads the IMO and name from TDT only. No call-sign format is checked (no source gives one).
 
 **Unverified mapping (DEC-28 item 7).** The qualifiers and positions in `edi/mapping.py` follow the AI-023 corpus, CT-12 and DEC-28, not the SMDG implementation guides 2.2.1 and 3.1.1, which are not available. `mapping.py` is the one place to correct them.
 

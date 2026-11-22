@@ -122,6 +122,18 @@ def test_call_sign_is_filled_only_when_the_vessel_has_none() -> None:
     assert kept.vessel_fills == {}
 
 
+def test_oversized_call_sign_is_quarantined_not_filled() -> None:
+    parsed = parse_baplie(CASES["01-valid-221"].edi_path.read_bytes())
+    assert parsed.vessel is not None
+    vessel = replace(parsed.vessel, call_sign="A" * 11)
+    plan = plan_from_records(vessel, parsed.lines, CONTEXT)
+
+    assert plan.outcome == "QUARANTINED"
+    assert plan.vessel_fills == {}
+    assert plan.staged_payload is not None
+    assert plan.staged_payload["vessel"]["call_sign"] == "A" * 11  # kept for staff to fix
+
+
 def test_segment_ref_and_message_fit_their_columns() -> None:
     from edi.commit import _issue_row
     from edi.records import ParseIssue
