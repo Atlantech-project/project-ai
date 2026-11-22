@@ -2,6 +2,43 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0k. Checkpoint 13 (2026-11-22, AI-059 PART2_SOLVE trigger handler)
+
+**Merges verified (pulls API):** PR #72 (`feature/SETUP-post-merge-replan-records`, head `847463c`) merged as `c28e49f` at 15:15:07Z; PR #71 (`feature/AI-058-fifo-infeasible-mysql-tests`, head `bb1c5f5`) as `4a1663f` at 15:15:19Z. Content identical to the pushed commits; no duplicate tracker rows.
+- **PR #70 is still open** (not merged, not closed). The user said they would close it unmerged; its content is in `develop` through #72.
+- Local `develop` = `origin/develop` = `4a1663f`, CI all success; the user's untracked `reports/` files untouched.
+- PortHub pointer `e395bac` → `4a1663f` (PortHub `79ca8d6`).
+- Checkpoint 12 re-read: accurate. AI-058 stays BLOCKED (INT-B11, regenerate only).
+
+**AI-059 handler:** `feature/AI-059-part2-solve-trigger-handler` (`92caa43`, from `4a1663f`).
+- **Modules:** `part2/job.py` (the `queue:part2` handler on the shared runtime) and `part2/inputs.py` (run horizon, REPLAN plan check, B3 inputs).
+- **Reuse:** AI-050, AI-060's context, AI-052, AI-053, AI-056, AI-057 and AI-058 are reused, not duplicated.
+- **Tests:** 17 MySQL + Redis scenarios through `Worker.process_message`, plus 9 unit tests.
+- **Full suite:** 2380 passed, 51 skipped, 1 xfailed. Ruff, format and mypy clean.
+- **Review:** an independent review found no Critical or Important issue; its 5 Minor findings are fixed.
+- **CI:** see the AI-059 record and the report.
+- **Status:** every criterion is met for every path but the regenerate re-solve of a request with a current version, so AI-059 is **BLOCKED (INT-B11, regenerate only)**. It is not DONE.
+
+**Dependency graph after the handler:**
+
+| Task | Prerequisites | Ready? |
+|---|---|---|
+| AI-061 (Part 2 latency and concurrency) | AI-059, AI-015 | Yes, once the handler merges; needs R15 (what "15 concurrent pipelines" and "≥ 5 parallel solves" mean under CT-10's one-solve rule) |
+| AI-062 (Part 2 validation suite, baseline harness) | AI-059, AI-015 | Yes, once the handler merges; R16 (which indicators have a formula) |
+| AI-066 (yard generator) | AI-065 (Proposed mapping, R7), AI-032 (BLOCKED, R6), AI-058 | No: AI-065 approval, Backend G-01/G-02/G-04 (INT-B3), INT-L1/L2 |
+| AI-080 (contract tests) | AI-003, AI-048, AI-058, AI-032 | No: AI-048 (needs AI-007, R4) |
+| AI-081 (workflow tests) | AI-080, AI-059, AI-066, AI-071, AI-072 | No |
+| AI-093 (reproducibility) | AI-058, AI-048 | No: AI-048 |
+| AI-084 | AI-062, AI-008 | After AI-062 |
+
+**Open branches, merge order:**
+1. `feature/AI-059-part2-solve-trigger-handler`
+2. `feature/SETUP-handler-records` (this branch)
+
+Close PR #70 unmerged; move the PortHub pointer after each merge.
+
+**Next (same workflow, no new batch):** after the handler merges, AI-062 (its property suite and its definable indicators need no decision), then AI-061 once R15 is answered.
+
 ## 0j. Checkpoint 12 (2026-11-22, post-merge verification of PRs #67 to #69)
 
 **GitHub (pulls API, check runs):**
