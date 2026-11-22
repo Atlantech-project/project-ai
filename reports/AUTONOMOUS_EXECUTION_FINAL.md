@@ -284,3 +284,35 @@ To open the PRs, use these compare links, each against `develop`:
 2. Merge `develop` into the SETUP branch, keeping every task's own row; push; check CI; merge.
 3. Move the PortHub pointer.
 4. Start AI-033 (after AI-032 merges). AI-058 then needs AI-056, AI-057 and INT-B1.
+
+---
+
+# Round 4 — round-3 merge verification (2026-11-22)
+
+## R4.1 Merges verified
+
+| Task | PR | Merge commit | Merged (UTC) | Status now |
+|---|---|---|---|---|
+| AI-065 | #48 | `7fc6954` | 2026-11-22 09:29 | IN REVIEW (Proposed mapping; R7) |
+| AI-056 | #49 | `44fd4ec` | 2026-11-22 09:29 | DONE |
+| AI-074 | #50 | `8b2032c` | 2026-11-22 09:29 | DONE |
+| AI-032 | #51 | `44e4b95` | 2026-11-22 09:29 | BLOCKED (criterion 3: R6, INT-B10) |
+| AI-060 handler | #53 | `7042ceb` | 2026-11-22 09:30 | DONE (with service PR #47) |
+| AI-072 | #52 | `b98024a` | 2026-11-22 09:32 | DONE (production values: R8) |
+| SETUP-post-merge-records | #54 | `ddfb551` | 2026-11-22 09:33 | DONE |
+
+CI on `develop` `ddfb551`: all checks success.
+
+## R4.2 Work this round
+
+- **Tracker clean-up:** the SETUP merge kept every row, so seven stale duplicates were removed and the statuses above set, each with its merge evidence.
+- **AI-033:** `DEFERRED (DEC-17)`. NFR-PERF-2 was removed from the MVP (Leads Council, 2026-10-27), so there is nothing to build (R10).
+- **AI-071:** investigated. The metric definitions are missing (R9), so it was not started.
+- **CT-12 `flag_state`:** checked. The worker may fill it, but the parsed records don't carry it; this was already recorded in the AI-032 decision entry, so it isn't a new gap.
+- **PortHub:** the `project-ai` pointer moved to `ddfb551`.
+
+## R4.3 Exact next action
+
+1. Merge `feature/SETUP-round3-merge-records`.
+2. Decide R2, R3, R4, R6, R7, R8 and R9.
+3. Deliver INT-Q4, INT-B1 and INT-B10.

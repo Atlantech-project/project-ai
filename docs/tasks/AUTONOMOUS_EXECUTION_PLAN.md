@@ -2,6 +2,28 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0b. Checkpoint 4 (2026-11-22, after the round-3 merges)
+
+**Verified on GitHub (pulls API and check runs):** PRs #48 (AI-065, `7fc6954`), #49 (AI-056, `44fd4ec`), #50 (AI-074, `8b2032c`), #51 (AI-032, `44e4b95`), #53 (AI-060 handler, `7042ceb`), #52 (AI-072, `b98024a`) and #54 (SETUP-post-merge-records, `ddfb551`) merged into `develop` on 2026-11-22. CI on `ddfb551`: `ci-ok`, `tests`, `lint`, `typecheck`, `secret-scan` all success. The SETUP merge kept every tracker row, so stale duplicates came back; `feature/SETUP-round3-merge-records` removes them.
+
+**Statuses (by acceptance criteria):** DONE: AI-056, AI-074, AI-060, AI-072, SETUP-post-merge-records. AI-065 stays IN REVIEW (Proposed mapping). AI-032 BLOCKED on criterion 3 (R6, INT-B10). AI-033 DEFERRED (DEC-17).
+
+**Nothing is both eligible and buildable now:**
+- AI-071 needs metric definitions (R9).
+- AI-058 needs AI-057, which needs templates (INT-Q4).
+- AI-066 needs AI-058.
+- AI-073 needs DEC-31 (R2).
+- AI-045 needs R3.
+- AI-007 needs R4.
+- AI-020 to AI-024 and AI-042 need data.
+
+**Exact next action:**
+1. Merge `feature/SETUP-round3-merge-records`.
+2. Decide R2, R3, R4, R6, R7, R8 and R9.
+3. Deliver INT-Q4, INT-B1 and INT-B10.
+
+The first of these that lands unblocks: R9 → AI-071; R2 → AI-073; R3 → AI-045; R4 → AI-007; INT-Q4 → AI-057 → AI-058.
+
 ## 0a. Checkpoint 3 (2026-11-21, round 3)
 
 See `reports/AUTONOMOUS_EXECUTION_FINAL.md` § Round 3: the PR queue (six task branches, SETUP last), the new AI-060 handler branch (`4add5e0`), the AI-057 finding (no templates, INT-Q4) and the exact next action. Decision review R6–R8: `DECISION_RECOMMENDATIONS.md`.

@@ -91,3 +91,37 @@ Setup record (not in the backlog), written for the user as AI Team owner. Each i
 | R6 | Open | Closing AI-032 cleanly |
 | R7 | Open | Confirmation only |
 | R8 | Open | AI-072 production use |
+
+## R9 · AI-071 C1 metric definitions (owner: AI Team; added 2026-11-22)
+
+- **Context:**
+  - AI-071 must write `evaluation_metric` rows for `MAE`, `OVERRIDE_RATE`, `WAIT_TIME` and `WINDOW_ACCURACY`. Its acceptance criterion is "hand-computed metric expectations reproduced", which needs a written formula for each metric.
+  - The sources name the metrics (Architecture §9.1 C1, UML 3.x "MAE, override rate, waiting time, window accuracy") and the schema scope rule `chk_em_scope` (MAE needs a model version; `OVERRIDE_RATE` and `WAIT_TIME` must have none).
+  - No source gives a numerator, denominator, period or row selection.
+- **Open items:**
+  - **`OVERRIDE_RATE`:** what counts as an override (`MODIFIED_BY_STAFF` options? any staff change?) over which population (recommendations, options, or accepted plans) per period.
+  - **`WAIT_TIME`:** which interval (requested ETA to actual berthing start, from trusted `actual_status_updates`?) and which statistic (mean, median).
+  - **`WINDOW_ACCURACY`:** DEC-30 TR-11, DEFERRED (OD-16).
+  - **`MAE`:** needs a model version to attach to (OD-17); none exists yet.
+- **Recommendation:** none. These are business definitions, and I don't invent them. When the AI Team writes them (as the AI-071 task decision, or in DEC-30 for TR-11), AI-071 can be built on AI-074's trusted reads in about the size of AI-072.
+- **Blocks:** AI-071.
+
+## R10 · AI-033 status (added 2026-11-22)
+
+- **Finding:** DEC-17 (Closed; "Affects" lists AI-033) removed NFR-PERF-2 from the MVP (Leads Council, 2026-10-27). DEC-30 TR-08 is "out of MVP scope", and CT-12 has no size classes.
+- **Action taken:** AI-033 recorded as `DEFERRED (DEC-17)`. This records an existing closed decision; it is not a new one. Nothing was built.
+- **If you disagree:** a Leads ruling that brings NFR-PERF-2 back, with size definitions, reopens it.
+
+## Consolidated review of open recommendations (2026-11-22)
+
+| ID | State | Blocks |
+|---|---|---|
+| R1 | Open (round-1 task decisions; AI-055 `RESOURCE_COST` = tugs ÷ `N_cap`) | Nothing in code; confirmation only |
+| R2 | Open (DEC-31; Option 1 recommended) | AI-073 |
+| R3 | Open (AI-045 on synthetic data) | AI-045 → closing AI-055 |
+| R4 | Open (DEC-07 Option 1) | AI-007 → AI-047, AI-048 |
+| R6 | Open | Closing AI-032 (criterion 3) |
+| R7 | Open (AI-056, AI-074, AI-032, AI-072, plus the AI-065 mapping) | Closing AI-065; confirmation for the rest |
+| R8 | Open | AI-072 production use |
+| R9 | Open (new) | AI-071 |
+| R10 | Recorded (existing DEC-17) | Nothing |
