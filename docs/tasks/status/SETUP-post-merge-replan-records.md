@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only; DONE when its PR merges) |
+| Status | DONE (PR #72, merge `c28e49f`, 2026-11-22 15:15:07Z) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-post-merge-replan-records` (from `develop` at `e395bac`) |
 | Plan | the user's post-merge instruction of 2026-11-22 (verify GitHub, sync, verify AI-058, AI-059 and the random-instance tests, update records, Arabic report); the standing execution authorization approves the publish |

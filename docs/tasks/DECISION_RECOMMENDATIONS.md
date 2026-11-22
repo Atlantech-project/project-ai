@@ -287,3 +287,26 @@ Recommendations only; nothing here is approved.
 |---|---|---|---|---|
 | AI-058 | Schema CHECKs mirrored before the write; regenerate refused before any write (INT-B11); `result_detail` kept to CT-10 v1.1, the two Proposed codes written as their approved parents; job intervals NULL (DEC-32 rule 4) | Stays inside DEC-02, CT-10 v1.1 and CT-15 without waiting for INT-B1 | Staff see `PILOT_UNAVAILABLE` where the finer reason is a rank limit (the `detail` text still says so) | Accept |
 | AI-059 | Begun = a `STARTED` or `DONE` event; "fixed" = same resource and same interval, so the option's start and end are the started interval and B3 is not used; a started resource no longer usable gives `NO_FEASIBLE_PLAN`; disagreeing intervals fail the run | Architecture §8.13 "STARTED components fixed" with the one-interval option of DEC-32 rule 4; no duration invented | A delay after berthing can't lengthen a started berth stay; that needs a rule the sources don't have (follow-up) | Accept |
+
+## After the AI-059 handler (2026-11-22)
+
+Recommendations only; nothing here is approved.
+
+| ID | Question | Recommended | Owner | Blocks |
+|---|---|---|---|---|
+| R13 | Regenerate write (INT-B11) | Unchanged: option (a). Now the only path left in AI-058 and AI-059; the handler refuses it before any write | Backend Team, Leads Council | AI-058, AI-059 regenerate |
+| R14 | Confirm the AI-058 and AI-059 task decisions | Accept, including the AI-059 handler row (items 1 to 11) | AI Team | Confirmation only |
+| R15 | AI-061: what do "15 concurrent pipelines" (NFR-PERF-1) and "≥ 5 parallel solves" (backlog) mean, when CT-10 says one PART2_SOLVE at a time? | Measure the latency of one joint solve carrying 15 requests (CT-10 Option 2 scope) for p50 / p95 / p99. Show "parallel solves" as 5 worker processes on 5 separate test databases: a capacity check of the host, not a production mode. Record both readings in the report | AI Team; Leads Council if NFR-PERF-1 must be re-read | AI-061 |
+| R16 | AI-062: "indicators exactly as named in the proposal" (Proposal §12 and plan §7.2 are not in this repository) | Use Master_Context's six evaluation indicators. Compute the four that existing data defines (conflicts detected and resolved, resource utilisation, avoidable idle time as waiting, feasibility of recommendations). Report the two without a formula (estimated operational cost, downstream re-handling) as "not defined", never estimated | AI Team | AI-062 indicator table |
+
+### R15 · AI-061 concurrency
+
+- **Conflict:** CT-10 "One solve at a time: the Backend never enqueues a PART2_SOLVE while another is QUEUED or RUNNING"; the runtime serves `queue:part2` with one worker. NFR-PERF-1: "p50 ≤ 3 s, p95 ≤ 8 s, p99 ≤ 15 s with 15 concurrent pipelines". The backlog: "≥ 5 parallel solves demonstrated".
+- **Why the recommendation:** with DEC-06 Option 2, concurrent requests are solved jointly, so "15 concurrent pipelines" maps to one solve with 15 requests; it keeps CT-10 unchanged. A multi-process capacity run shows the host can take more if the rule changes.
+- **Alternatives:** (b) change CT-10 to allow parallel solves on disjoint resources (Backend, a contract change); (c) report AI-061 as not applicable to the MVP.
+- **Missing:** the prototype hardware (backlog open question); NFR-CAP-2 is cited but not defined in this repository.
+
+### R16 · AI-062 indicators
+
+- **Sources:** Master_Context "Evaluation": conflicts detected and resolved; resource utilisation (berths, tugs, pilots, equipment); avoidable idle time; estimated operational cost; feasibility and quality of recommendations; downstream effect on re-handling.
+- **Risk:** cost and re-handling need business definitions (the same kind as R9); inventing them would make the harness look complete when it isn't.

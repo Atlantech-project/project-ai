@@ -89,3 +89,11 @@ DEC-30 TR-01 / TR-02 are AI Team values (R8), not an external request.
 | Field status codes (for AI-071 R9 and MAE) | Open (Backend Team) | Unchanged |
 
 **For the Backend Team, from AI-059 (no request, information):** a DELAY_REPLAN proposal's options keep every component that has a `STARTED` or `DONE` event at its resource and interval, so the confirmation step "keep STARTED components" (UML 2.14) finds them unchanged in the proposal. A started resource that is no longer usable gives `NO_FEASIBLE_PLAN` with a reason instead of a proposal.
+
+## Update 2026-11-22 (AI-059 trigger handler)
+
+| ID | State now | What changed |
+|---|---|---|
+| INT-B11 | Open; the only blocker of AI-058 and AI-059 | The PART2_SOLVE handler (`feature/AI-059-part2-solve-trigger-handler`) runs every trigger end to end; a MANUAL or RESOURCE_CHANGE re-solve of a request with a current version fails with `PRECONDITION_FAILED` naming INT-B11 and leaves the previous version current (MySQL + Redis scenarios) |
+| INT-B12 (new, information) | Backend Team | The AI side now sends real PART2_SOLVE C-06 messages (`SOLVED`, `PARTIALLY_SOLVED`, `NO_FEASIBLE_PLAN`, `FIFO_FALLBACK`, `GENERATION_FAILED`). Backend `develop` (`554b09c`, last read) has no C-06 handler for PART2_SOLVE: the request transition, REPLACED (after INT-B11), audit and SSE steps of CT-14 are the Backend's. Acceptance: a Backend test that consumes the C-06 of a SOLVED and of a FIFO_FALLBACK run |
+| Forecast feed | AI Team (AI-020, AI-021; data, flag D) | B4 gets no forecast: no feed writes `forecast_runs` yet, and no rule says which run a solve uses. When the feed exists, the AI Team decides the run-selection rule (for example the latest SUCCESS run covering the option) |
