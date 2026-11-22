@@ -2222,6 +2222,19 @@ Decisions that belong to one AI backlog task and have no `DEC-` ID. Each is keye
 
 **Follow-ups (open):** extending a started component (for example a longer berth stay after a delay) is not in the sources ("keep STARTED"), so it is not done; separate pilot and tug job intervals (DEC-32 G-14, INT-B4) would let a re-plan keep a started pilot job while moving the berth.
 
+### AI-062 · Part 2 validation suite: indicator definitions, the FIFO baseline and what is not defined
+
+| | |
+| --- | --- |
+| Source | AI-062 (backlog: outputs "Property tests; harness computing conflicts, waiting, utilisation for CP-SAT vs FIFO"; guidance "Indicators exactly as named in the proposal"; criteria "Property suite in CI", "Harness produces the indicator table for any scenario") · Master_Context "Evaluation" (six indicators) · DEC-32 rule 3 (option 1 holds resources) · AI-055, AI-056 task decisions · Proposal §12 and plan §7.2 are cited but not in this repository |
+| Owner | AI Team |
+| Status | Proposed |
+| Affects | AI-084 (evaluation against FIFO and manual baselines) · AI-061 |
+| Decision | ______ |
+| Proposed change | 2026-11-22 · AI-062 · (1) **Module** `tools/evaluate/harness.py`: `compare` runs the same run through CP-SAT and through FIFO with AI-056's `handle_solve` (FIFO = its timeout path), `indicators`, the table as rows and Markdown; pure. (2) **Input** = what every scenario becomes before a solve: the AI-050 snapshot, the B2 context and B3's service times (from MySQL through the handler's own readers, or from the test builders). (3) **Plan** = option 1 of each placed request (DEC-32 rule 3). (4) **Indicators:** requests placed of total; conflicts = overlapping pairs on the same berth, pilot or tug among the plan's options and against the fixed holds of the snapshot; hard-constraint violations = options B2's `check_plan` rejects; waiting = whole minutes from the confirmed window's start to the start (total, mean, max), AI-055's `WAITING_TIME` minutes; utilisation per kind = minutes booked ÷ (resources of the kind in the snapshot × horizon minutes); feasibility = options passing B2 ÷ placed. Means and shares to 4 decimals, half up; "n/a" when nothing is placed. (5) **Not defined, never estimated:** estimated operational cost and downstream re-handling (R16). (6) **Property suite:** zero conflicts and violations in both plans; an OPTIMAL solve places at least as many requests as FIFO; indicator ranges; determinism; every property asserts that something was placed. CP-SAT is not required to wait less than FIFO: with equal DEC-23 weights it trades waiting against tugs (seeds 2, 4, 11 show more raw waiting). · Reason: the backlog names the indicators but not their formulas, the baseline, or what the plan of a run is; the proposal it points to is not available · Evidence: `tools/evaluate/harness.py`; `tests/unit/part2/test_validation_suite.py`, `tests/integration/test_evaluation_harness.py` (MySQL) on branch `feature/AI-062-part2-validation-harness` · Impact: AI-084, AI-061 · Awaiting: AI Team (owner); R16 for item (5) |
+
+**Follow-ups (open):** formulas for operational cost and re-handling (R16); a manual-planning baseline (AI-084); the indicator names to be checked against Proposal §12 when it is in the repository.
+
 ### AI-060 · OVERRIDE validation: applying changes, message keys and change attribution
 
 | | |
