@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only) |
+| Status | DONE (PR #60, merge `db42b4a`, 2026-11-22; verified with the GitHub pulls API) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-five-task-post-merge-records` (from `develop` at `0040139`) |
 | Plan | the user's post-merge instruction of 2026-11-22 (verify PRs #57 and #58, sync local `develop`, move the PortHub pointer, verify records, update the report; no new batch) |
@@ -22,3 +22,7 @@ None from this machine (`gh` is not installed).
 
 ## Blockers and follow-ups
 - Merge `feature/AI-031-review-followups` first, then this branch, then move the PortHub pointer again.
+
+## Merge verification (2026-11-22, recorded by SETUP-five-task-records-pr60)
+- PR #60, head `5e95e6b`, merged at 2026-11-22T12:20:32Z as `db42b4a`. PR #59 (`feature/AI-031-review-followups`, head `cd5e001`) merged at 12:20:09Z as `a5de981`. CI on `db42b4a`: all success.
+- PortHub `project-ai` pointer moved `0040139` → `db42b4a` (PortHub `2c9fd5c`).

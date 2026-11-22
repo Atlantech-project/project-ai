@@ -2,6 +2,17 @@
 
 Setup record (not in the backlog), written for whoever resumes the AI-track work, human or AI session. The backlog (`ATLANTECH_AI_TASKS.md`) stays the official task list and `WORK_STATUS.md` the tracker; this file holds the execution order, the dependency picture and the resume point. Related: [INTEGRATION_TASKS.md](INTEGRATION_TASKS.md) · [BLOCKED_TASKS.md](BLOCKED_TASKS.md) · [DECISION_RECOMMENDATIONS.md](DECISION_RECOMMENDATIONS.md).
 
+## 0f. Checkpoint 8 (2026-11-22, R12 and the last records)
+
+**Verified with the GitHub pulls API and check runs:** PR #59 (`feature/AI-031-review-followups`, head `cd5e001`) merged as `a5de981` at 12:20:09Z; PR #60 (`feature/SETUP-five-task-post-merge-records`, head `5e95e6b`) merged as `db42b4a` at 12:20:32Z. CI on `db42b4a`: all success. Local `develop` = `db42b4a` (2205 passed, 50 skipped, 1 xfailed). PortHub pointer `0040139` → `db42b4a` (PortHub `2c9fd5c`).
+
+**R12** (corrected `call_sign` longer than `vessels.call_sign` `varchar(10)`): reproduced (MySQL 1406); new ERROR `MALFORMED_CALL_SIGN`. Three separate states:
+1. AI Team approval of R12: **given** by the user, 2026-11-22 (AI-031 task decision item (10), Decision row).
+2. AI-031 implementation of R12: **IN REVIEW**, `feature/AI-031-call-sign-length` (`d7cd794`, `7cc4a55`), not merged.
+3. QA Team's CT-24 code listing: **pending** (INT-Q2).
+
+**Open branches, merge order:** `feature/AI-031-call-sign-length`, then `feature/SETUP-five-task-records-pr60`; then move the PortHub pointer.
+
 ## 0e. Checkpoint 7 (2026-11-22, five-task batch post-merge verification)
 
 **Verified with the GitHub pulls API and check runs:**
