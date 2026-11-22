@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | SUPERSEDED (2026-11-22) by `feature/SETUP-post-merge-replan-records`. PR #70 stayed open while PRs #67 to #69 merged; its `WORK_STATUS.md` tail then conflicted with `develop`. Its content is carried over unchanged; close PR #70 unmerged |
+| Status | SUPERSEDED (2026-11-22) by `feature/SETUP-post-merge-replan-records`. PR #70 stayed open while PRs #67 to #69 merged; its `WORK_STATUS.md` tail then conflicted with `develop`. Its content is carried over unchanged; PR #70 was closed without merging (pulls API: closed, `merged_at` null, verified 2026-11-22) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-replan-batch-records` (from `develop` at `254757c`) |
 | Plan | the user's instruction of 2026-11-22 ("Update all task records, checkpoints, integration requests and the Arabic execution report"); the standing execution authorization approves the publish |

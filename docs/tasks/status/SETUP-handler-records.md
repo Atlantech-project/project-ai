@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (documents only; DONE when its PR merges) |
+| Status | DONE (PR #74, merge `11c537c`, 2026-11-22 15:42:11Z) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-handler-records` (from `develop` at `4a1663f`) |
 | Plan | the user's AI-059 continuation instruction of 2026-11-22 (Phases 1, 7 and 8); the standing execution authorization approves the publish |

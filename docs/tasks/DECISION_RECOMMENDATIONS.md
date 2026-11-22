@@ -310,3 +310,57 @@ Recommendations only; nothing here is approved.
 
 - **Sources:** Master_Context "Evaluation": conflicts detected and resolved; resource utilisation (berths, tugs, pilots, equipment); avoidable idle time; estimated operational cost; feasibility and quality of recommendations; downstream effect on re-handling.
 - **Risk:** cost and re-handling need business definitions (the same kind as R9); inventing them would make the harness look complete when it isn't.
+
+## After AI-062 (2026-11-22)
+
+### R16 · Operational cost and re-handling (detail; updates R16)
+
+Recommendations only; nothing is approved and no formula is used in code. The harness reports both indicators as "not defined (R16)".
+
+**Estimated operational cost**
+- **Missing:** monetary rates. The harness can count resource use exactly (tug-hours, pilot jobs, berth-hours, waiting hours per vessel), but nothing gives a price for any of them. DEC-22 (financial impact in ranking) is Open.
+- **Option (a), recommended:** keep it "not defined" until the Port Authority provides rates; then cost = Σ tug-hours × tug rate + pilot jobs × pilot fee + berth-hours × berth rate + vessel waiting hours × waiting cost. Request to the Leads Council: the four rates, their unit and currency, and who owns them (a new `port_settings` key set through CT-18, or a table: the Backend's schema).
+- **Option (b):** show the plan's DEC-23 objective score as a "relative effort index", labelled as not a cost. It is available today, but it would be easy to misread as money.
+- **Option (c):** report the resource quantities only (tug-hours, pilot jobs, berth-hours, waiting hours), without a sum. It adds no business rule.
+- **My recommendation:** (c) now and (a) when rates exist. Never (b) under the name "cost".
+- **Owner:** AI Team (definition), Leads Council (rates).
+
+**Downstream re-handling**
+- **Missing:** a berth plan has no stowage or yard data, so Part 2 alone cannot produce re-handles. The measure belongs to the yard plan: CT-11 v1.2 proposes `no_rehandle_count` (INT-B2, Backend approval pending), produced by AI-066 (blocked: AI-065 approval, AI-032, INT-B3, INT-L1/L2).
+- **Recommendation:** define re-handling as the yard plan's re-handle count once CT-11 v1.2 is approved and AI-066 exists, and add it to the harness then. Until then, "not defined".
+- **Owner:** AI Team; Backend for CT-11 v1.2.
+
+**Effect on AI-062:** its two criteria are met. Accepting (c) plus "not defined" for re-handling lets AI-062 be DONE on merge; otherwise it is BLOCKED (R16).
+
+### Blocking decisions and dependencies after AI-062
+
+**Decisions the user takes as AI Team owner:**
+
+| ID | Decision | Unblocks |
+|---|---|---|
+| R15 | Meaning of "15 concurrent pipelines" / "≥ 5 parallel solves" under CT-10's one-solve rule (recommended: one joint solve of 15 requests, plus a 5-process capacity run) | AI-061 |
+| R16 | Cost (recommended (c) then (a)) and re-handling (after CT-11 v1.2 / AI-066) | AI-062 DONE |
+| R11 (a) | No factor rows for FIFO options (recommended) | AI-057 criterion 1 |
+| R9 | `OVERRIDE_RATE`, `WAIT_TIME`, TR-11 definitions (proposals written) | AI-071 |
+| R3 | AI-045 on labelled synthetic data, once a squat-coefficient source exists | AI-045 → AI-055 DONE |
+| R4 | DEC-07 Option 1 (and DEC-24 values) | AI-007 → AI-046 to AI-048 → AI-080, AI-093 |
+| R2 | DEC-31 Option 1 (scheduler in the Part 3 worker) | AI-073 |
+| R6 | AI-032 criterion 3 is the Backend's | AI-032 DONE |
+| R8 | DEC-30 TR-01 / TR-02 drift thresholds (no value proposed) | AI-072 in production |
+| R1, R7, R14 | Confirm the Proposed AI task decisions | Confirmation only |
+
+**External deliveries:**
+
+| ID | Team | Deliverable | Unblocks |
+|---|---|---|---|
+| INT-B11 | Backend, Leads Council | Regenerate write (R13, option (a) recommended) | AI-058, AI-059 regenerate |
+| INT-B12 | Backend | C-06 consumer for PART2_SOLVE | Part 2 end-to-end with the staff screens |
+| INT-B1 | Backend | CT-10 Proposed change | Finer reason codes (not a gate) |
+| INT-B6 | Backend | DEC-08 retraining grants | AI-070 registration, AI-104 |
+| INT-B3, INT-B2 | Backend | DEC-29 G-01/G-02/G-04/G-06; CT-11 v1.2 | AI-066 → re-handling (R16), AI-081 |
+| INT-B10 | Backend | CT-12 step 5 test | AI-032 DONE |
+| INT-Q4 | QA / domain reviewer | Rationale templates and language | AI-057 |
+| INT-Q1, INT-Q2 | QA | Stowage bounds; CT-24 codes | AI-031 case 12 |
+| INT-L1, INT-L2 | Leads, Terminal operations | Yard dwell and time limit | AI-066 |
+| Cost rates (new, R16) | Leads Council / Port Authority | Tug, pilot, berth and waiting rates | Cost indicator |
+| Data (flag D) | Leads Council, domain experts | Providers, forecast feed, tides, history | AI-020 to AI-024, AI-042, B4 forecast, Part 1 chain |
