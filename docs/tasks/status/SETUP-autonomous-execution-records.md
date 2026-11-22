@@ -1,7 +1,7 @@
 # SETUP-autonomous-execution-records · Execution records and stale status fixes (setup task, not in the backlog)
 | Field | Value |
 |---|---|
-| Status | IN REVIEW (records written; becomes `DONE` when the branch is reviewed and merged) |
+| Status | DONE (PR #41 merged into `develop`, merge `6ed8c91`, 2026-11-21) |
 | Owner | AI Team |
 | Branch | `feature/SETUP-autonomous-execution-records` (from `develop` at `3180e90`) |
 | Plan | the user's autonomous execution protocol of 2026-11-21 (§10 records, §5 housekeeping) · approval: the user's standing authorization in that message |

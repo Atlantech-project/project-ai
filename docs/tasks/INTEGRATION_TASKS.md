@@ -38,3 +38,25 @@ Setup record (not in the backlog), written for the owning teams. Each item says 
 | INT-L3 | Medium | A real BAPLIE with onward-vessel data (DEC-29 G-01) | The Leads Council provides it | INT-B3 G-01 |
 | INT-L4 | Low | Damietta Port Authority reference for compulsory pilotage | Source for the AI-051 confirmed rule | AI-051 follow-up |
 | INT-L5 | Medium | Damietta yard bay numbering (DEC-29 G-04) | How bays b and b+1 pair for 40/45 ft | AI-066 H6 |
+
+## Additions 2026-11-21 (round 3)
+
+| ID | Owner | Request | Exact deliverable | Blocks | Acceptance / tests |
+|---|---|---|---|---|---|
+| INT-B9 | Backend Team | DEC-20 missing tug inputs | Nullable `berthing_requests.pilot_requested` (bool) and a tug-count pilot override, if the form collects them (DEC-20 data requirements). Today the shared B2 loader passes `pilot_requested = None` (table applies) | Accuracy of AI-054 / B2 tug counts | Columns in PortHub `schema.sql`; the AI loader then reads them (one-line change plus a unit test) |
+| INT-B10 | Backend Team | CT-12 step 5 test (R6) | Backend test: `PARSED` C-06 → new file `ACTIVE` and the previous ACTIVE file `REPLACED` in one transaction; other outcomes change nothing | Closing AI-032 criterion 3 | Backend test green |
+| INT-Q4 | QA Team / domain reviewer | Rationale templates (AI-009 criterion 3) | Domain-reviewed `rationale_templates` rows (code, version, text with placeholders), with the rationale language decided | AI-057 rendering tests per template | Rows in the seed spec; AI-057 renders each one |
+
+**Still open from earlier rounds:**
+
+- INT-B1: CT-10 Proposed change (AI-058 merge gate).
+- INT-B2: CT-11 v1.2.
+- INT-B3: DEC-29 G-01, G-02, G-04, G-06 (AI-066).
+- INT-B4: separate pilot and tug job intervals.
+- INT-B5: CT-13 message keys.
+- INT-B6: DEC-08 retraining grants (AI-070 registration).
+- INT-Q1: stowage upper bounds.
+- INT-Q2: CT-24 codes.
+- INT-L1, INT-L2: yard dwell and time-limit values.
+
+DEC-30 TR-01 / TR-02 are AI Team values (R8), not an external request.
